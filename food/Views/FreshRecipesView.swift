@@ -1,77 +1,61 @@
-//
-//  FreshRecipesView.swift
-//  food
-//
-//  Created by Abu Anwar MD Abdullah on 25/1/21.
-//
-
 import SwiftUI
 
 struct FreshRecipesView: View {
     var body: some View {
-        VStack (alignment: .leading, spacing: 16) {
-            SectionTitleView(title: "Today's Fresh Recipes")
-            
-            ScrollView (.horizontal, showsIndicators: false) {
-                HStack (spacing: 16) {
-                    RecipeCard(image: #imageLiteral(resourceName: "fresh_recipe_1"))
-                    RecipeCard(image: #imageLiteral(resourceName: "fresh_recipe_2"))
-                }
-            }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 5) {
+                    LocationCard(distance: "最近")
+                    LocationCard(distance: "<200m")
+                    LocationCard(distance: "<300m")
+       
+                    
+                }.padding()
         }
+       //Add padding to the entire VStack for spacing
     }
 }
 
-struct RecipeCard: View {
-    let image: UIImage
+struct LocationCard: View {
+    var distance: String
+    
     var body: some View {
         ZStack {
-            VStack (alignment: .leading, spacing: 8) {
-                Image(uiImage: #imageLiteral(resourceName: "like"))
-                    .padding(.bottom, 60)
-                Text("Breakfast")
-                    .font(.caption)
-                    .foregroundColor(Color(#colorLiteral(red: 0.07058823529, green: 0.5607843137, blue: 0.6823529412, alpha: 1)))
-                Text("French Toast with Berries")
-                    .fontWeight(.medium)
-                    .lineLimit(nil)
-                HStack (spacing: 2) {
-                    ForEach(0 ..< 5) { item in
-                        Image(uiImage: #imageLiteral(resourceName: "star"))
-                            .renderingMode(.template)
-                            .foregroundColor(Color("PrimaryColor"))
-                    }
-                }
-                Text("120 Calories")
-                    .font(.caption)
-                    .foregroundColor(Color("PrimaryColor"))
-                
-                HStack {
-                    Image(uiImage: #imageLiteral(resourceName: "time"))
-                    Text("10 mins")
-                        .font(.caption2)
-                        .foregroundColor(Color("GrayColor"))
-                    Spacer()
-                    
-                    Image(uiImage: #imageLiteral(resourceName: "serving"))
-                    Text("1 Serving")
-                        .font(.caption2)
-                        .foregroundColor(Color("GrayColor"))
-                }
-                
+            VStack(alignment: .center, spacing: 10) {
+                Text(distance)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color("TextColor"))
+                    .padding(.bottom, 4)
             }
-            .frame(width: 147)
-            .padding()
-            .background(Color("LightGrayColor"))
-            .cornerRadius(20.0)
-            
-            //                Image
-            Image(uiImage: image)
-                .offset(x: 45, y: -60)
-            
+            .frame(width: 50, height: 50) // Adjusted height to give more vertical space
+            .background(
+                LinearGradient(gradient: Gradient(colors: [Color("LightGrayColor"), Color.white]),
+                               startPoint: .topLeading,
+                               endPoint: .bottomTrailing)
+            )
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 4) // Subtle shadow for depth
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color("BorderColor").opacity(0.3), lineWidth: 1)
+            )
         }
-        .padding(.trailing, 25)
+        .padding(.vertical, 1) // Add vertical padding to avoid cutoff
+        .padding(.trailing, 1) // Horizontal padding
     }
 }
 
+// Preview for FreshRecipesView
+struct FreshRecipesView_Previews: PreviewProvider {
+    static var previews: some View {
+        FreshRecipesView()
+    }
+}
 
+// Preview for LocationCard
+struct LocationCard_Previews: PreviewProvider {
+    static var previews: some View {
+        LocationCard(distance: "<100m")
+            .previewLayout(.sizeThatFits) // Fit content in preview
+            .padding() // Add padding for preview
+    }
+}

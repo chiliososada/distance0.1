@@ -3,10 +3,28 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
+		68209D0E2CAE779500395C34 /* ProFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68209D0D2CAE778A00395C34 /* ProFileView.swift */; };
+		68209D102CAE94D400395C34 /* MyReviewRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68209D0F2CAE94BF00395C34 /* MyReviewRow.swift */; };
+		6841B1292CB15C8600100A5A /* ChatRoomListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841B1282CB15C7C00100A5A /* ChatRoomListView.swift */; };
+		6841B12B2CB6307F00100A5A /* ChatDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841B12A2CB6307B00100A5A /* ChatDetailView.swift */; };
+		6841B12D2CB630C600100A5A /* ChatRoomRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841B12C2CB630C500100A5A /* ChatRoomRow.swift */; };
+		6841B12F2CB6310000100A5A /* ChatListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841B12E2CB630FE00100A5A /* ChatListView.swift */; };
+		6841B1502CB6BCC700100A5A /* ChatMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841B14F2CB6BCBF00100A5A /* ChatMessageView.swift */; };
+		6841B1522CB6BD0400100A5A /* ChatAnnouncementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841B1512CB6BCFE00100A5A /* ChatAnnouncementView.swift */; };
+		6872665B2CB769A900F19703 /* ChatSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665A2CB769A700F19703 /* ChatSettingsView.swift */; };
+		6872665D2CB78CE300F19703 /* FloatingActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665C2CB78CD600F19703 /* FloatingActionButton.swift */; };
+		6872665F2CB7909700F19703 /* TabBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665E2CB7909000F19703 /* TabBarViewModel.swift */; };
+		687266612CB7970500F19703 /* SideMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266602CB7970200F19703 /* SideMenu.swift */; };
+		687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DBF202CA4401100371A2F /* RecipeDetailView.swift */; };
+		68E2F8F02CA80802001C2496 /* PostInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8EF2CA807F5001C2496 /* PostInputView.swift */; };
+		68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */; };
+		68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */; };
+		68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5942CA64491000CA80B /* NearbyView.swift */; };
+		68EBD5972CA64BA4000CA80B /* MapButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */; };
 		8821892925BEC29900820A7E /* foodApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821892825BEC29900820A7E /* foodApp.swift */; };
 		8821892B25BEC29900820A7E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821892A25BEC29900820A7E /* ContentView.swift */; };
 		8821892D25BEC29B00820A7E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8821892C25BEC29B00820A7E /* Assets.xcassets */; };
@@ -45,6 +63,24 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		68209D0D2CAE778A00395C34 /* ProFileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProFileView.swift; sourceTree = "<group>"; };
+		68209D0F2CAE94BF00395C34 /* MyReviewRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyReviewRow.swift; sourceTree = "<group>"; };
+		6841B1282CB15C7C00100A5A /* ChatRoomListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomListView.swift; sourceTree = "<group>"; };
+		6841B12A2CB6307B00100A5A /* ChatDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatDetailView.swift; sourceTree = "<group>"; };
+		6841B12C2CB630C500100A5A /* ChatRoomRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatRoomRow.swift; sourceTree = "<group>"; };
+		6841B12E2CB630FE00100A5A /* ChatListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatListView.swift; sourceTree = "<group>"; };
+		6841B14F2CB6BCBF00100A5A /* ChatMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessageView.swift; sourceTree = "<group>"; };
+		6841B1512CB6BCFE00100A5A /* ChatAnnouncementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAnnouncementView.swift; sourceTree = "<group>"; };
+		6872665A2CB769A700F19703 /* ChatSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSettingsView.swift; sourceTree = "<group>"; };
+		6872665C2CB78CD600F19703 /* FloatingActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingActionButton.swift; sourceTree = "<group>"; };
+		6872665E2CB7909000F19703 /* TabBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarViewModel.swift; sourceTree = "<group>"; };
+		687266602CB7970200F19703 /* SideMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideMenu.swift; sourceTree = "<group>"; };
+		687DBF202CA4401100371A2F /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
+		68E2F8EF2CA807F5001C2496 /* PostInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputView.swift; sourceTree = "<group>"; };
+		68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputLocation.swift; sourceTree = "<group>"; };
+		68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabContentView.swift; sourceTree = "<group>"; };
+		68EBD5942CA64491000CA80B /* NearbyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyView.swift; sourceTree = "<group>"; };
+		68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapButtonsView.swift; sourceTree = "<group>"; };
 		8821892525BEC29900820A7E /* food.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = food.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8821892825BEC29900820A7E /* foodApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = foodApp.swift; sourceTree = "<group>"; };
 		8821892A25BEC29900820A7E /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -70,6 +106,12 @@
 		8821898125BF2DE800820A7E /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		884FDFB525C403E500B05042 /* gif.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = gif.gif; sourceTree = "<group>"; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		6841B1242CAFE7AB00100A5A /* Heplers */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Heplers; sourceTree = "<group>"; };
+		687DBF1C2CA43F4600371A2F /* Model */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Model; sourceTree = "<group>"; };
+		68E2F8F52CAA72C4001C2496 /* Services */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Services; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		8821892225BEC29900820A7E /* Frameworks */ = {
@@ -120,6 +162,8 @@
 		8821892725BEC29900820A7E /* food */ = {
 			isa = PBXGroup;
 			children = (
+				68E2F8F52CAA72C4001C2496 /* Services */,
+				687DBF1C2CA43F4600371A2F /* Model */,
 				8821895F25BEC8EE00820A7E /* fonts */,
 				8821895625BEC81300820A7E /* Views */,
 				8821892825BEC29900820A7E /* foodApp.swift */,
@@ -160,11 +204,30 @@
 		8821895625BEC81300820A7E /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				687266602CB7970200F19703 /* SideMenu.swift */,
+				6872665E2CB7909000F19703 /* TabBarViewModel.swift */,
+				6872665C2CB78CD600F19703 /* FloatingActionButton.swift */,
+				6872665A2CB769A700F19703 /* ChatSettingsView.swift */,
+				6841B1512CB6BCFE00100A5A /* ChatAnnouncementView.swift */,
+				6841B14F2CB6BCBF00100A5A /* ChatMessageView.swift */,
+				6841B12E2CB630FE00100A5A /* ChatListView.swift */,
+				6841B12C2CB630C500100A5A /* ChatRoomRow.swift */,
+				6841B12A2CB6307B00100A5A /* ChatDetailView.swift */,
+				6841B1242CAFE7AB00100A5A /* Heplers */,
+				68209D0F2CAE94BF00395C34 /* MyReviewRow.swift */,
+				6841B1282CB15C7C00100A5A /* ChatRoomListView.swift */,
+				68209D0D2CAE778A00395C34 /* ProFileView.swift */,
+				68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */,
+				68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */,
+				68E2F8EF2CA807F5001C2496 /* PostInputView.swift */,
+				68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */,
+				68EBD5942CA64491000CA80B /* NearbyView.swift */,
+				687DBF202CA4401100371A2F /* RecipeDetailView.swift */,
 				8821895725BEC82400820A7E /* HomeNavBarView.swift */,
 				8821896D25BEFE3C00820A7E /* SearchAndFilterView.swift */,
 				8821897225BF073800820A7E /* FreshRecipesView.swift */,
-				8821897725BF257E00820A7E /* SectionTitleView.swift */,
 				8821897C25BF2D7600820A7E /* RecommendedRecipeCardView.swift */,
+				8821897725BF257E00820A7E /* SectionTitleView.swift */,
 				8821898125BF2DE800820A7E /* HomeView.swift */,
 			);
 			path = Views;
@@ -196,6 +259,11 @@
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				6841B1242CAFE7AB00100A5A /* Heplers */,
+				687DBF1C2CA43F4600371A2F /* Model */,
+				68E2F8F52CAA72C4001C2496 /* Services */,
 			);
 			name = food;
 			productName = food;
@@ -317,13 +385,31 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6841B1502CB6BCC700100A5A /* ChatMessageView.swift in Sources */,
+				6841B12F2CB6310000100A5A /* ChatListView.swift in Sources */,
 				8821895825BEC82400820A7E /* HomeNavBarView.swift in Sources */,
+				6841B12D2CB630C600100A5A /* ChatRoomRow.swift in Sources */,
+				687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */,
 				8821897D25BF2D7600820A7E /* RecommendedRecipeCardView.swift in Sources */,
+				68E2F8F02CA80802001C2496 /* PostInputView.swift in Sources */,
+				687266612CB7970500F19703 /* SideMenu.swift in Sources */,
+				6872665D2CB78CE300F19703 /* FloatingActionButton.swift in Sources */,
+				6872665B2CB769A900F19703 /* ChatSettingsView.swift in Sources */,
 				8821892B25BEC29900820A7E /* ContentView.swift in Sources */,
+				68209D102CAE94D400395C34 /* MyReviewRow.swift in Sources */,
+				68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */,
 				8821896E25BEFE3C00820A7E /* SearchAndFilterView.swift in Sources */,
+				6841B12B2CB6307F00100A5A /* ChatDetailView.swift in Sources */,
 				8821897325BF073800820A7E /* FreshRecipesView.swift in Sources */,
+				6841B1522CB6BD0400100A5A /* ChatAnnouncementView.swift in Sources */,
+				68EBD5972CA64BA4000CA80B /* MapButtonsView.swift in Sources */,
+				6872665F2CB7909700F19703 /* TabBarViewModel.swift in Sources */,
 				8821898225BF2DE800820A7E /* HomeView.swift in Sources */,
 				8821892925BEC29900820A7E /* foodApp.swift in Sources */,
+				6841B1292CB15C8600100A5A /* ChatRoomListView.swift in Sources */,
+				68209D0E2CAE779500395C34 /* ProFileView.swift in Sources */,
+				68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */,
+				68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */,
 				8821897825BF257E00820A7E /* SectionTitleView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -483,14 +569,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"food/Preview Content\"";
+				DEVELOPMENT_TEAM = 9W374AW5XT;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = food/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = TheSwiftWay.food;
+				PRODUCT_BUNDLE_IDENTIFIER = tysoft;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -504,14 +591,15 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_ASSET_PATHS = "\"food/Preview Content\"";
+				DEVELOPMENT_TEAM = 9W374AW5XT;
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = food/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = TheSwiftWay.food;
+				PRODUCT_BUNDLE_IDENTIFIER = tysoft;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

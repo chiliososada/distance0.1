@@ -13,16 +13,15 @@ struct SectionTitleView: View {
     var body: some View {
         HStack {
             Text(title)
-                .font(.title2)
+                .font(.subheadline)
                 .fontWeight(.bold)
-            
+                .padding(.leading, 4)
             Spacer()
-            
-            Text("See All")
-                .foregroundColor(Color("PrimaryColor"))
-                .onTapGesture {
-                    
-                }
         }
+    }
+}
+struct SectionTitleView_Previews: PreviewProvider {
+    static var previews: some View {
+        SectionTitleView(title: "根据位置进行过滤")
     }
 }
