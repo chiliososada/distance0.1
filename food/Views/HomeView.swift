@@ -2,66 +2,59 @@ import SwiftUI
 
 struct HomeView: View {
     @State private var selectedTab = 0
-    
  //   @Binding var selectedTab: Int // 传递 selectedTab 绑定
     @State private var isShowingPostInputView = false
     @State private var isTabBarHidden = false
     @State private var tabState: Visibility = .visible
-
-    
-//    init() {
-//        UITabBar.appearance().isHidden = true
-//    }
-    
-    
-    
     @State var showMenu: Bool = false
     @State var offset: CGFloat = 0
     @State var lastStoredOffset: CGFloat = 0
     @GestureState var gestureOffSet: CGFloat = 0
-
+    
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass  // 检测 iPad 或 iPhone
+   
     var body: some View {
         let sideBarWidth = getRect().width * 0.7
-
-        ZStack {
-            HStack(spacing: 0) {
-                // Side Menu
-                SideMenu(showMenu: $showMenu)
-
-                VStack(spacing: 0) {
-                    tabViewContent // 放置 TabView 和它的内容
+        NavigationView {
+            ZStack {
+                HStack(spacing: 0) {
+                    // Side Menu
+                    SideMenu(showMenu: $showMenu)
+                    VStack(spacing: 0) {
+                        tabViewContent // 放置 TabView 和它的内容
+                            .navigationBarHidden(true)
+                    }
+                    .frame(width: getRect().width) // 确保 TabView 和内容占满屏幕宽度
+                    .overlay(
+                        // 遮罩层，点击关闭侧边栏
+                        Rectangle()
+                            .fill(Color.primary.opacity(Double(offset / sideBarWidth / 5)))
+                            .ignoresSafeArea(.container, edges: .vertical)
+                            .onTapGesture {
+                                withAnimation { showMenu.toggle() }
+                            }
+                    )
                 }
-                .frame(width: getRect().width) // 确保 TabView 和内容占满屏幕宽度
-                .overlay(
-                    // 遮罩层，点击关闭侧边栏
-                    Rectangle()
-                        .fill(Color.primary.opacity(Double(offset / sideBarWidth / 5)))
-                        .ignoresSafeArea(.container, edges: .vertical)
-                        .onTapGesture {
-                            withAnimation { showMenu.toggle() }
-                        }
+                .frame(width: getRect().width + sideBarWidth)
+                .offset(x: -sideBarWidth / 2)
+                .offset(x: offset > 0 ? offset : 0)
+                .gesture(
+                    DragGesture()
+                        .updating($gestureOffSet, body: { value, out, _ in
+                            out = value.translation.width
+                        })
+                        .onEnded(onEnd(value:))
                 )
-            }
-            .frame(width: getRect().width + sideBarWidth)
-            .offset(x: -sideBarWidth / 2)
-            .offset(x: offset > 0 ? offset : 0)
-            .gesture(
-                DragGesture()
-                    .updating($gestureOffSet, body: { value, out, _ in
-                        out = value.translation.width
-                    })
-                    .onEnded(onEnd(value:))
-            )
-
-            // 悬浮按钮
-            if !isTabBarHidden && !showMenu{
-                VStack {
-                    Spacer()
-                    FloatingActionButton(isShowingPostInputView: $isShowingPostInputView)
-                        .padding(.bottom) // 保证按钮不覆盖在 TabBar 上
+                
+                // 悬浮按钮
+                if !isTabBarHidden && !showMenu{
+                    VStack {
+                        FloatingActionButton(isShowingPostInputView: $isShowingPostInputView)
+                    }
                 }
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
         .animation(.easeOut, value: offset == 0)
         .onChange(of: showMenu) {
             if showMenu && offset == 0 {
@@ -87,10 +80,12 @@ struct HomeView: View {
                 NavigationStack {
                     TabStateScrollView(axis: .vertical, showsIndicator: false, tabState: $tabState) {
                         HomeTabContentView(isTabBarHidden: $isTabBarHidden)
+                          
                             .navigationBarItems(
                                 leading: leadingNavBarItem,
                                 trailing: trailingNavBarItem
                             )
+                           
                     }
                     .toolbar(isTabBarHidden || tabState == .hidden ? .hidden : .visible, for: .tabBar)
                     .animation(.easeInOut(duration: 0.3), value: isTabBarHidden || tabState == .hidden)
@@ -200,6 +195,7 @@ struct HomeView: View {
 func getRect() -> CGRect {
     return UIScreen.main.bounds
 }
+
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()

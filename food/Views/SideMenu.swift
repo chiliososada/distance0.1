@@ -5,7 +5,7 @@ struct SideMenu: View {
 
     var body: some View {
         
-        NavigationStack { // 使用 NavigationStack
+      
             VStack(alignment: .leading, spacing: 0) {
                 // 头像和用户名部分
                 VStack(alignment: .center, spacing: 14) {
@@ -64,7 +64,7 @@ struct SideMenu: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
-}
+
 
 
 @ViewBuilder

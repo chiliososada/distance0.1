@@ -74,7 +74,7 @@ struct HomeTabContentView: View {
                                     onTap: {},
                                     busynessLevel: Color.red
                                 )
-                                .frame(maxWidth: 350)
+                                //.frame(maxWidth: 350)
                             }
                         }
                     }
