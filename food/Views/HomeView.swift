@@ -10,8 +10,10 @@ struct HomeView: View {
     @State var offset: CGFloat = 0
     @State var lastStoredOffset: CGFloat = 0
     @GestureState var gestureOffSet: CGFloat = 0
-    
+    @State private var search: String = ""
     @Environment(\.horizontalSizeClass) var horizontalSizeClass  // 检测 iPad 或 iPhone
+    
+    @State private var isNavigationBarHidden: Bool = false  // Track navigation bar visibility
    
     var body: some View {
         let sideBarWidth = getRect().width * 0.7
@@ -76,11 +78,13 @@ struct HomeView: View {
         VStack {
           
             TabView(selection: $selectedTab) {
+               
                 // 主页 Tab
                 NavigationStack {
-                    TabStateScrollView(axis: .vertical, showsIndicator: false, tabState: $tabState) {
+                    SearchAndFilterView(search: $search)
+                    TabStateScrollView(axis: .vertical, showsIndicator: false, tabState: $tabState, isNavigationBarHidden: $isNavigationBarHidden) {
                         HomeTabContentView(isTabBarHidden: $isTabBarHidden)
-                          
+                            .navigationBarHidden(isNavigationBarHidden) 
                             .navigationBarItems(
                                 leading: leadingNavBarItem,
                                 trailing: trailingNavBarItem

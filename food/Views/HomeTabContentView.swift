@@ -4,7 +4,7 @@ struct HomeTabContentView: View {
     @Binding var isTabBarHidden: Bool
     
     @State private var tabState: Visibility = .visible
-   
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     @State private var search: String = ""
     @State private var recommendedRecipes = [
@@ -47,44 +47,38 @@ struct HomeTabContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            //TabStateScrollView(axis: .vertical, showsIndicator: false, tabState: $tabState)
-            ScrollView(showsIndicators: false){
-                VStack(alignment: .leading, spacing: 4) {
-                    SearchAndFilterView(search: $search)
-//                    SectionTitleView(title: "根据位置进行过滤")
-//                    FreshRecipesView()
-                    // 推荐内容
-                    VStack(spacing: 10) {
-                        ForEach(recommendedRecipes) { recipe in
-                            NavigationLink(
-                                destination: RecipeDetailView(recipe: recipe)
-                                 
-                                    .onAppear {
-                                                                           // 隐藏 TabBar
-                                                                           isTabBarHidden = true
-                                                                       }
-                                    .onDisappear {
-                                                                            // 显示 TabBar
-                                                                            isTabBarHidden = false
-                                                                        }
-                            ) {
-                                RecommendedRecipeCardView(
-                                    image: UIImage(named: recipe.imageName) ?? UIImage(),
-                                    title: recipe.title,
-                                    onTap: {},
-                                    busynessLevel: Color.red
-                                )
-                                //.frame(maxWidth: 350)
-                            }
+
+            // ScrollView for content
+            //                ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 4) {
+                // 推荐内容
+                VStack(spacing: 10) {
+                    ForEach(recommendedRecipes) { recipe in
+                        NavigationLink(
+                            destination: RecipeDetailView(recipe: recipe)
+                                .onAppear {
+                                    isTabBarHidden = true  // Hide TabBar
+                                }
+                                .onDisappear {
+                                    isTabBarHidden = false  // Show TabBar
+                                }
+                        ) {
+                            RecommendedRecipeCardView(
+                                image: UIImage(named: recipe.imageName) ?? UIImage(),
+                                title: recipe.title,
+                                onTap: {},
+                                busynessLevel: Color.red
+                            )
+                            .frame(maxWidth: horizontalSizeClass == .compact ? 350 : .infinity)  // Limit width on iPhone, full width on iPad
                         }
                     }
-                    .padding(.horizontal)
                 }
-                .padding()
+                .padding(.horizontal)
             }
-            
+            .padding()
         }
-    }
+//            }
+        }
 }
 
 struct HomeTabContentView_Previews: PreviewProvider {

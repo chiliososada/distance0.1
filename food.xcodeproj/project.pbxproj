@@ -19,6 +19,7 @@
 		6872665D2CB78CE300F19703 /* FloatingActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665C2CB78CD600F19703 /* FloatingActionButton.swift */; };
 		6872665F2CB7909700F19703 /* TabBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665E2CB7909000F19703 /* TabBarViewModel.swift */; };
 		687266612CB7970500F19703 /* SideMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266602CB7970200F19703 /* SideMenu.swift */; };
+		687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266622CB8FD5100F19703 /* SearchFilterView.swift */; };
 		687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DBF202CA4401100371A2F /* RecipeDetailView.swift */; };
 		68E2F8F02CA80802001C2496 /* PostInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8EF2CA807F5001C2496 /* PostInputView.swift */; };
 		68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */; };
@@ -75,6 +76,7 @@
 		6872665C2CB78CD600F19703 /* FloatingActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingActionButton.swift; sourceTree = "<group>"; };
 		6872665E2CB7909000F19703 /* TabBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarViewModel.swift; sourceTree = "<group>"; };
 		687266602CB7970200F19703 /* SideMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideMenu.swift; sourceTree = "<group>"; };
+		687266622CB8FD5100F19703 /* SearchFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchFilterView.swift; sourceTree = "<group>"; };
 		687DBF202CA4401100371A2F /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
 		68E2F8EF2CA807F5001C2496 /* PostInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputView.swift; sourceTree = "<group>"; };
 		68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputLocation.swift; sourceTree = "<group>"; };
@@ -204,7 +206,9 @@
 		8821895625BEC81300820A7E /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				6841B1242CAFE7AB00100A5A /* Heplers */,
 				687266602CB7970200F19703 /* SideMenu.swift */,
+				8821898125BF2DE800820A7E /* HomeView.swift */,
 				6872665E2CB7909000F19703 /* TabBarViewModel.swift */,
 				6872665C2CB78CD600F19703 /* FloatingActionButton.swift */,
 				6872665A2CB769A700F19703 /* ChatSettingsView.swift */,
@@ -213,10 +217,11 @@
 				6841B12E2CB630FE00100A5A /* ChatListView.swift */,
 				6841B12C2CB630C500100A5A /* ChatRoomRow.swift */,
 				6841B12A2CB6307B00100A5A /* ChatDetailView.swift */,
-				6841B1242CAFE7AB00100A5A /* Heplers */,
 				68209D0F2CAE94BF00395C34 /* MyReviewRow.swift */,
 				6841B1282CB15C7C00100A5A /* ChatRoomListView.swift */,
 				68209D0D2CAE778A00395C34 /* ProFileView.swift */,
+				8821896D25BEFE3C00820A7E /* SearchAndFilterView.swift */,
+				687266622CB8FD5100F19703 /* SearchFilterView.swift */,
 				68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */,
 				68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */,
 				68E2F8EF2CA807F5001C2496 /* PostInputView.swift */,
@@ -224,11 +229,9 @@
 				68EBD5942CA64491000CA80B /* NearbyView.swift */,
 				687DBF202CA4401100371A2F /* RecipeDetailView.swift */,
 				8821895725BEC82400820A7E /* HomeNavBarView.swift */,
-				8821896D25BEFE3C00820A7E /* SearchAndFilterView.swift */,
 				8821897225BF073800820A7E /* FreshRecipesView.swift */,
 				8821897C25BF2D7600820A7E /* RecommendedRecipeCardView.swift */,
 				8821897725BF257E00820A7E /* SectionTitleView.swift */,
-				8821898125BF2DE800820A7E /* HomeView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -397,6 +400,7 @@
 				6872665B2CB769A900F19703 /* ChatSettingsView.swift in Sources */,
 				8821892B25BEC29900820A7E /* ContentView.swift in Sources */,
 				68209D102CAE94D400395C34 /* MyReviewRow.swift in Sources */,
+				687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */,
 				68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */,
 				8821896E25BEFE3C00820A7E /* SearchAndFilterView.swift in Sources */,
 				6841B12B2CB6307F00100A5A /* ChatDetailView.swift in Sources */,
