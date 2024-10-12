@@ -132,24 +132,23 @@ struct ChatDetailView: View {
                 }
             }
             .sheet(isPresented: $showMemberList) {
-                ChatSettingsView()
-                    .background(BlurView())
-                    .cornerRadius(20)
-                    .shadow(radius: 10)
-                    .padding()
+                ZStack {
+                    BlurView()  // 模糊背景
+
+                    VStack {
+                        // 主内容视图
+                        ChatSettingsView()
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(30, corners: [.topLeft, .topRight, .bottomLeft, .bottomRight]) 
+                            .shadow(radius: 10)
+                            .padding()
+                    }
+                    .background(Color.clear)
+                }
             }
         }
     }
-// 自定义模糊视图效果
-struct BlurView: UIViewRepresentable {
-    func makeUIView(context: Context) -> UIVisualEffectView {
-        let view = UIVisualEffectView(effect: UIBlurEffect(style: .light))
-        return view
-    }
-
-    func updateUIView(_ uiView: UIVisualEffectView, context: Context) {}
-}
-
 
 
 

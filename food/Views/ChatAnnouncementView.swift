@@ -14,12 +14,16 @@ struct AnnouncementView: View {
             
             Text("www.Nike.com/AJPicard")
                 .font(.footnote) // 链接文本更小
-                .foregroundColor(.gray)
+                .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity) // 占满宽度
         .padding(8) // 减少整体的 padding
-        .background(Color.blue.opacity(0.4)) // 半透明灰色背景
+        .background(Color.white) // 半透明灰色背景
         .cornerRadius(12) // 较小的圆角
+        .overlay( // 添加黑色外边框
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.black, lineWidth: 1) // 黑色边框，线宽1
+                )
         .padding(.horizontal)
     }
 }

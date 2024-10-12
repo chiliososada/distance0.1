@@ -56,8 +56,12 @@ struct ChatRoomListView: View {
                         HStack {
                             TextField("Search...", text: $searchText)
                                 .padding(10)
-                                .background(Color(.systemGray6))
+                                .background(Color(.white))
                                 .cornerRadius(10)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .stroke(Color.black, lineWidth: 0.5)  // 黑色外边框
+                                )
                                 .padding(.horizontal)
                         }
 

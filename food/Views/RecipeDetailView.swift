@@ -21,10 +21,10 @@ struct RecipeDetailView: View {
                                 Image(recipe.imageNames[index])
                                     .resizable()
                                     .scaledToFill()
-                                    .frame(width: UIScreen.main.bounds.width) // Full width image
-                                    .clipped() // Ensures the image doesn't overflow
-                                    .clipShape(RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                        .inset(by: -0.1)) // Apply round corners only at the bottom
+                                    .frame(width: UIScreen.main.bounds.width)
+                                    .clipped()
+                                    .clipShape(RoundedCorner(radius: 30, corners: [.bottomLeft, .bottomRight])
+                                                 )
                                     .tag(index)
                             }
                         }
@@ -209,17 +209,6 @@ struct RecipeDetailView: View {
                                 .background(Color.green.opacity(0.2))
                                 .cornerRadius(10)
                                 .frame(minWidth: 80) // Ensure enough width to avoid wrapping
-                                
-                                // More Amenities (+3)
-                                //                                HStack {
-                                //                                    Image(systemName: "clock.arrow.circlepath")
-                                //                                    Text("3 days")
-                                //                                        .lineLimit(1) // Avoid text wrapping
-                                //                                }
-                                //                                .padding(8)
-                                //
-                                //                                .cornerRadius(10)
-                                //                                .frame(minWidth: 40) // Ensure enough width
                             }
                             .padding(.horizontal) // Apply the same padding to ensure alignment with other sections
                             
@@ -231,21 +220,11 @@ struct RecipeDetailView: View {
                             Text("今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。听说入管局那边今天可能人会比较多，所以我打算早点出发，不知道有没有人顺路一起的？如果有一起去的可以顺便聊聊，也能互相帮个忙。毕竟在入管局排队的时候有个熟人聊聊天，时间也会过得快一点。其实最近的事情不少，很多事情都堆在一起处理，真希望能赶快把这些杂事都搞定。你们有没有类似的情况？处理这些手续真的是既耗时间又耗精力。")
                                 .font(.body)
                                 .padding(.horizontal)
-                            
                             Spacer()
                         }
                     }
                 }
-                
-                
-                
-                
             }
-            
-            
-            
-            
-            
             // 固定按钮在视图的底部，不随滚动变化
             GeometryReader { geometry in
                 VStack {
@@ -259,17 +238,18 @@ struct RecipeDetailView: View {
                             .frame(width: 60, height: 60)
                             .background(
                                 Circle()
-                                    .fill(Color.blue)
+                                    .fill(Color.black)
                             )
                             .shadow(radius: 10)
+                            .opacity(0.8)
                     }
                     // 使用缩放效果来创建自动变化的视觉效果
                     .scaleEffect(isPressed ? 1.2 : 1.0) // 持续缩放
                     .position(x: geometry.size.width / 2, y: geometry.size.height - 50) // 固定按钮在底部上方
                 }
                 .onReceive(timer) { _ in
-                    // 每隔 0.5 秒自动触发缩放变化
-                    withAnimation(.easeInOut(duration: 0.5)) {
+                    // 每隔 1 秒自动触发缩放变化
+                    withAnimation(.easeInOut(duration: 1)) {
                         isPressed.toggle()
                     }
                 }
@@ -307,3 +287,6 @@ struct RecipeDetailView_Previews: PreviewProvider {
         )
     }
 }
+
+
+

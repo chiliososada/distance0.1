@@ -40,7 +40,7 @@ struct MessageView: View {
                     // 消息内容使用自定义的气泡形状
                     Text(message.text)
                         .padding()
-                        .background(Color.blue.opacity(0.2))
+                        .background(Color.blue.opacity(0.4))
                         .clipShape(BubbleShape(isCurrentUser: true))
                 }
                 .padding(.horizontal, 5) // 缩小水平 padding

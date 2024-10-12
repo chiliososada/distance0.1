@@ -56,7 +56,8 @@ struct SearchFilterView: View {
                             .foregroundColor(.gray)
                     }
                     Slider(value: $selectedDistance, in: 0...100)
-                        .accentColor(.blue)
+                        .accentColor(.black)
+                        .contentShape(Rectangle()) 
                 }
                 .padding()
                 .background(Color(.systemGray6))
@@ -173,7 +174,7 @@ struct SearchFilterView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
+                        .background(Color.black)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                 }
