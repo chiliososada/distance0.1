@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct foodApp: App {
+    @StateObject var tabBarManager = TabBarManager() // 创建全局的 TabBarManager
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(tabBarManager)
         }
     }
 }

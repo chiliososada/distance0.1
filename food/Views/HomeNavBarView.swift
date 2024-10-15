@@ -15,15 +15,7 @@ struct HomeNavBarView: View {
                 .onTapGesture {
                     handleMenuTap()
                 }
-            
             Spacer()
-            
-            // Notifications Button
-            //            Image(uiImage: #imageLiteral(resourceName: "notifications"))
-            //                .onTapGesture {
-            //                    handleNotificationsTap()
-            //                }
-        
             Image(systemName: "mappin.circle.fill")
                 .resizable()
                 .scaledToFit()

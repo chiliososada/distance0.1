@@ -5,6 +5,12 @@ struct PostInputView: View {
     @State private var titleText: String = ""
     @State private var bodyText: String = ""
     @Binding var isPresented: Bool
+    @Binding var selectedTab: Int // 用于控制跳转到主页的 Tab
+       
+    @Environment(\.dismiss) var dismiss
+//    @EnvironmentObject var tabBarManager: TabBarManager
+    
+    
     @FocusState private var isTextFieldFocused: Bool
     @State private var keyboardHeight: CGFloat = 0
     @State private var offset: CGFloat = 0
@@ -191,21 +197,28 @@ struct PostInputView: View {
                 }
             }
             .onAppear {
+                
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     isTextFieldFocused = true
                 }
                 self.subscribeToKeyboardEvents()
+                
             }
             .onDisappear {
                 NotificationCenter.default.removeObserver(self)
+                
             }
+
             .sheet(isPresented: $isShowingImagePicker) {
                 // 调用多图片选择的图片选择器
                 MultiImagePicker(images: $selectedImages)
             }
             .navigationBarItems(
                 leading: Button(action: {
-                    isPresented = false
+//                    isPresented = false
+                    dismiss() // 关闭当前发布视图
+                    selectedTab = 0 // 切换到主页 Tab (假设主页的 tag 是 0)
+                    
                 }) {
                     Image(systemName: "xmark")
                         .font(.title2)
@@ -222,6 +235,7 @@ struct PostInputView: View {
                     self.selectedLocation = location
                 }, isPresented: $showSecondView)
             }
+            
         }
     }
 
@@ -314,6 +328,10 @@ struct MultiImagePicker: UIViewControllerRepresentable {
 
 struct PostInputView_Previews: PreviewProvider {
     static var previews: some View {
-        PostInputView(isPresented: .constant(true))
+        PostInputView(
+            isPresented: .constant(true),
+            selectedTab: .constant(0) // 预览时设置 selectedTab 的默认值
+        )
+       
     }
 }

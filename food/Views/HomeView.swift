@@ -4,7 +4,15 @@ struct HomeView: View {
     @State private var selectedTab = 0
  //   @Binding var selectedTab: Int // 传递 selectedTab 绑定
     @State private var isShowingPostInputView = false
-    @State private var isTabBarHidden = false
+    
+    
+    @State private var isViewTabBarHidden = false
+    
+    
+    @EnvironmentObject var tabBarManager: TabBarManager
+    
+    
+    
     @State private var tabState: Visibility = .visible
     @State var showMenu: Bool = false
     @State var offset: CGFloat = 0
@@ -12,10 +20,12 @@ struct HomeView: View {
     @GestureState var gestureOffSet: CGFloat = 0
     @State private var search: String = ""
     @Environment(\.horizontalSizeClass) var horizontalSizeClass  // 检测 iPad 或 iPhone
-    
     @State private var isNavigationBarHidden: Bool = false  // Track navigation bar visibility
-   
+
+    
     var body: some View {
+       
+        
         let sideBarWidth = getRect().width * 0.7
         NavigationView {
             ZStack {
@@ -48,12 +58,12 @@ struct HomeView: View {
                         .onEnded(onEnd(value:))
                 )
                 
-                // 悬浮按钮
-                if !isTabBarHidden && !showMenu{
-                    VStack {
-                        FloatingActionButton(isShowingPostInputView: $isShowingPostInputView)
-                    }
-                }
+//                // 悬浮按钮
+//                if !isTabBarHidden && !showMenu{
+//                    VStack {
+//                        FloatingActionButton(isShowingPostInputView: $isShowingPostInputView)
+//                    }
+//                }
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
@@ -73,17 +83,17 @@ struct HomeView: View {
             onChange()
         }
         .ignoresSafeArea(edges: .bottom)
+       
     }
     var tabViewContent: some View {
         VStack {
           
             TabView(selection: $selectedTab) {
-               
                 // 主页 Tab
                 NavigationStack {
                     SearchAndFilterView(search: $search)
                     TabStateScrollView(axis: .vertical, showsIndicator: false, tabState: $tabState, isNavigationBarHidden: $isNavigationBarHidden) {
-                        HomeTabContentView(isTabBarHidden: $isTabBarHidden)
+                        HomeTabContentView()
                             .navigationBarHidden(isNavigationBarHidden) 
                             .navigationBarItems(
                                 leading: leadingNavBarItem,
@@ -91,40 +101,63 @@ struct HomeView: View {
                             )
                            
                     }
-                    .toolbar(isTabBarHidden || tabState == .hidden ? .hidden : .visible, for: .tabBar)
-                    .animation(.easeInOut(duration: 0.3), value: isTabBarHidden || tabState == .hidden)
+//                 .toolbar(isTabBarHidden || tabState == .hidden ? .hidden : .visible, for: .tabBar)
+                    .toolbar((tabState == .hidden || tabBarManager.isViewTabBarHidden) ? .hidden : .visible, for: .tabBar)
+                    .animation(.easeInOut(duration: 0.2), value: tabState == .hidden)
+                    
                 }
+                
                 .navigationViewStyle(StackNavigationViewStyle())
                 .tabItem {
                     Image(systemName: "house.fill")
-                    Text("首页")
                 }
                 .tag(0)
-
+                
                 // 其他 Tabs
                 NearbyView()
                     .tabItem {
                         Image(systemName: "location.fill")
-                        Text("周围")
                     }
                     .tag(1)
-
-                ChatRoomListView(isTabBarHidden: $isTabBarHidden)
+                // 发布按钮 Tab
+//              
+//                PostInputView(isPresented: $isShowingPostInputView, selectedTab: $selectedTab)
+//                    .environmentObject(tabBarManager) // 传递环境对象
+//                    .tabItem {
+//                        Image(systemName: "plus.circle.fill")
+//                    }
+//                       .tag(2)
+                // 发布按钮 Tab (This will trigger a sheet)
+                 Text("") // Empty content since we're using a sheet
+                     .tabItem {
+                         Image(systemName: "plus.circle.fill")
+                     }
+                     .tag(2)
+                     .onAppear {
+                         isShowingPostInputView = true  // Show the sheet when the tab is selected
+                     }
+                     .fullScreenCover(isPresented: $isShowingPostInputView) {
+                         PostInputView(isPresented: $isShowingPostInputView, selectedTab: $selectedTab)
+                     }
+                ChatRoomListView()
                     .tabItem {
                         Image(systemName: "message.fill")
-                        Text("聊天")
+                       
                     }
-                    .tag(2)
+                    .tag(3)
 
                 ProfileView()
                     .tabItem {
                         Image(systemName: "person.fill")
-                        Text("我的")
+                       
                     }
-                    .tag(3)
+                    .tag(4)
             }
             .accentColor(.black)
+            .edgesIgnoringSafeArea(.bottom)
+        
         }
+        
     }
 
     // leading 导航栏按钮，点击时显示侧滑菜单
@@ -202,7 +235,7 @@ func getRect() -> CGRect {
 
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
-        HomeView()
+        HomeView() .environmentObject(TabBarManager()) // Injecting TabBarManager instance
     }
 }
  

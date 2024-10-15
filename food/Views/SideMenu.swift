@@ -46,11 +46,6 @@ struct SideMenu: View {
                         
                         MenuItem(title: "About App", icon: "info.circle", destination: AboutAppView(), showMenu: $showMenu)
                         
-                        
-                        
-                        
-                        
-                        
                     }
                     .padding(.horizontal)
                     .padding(.top)

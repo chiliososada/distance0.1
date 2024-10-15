@@ -7,9 +7,10 @@ struct RecipeDetailView: View {
 
     @State private var isPressed = false // 用于控制按钮缩放的状态
     @State private var timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect() // 定时器
-
-                                             
-                                             
+                  
+    
+    @EnvironmentObject var tabBarManager: TabBarManager
+    
     var body: some View {
         ZStack {
             ScrollView {
@@ -255,12 +256,14 @@ struct RecipeDetailView: View {
                 }
             }
         }
-           
-                 
                         .edgesIgnoringSafeArea(.top) // 让整个 ScrollView 忽略顶部安全区域
                         .navigationBarHidden(true)
-            
-
+                        .onAppear {
+                            tabBarManager.isViewTabBarHidden = true // Hide TabBar when HomeView appears
+                        }
+                        .onDisappear {
+                            tabBarManager.isViewTabBarHidden = false // Show TabBar when HomeView disappears
+                        }
       }
 }
 
@@ -274,8 +277,6 @@ struct RecommendedRecipe: Identifiable {
 
 // Preview with Fake Data
 struct RecipeDetailView_Previews: PreviewProvider {
-    @State static var isTabBarHidden = false // 创建一个 @State 变量来提供绑定
-    
     static var previews: some View {
         RecipeDetailView(
             recipe: RecommendedRecipe(
@@ -283,8 +284,8 @@ struct RecipeDetailView_Previews: PreviewProvider {
                 title: "折扣 JJ 京东京",
                 imageNames: ["sample1", "reco_1", "reco_1", "reco_1"] // 4 example images
             )
-           
         )
+        .environmentObject(TabBarManager()) // Injecting TabBarManager instance
     }
 }
 

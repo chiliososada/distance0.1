@@ -17,7 +17,6 @@
 		6841B1522CB6BD0400100A5A /* ChatAnnouncementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6841B1512CB6BCFE00100A5A /* ChatAnnouncementView.swift */; };
 		6872665B2CB769A900F19703 /* ChatSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665A2CB769A700F19703 /* ChatSettingsView.swift */; };
 		6872665D2CB78CE300F19703 /* FloatingActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665C2CB78CD600F19703 /* FloatingActionButton.swift */; };
-		6872665F2CB7909700F19703 /* TabBarViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6872665E2CB7909000F19703 /* TabBarViewModel.swift */; };
 		687266612CB7970500F19703 /* SideMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266602CB7970200F19703 /* SideMenu.swift */; };
 		687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266622CB8FD5100F19703 /* SearchFilterView.swift */; };
 		687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266642CBA579500F19703 /* EditAnnouncementView.swift */; };
@@ -75,7 +74,6 @@
 		6841B1512CB6BCFE00100A5A /* ChatAnnouncementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatAnnouncementView.swift; sourceTree = "<group>"; };
 		6872665A2CB769A700F19703 /* ChatSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSettingsView.swift; sourceTree = "<group>"; };
 		6872665C2CB78CD600F19703 /* FloatingActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingActionButton.swift; sourceTree = "<group>"; };
-		6872665E2CB7909000F19703 /* TabBarViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarViewModel.swift; sourceTree = "<group>"; };
 		687266602CB7970200F19703 /* SideMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideMenu.swift; sourceTree = "<group>"; };
 		687266622CB8FD5100F19703 /* SearchFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchFilterView.swift; sourceTree = "<group>"; };
 		687266642CBA579500F19703 /* EditAnnouncementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnouncementView.swift; sourceTree = "<group>"; };
@@ -212,7 +210,7 @@
 				6841B1242CAFE7AB00100A5A /* Heplers */,
 				687266602CB7970200F19703 /* SideMenu.swift */,
 				8821898125BF2DE800820A7E /* HomeView.swift */,
-				6872665E2CB7909000F19703 /* TabBarViewModel.swift */,
+				687DBF202CA4401100371A2F /* RecipeDetailView.swift */,
 				6872665C2CB78CD600F19703 /* FloatingActionButton.swift */,
 				6872665A2CB769A700F19703 /* ChatSettingsView.swift */,
 				6841B1512CB6BCFE00100A5A /* ChatAnnouncementView.swift */,
@@ -230,7 +228,6 @@
 				68E2F8EF2CA807F5001C2496 /* PostInputView.swift */,
 				68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */,
 				68EBD5942CA64491000CA80B /* NearbyView.swift */,
-				687DBF202CA4401100371A2F /* RecipeDetailView.swift */,
 				8821895725BEC82400820A7E /* HomeNavBarView.swift */,
 				8821897225BF073800820A7E /* FreshRecipesView.swift */,
 				8821897C25BF2D7600820A7E /* RecommendedRecipeCardView.swift */,
@@ -411,7 +408,6 @@
 				8821897325BF073800820A7E /* FreshRecipesView.swift in Sources */,
 				6841B1522CB6BD0400100A5A /* ChatAnnouncementView.swift in Sources */,
 				68EBD5972CA64BA4000CA80B /* MapButtonsView.swift in Sources */,
-				6872665F2CB7909700F19703 /* TabBarViewModel.swift in Sources */,
 				8821898225BF2DE800820A7E /* HomeView.swift in Sources */,
 				8821892925BEC29900820A7E /* foodApp.swift in Sources */,
 				6841B1292CB15C8600100A5A /* ChatRoomListView.swift in Sources */,

@@ -23,13 +23,13 @@ struct ChatRoomListView: View {
         ChatRoom(name: "Ronald Richards", lastMessage: "See you tomorrow at the meeting.", time: "14:45", avatar: "sample2", isGroupChat: false),
         ChatRoom(name: "Game Night", lastMessage: "Board games on Friday!", time: "17:30", avatar: "sample2", isGroupChat: true)
     ]
-    @EnvironmentObject var tabBarViewModel: TabBarViewModel
+//    @EnvironmentObject var tabBarViewModel: TabBarViewModel
     @State private var selectedTab = 0 // Track the selected tab
     @State private var showSearchBar = false // State variable to toggle search bar
     @State private var searchText = ""       // State variable for search text
     @State private var selectedChatRoom: ChatRoom? // State to track the selected chat room
     @State private var isNavigating = false // Controls whether navigation should happen
-    @Binding var isTabBarHidden: Bool
+   
  
     
     var body: some View {
@@ -161,15 +161,8 @@ struct ChatRoomListView: View {
             // Programmatically trigger navigation to ChatDetailView
             .navigationDestination(isPresented: $isNavigating) {
                 if let selectedChatRoom = selectedChatRoom {
-                    ChatDetailView(chatRoom: selectedChatRoom, isTabBarHidden: $isTabBarHidden)
-                        .onAppear {
-                            // 隐藏 TabBar
-                            isTabBarHidden = true
-                        }
-                        .onDisappear() {
-                            // 隐藏 TabBar
-                            isTabBarHidden = false
-                        }
+                    ChatDetailView(chatRoom: selectedChatRoom)
+                        
                         
                 }
             }
@@ -185,6 +178,6 @@ struct ChatRoomListView: View {
 
 struct ChatRoomListView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatRoomListView(isTabBarHidden: .constant(false))
+        ChatRoomListView()
     }
 }

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomeTabContentView: View {
-    @Binding var isTabBarHidden: Bool
+   
     
     @State private var tabState: Visibility = .visible
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -15,7 +15,7 @@ struct HomeTabContentView: View {
         ),
         RecommendedRecipe(
             imageName: "reco_2",
-            title: "永驻申请进度讨论群",
+            title: "永驻申请进度讨论群永驻申请进度讨论群永驻申请进度讨论群永驻申请进度讨论群永进度讨论群",
             imageNames: ["reco_2", "reco_3"]
         ),
         RecommendedRecipe(
@@ -47,21 +47,12 @@ struct HomeTabContentView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-
-            // ScrollView for content
-            //                ScrollView(showsIndicators: false) {
             VStack(alignment: .leading, spacing: 4) {
                 // 推荐内容
                 VStack(spacing: 10) {
                     ForEach(recommendedRecipes) { recipe in
                         NavigationLink(
                             destination: RecipeDetailView(recipe: recipe)
-                                .onAppear {
-                                    isTabBarHidden = true  // Hide TabBar
-                                }
-                                .onDisappear {
-                                    isTabBarHidden = false  // Show TabBar
-                                }
                         ) {
                             RecommendedRecipeCardView(
                                 image: UIImage(named: recipe.imageName) ?? UIImage(),
@@ -77,12 +68,11 @@ struct HomeTabContentView: View {
             }
             .padding()
         }
-//            }
-        }
+    }
 }
 
 struct HomeTabContentView_Previews: PreviewProvider {
     static var previews: some View {
-        HomeTabContentView(isTabBarHidden: .constant(false))
+        HomeTabContentView()
     }
 }
