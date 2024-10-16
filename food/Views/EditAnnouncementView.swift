@@ -41,11 +41,11 @@ struct EditAnnouncementView: View {
     }
 }
 
-// Preview for the EditAnnouncementView
-struct EditAnnouncementView_Previews: PreviewProvider {
-    static var previews: some View {
-        EditAnnouncementView()
-            .previewLayout(.sizeThatFits)
-            .padding()
-    }
-}
+//// Preview for the EditAnnouncementView
+//struct EditAnnouncementView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        EditAnnouncementView()
+//            .previewLayout(.sizeThatFits)
+//            .padding()
+//    }
+//}

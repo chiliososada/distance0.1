@@ -85,7 +85,7 @@ struct HomeView: View {
                            
                     }
 //                 .toolbar(isTabBarHidden || tabState == .hidden ? .hidden : .visible, for: .tabBar)
-                    .toolbar((tabState == .hidden || tabBarManager.isViewTabBarHidden) ? .hidden : .visible, for: .tabBar)
+                     .toolbar((tabState == .hidden || tabBarManager.isViewTabBarHidden) ? .hidden : .visible, for: .tabBar)
                     .animation(.easeInOut(duration: 0.2), value: tabState == .hidden)
                     
                 }

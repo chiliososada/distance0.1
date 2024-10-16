@@ -123,10 +123,11 @@ struct CreateAccountView: View {
 
 
 
-struct CreateAccountView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            CreateAccountView(emailOrPhone: "example@example.com")
-        }
-    }
-}
+//struct CreateAccountView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        NavigationView {
+//            CreateAccountView(emailOrPhone: "example@example.com")
+//                .environmentObject(TabBarManager()) // 注入环境对象
+//        }
+//    }
+//}

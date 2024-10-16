@@ -2,7 +2,7 @@ import SwiftUI
 
 struct HomeLoginView: View {
     var velocity: CGFloat = 50
-    
+    @EnvironmentObject var tabBarManager: TabBarManager
     var body: some View {
         NavigationStack { VStack(spacing: 40) {
                 VerticalLineAnimationView().frame(height: 200) .padding(.top, 100)
@@ -21,7 +21,7 @@ struct HomeLoginView: View {
                             )
                     }
                     
-                    NavigationLink(destination: LoginInputView()) {
+                    NavigationLink(destination: LoginInputView().environmentObject(tabBarManager)) {
                         Text("登陆")
                             .frame(width: 100, height: 40) // Adjusted button size
                             .background(Color.black)
@@ -248,6 +248,6 @@ struct ImageModel: Identifiable {
     var color: Color?
 }
 
-#Preview {
-    HomeLoginView()
-}
+//#Preview {
+//    HomeLoginView()
+//}

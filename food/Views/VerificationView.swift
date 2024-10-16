@@ -97,10 +97,11 @@ struct CodeInputBox: View {
     }
 }
 
-struct VerificationView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            VerificationView()
-        }
-    }
-}
+//struct VerificationView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        NavigationView {
+//            VerificationView()
+//                .environmentObject(TabBarManager()) // 注入环境对象
+//        }
+//    }
+//}

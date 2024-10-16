@@ -5,10 +5,13 @@ struct LoginPasswordView: View {
     @State private var password: String = "" // 密码输入框内容
     @State private var isPasswordVisible: Bool = false // 控制密码是否可见
     @State private var isLoginEnabled: Bool = false // 控制登录按钮是否启用
-    
     @State private var navigateToHome = false // 控制跳转到主页
-    @EnvironmentObject var tabBarManager: TabBarManager // 确保环境对象传递进来
     var emailOrUsername: String // 邮件或用户名传递进来
+   
+    
+    //aa
+    @State private var isViewTabBarHidden = false
+    @EnvironmentObject var tabBarManager: TabBarManager
 
     var body: some View {
         ZStack {
@@ -65,48 +68,31 @@ struct LoginPasswordView: View {
                     .padding(.horizontal)
                     .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)
                     
-                    
                     Spacer() // This pushes内容 upward
-                  
 
                     // "登录" 按钮
-//                    Button(action: {
-//                       
-//                        
-//                    }) {
-//                        Text("登录")
-//                            .font(.system(size: 18, weight: .medium))
-//                            .frame(maxWidth: .infinity)
-//                            .padding()
-//                            .foregroundColor(.white)
-//                            .background(Color.black )
-//                            .cornerRadius(25)
-//                    }
-                    
-                    // "登录" 按钮
-                   
-                    NavigationLink(destination:  HomeView() ){
-                                               Text("登录")
-                                                   .font(.system(size: 18, weight: .medium))
-                                                   .frame(maxWidth: .infinity)
-                                                   .padding()
-                                                   .foregroundColor(.white)
-                                                   .background(Color.black)
-                                                   .cornerRadius(25)
-                                       }
+                    Button(action: {
+                        // 触发跳转到 HomeView 并关闭当前视图栈
+                        goToHomeView()
+                    }) {
+                        Text("登录")
+                            .font(.system(size: 18, weight: .medium))
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .foregroundColor(.white)
+                            .background(Color.black)
+                            .cornerRadius(25)
+                    }
                     .padding(.horizontal)
                     
-                    
-                    
                     // "忘记密码?" 按钮
-                              Button(action: {
-                                  // 处理忘记密码操作
-                              }) {
-                                  Text("忘记密码?")
-                                      .font(.system(size: 16))
-                                      .foregroundColor(.blue)
-                              }
-                              
+                    Button(action: {
+                        // 处理忘记密码操作
+                    }) {
+                        Text("忘记密码?")
+                            .font(.system(size: 16))
+                            .foregroundColor(.blue)
+                    }
                     .padding(.horizontal)
                     .padding(.bottom, 10)
                 }
@@ -128,12 +114,30 @@ struct LoginPasswordView: View {
             }
         )
     }
+    
+    func goToHomeView() {
+        // 创建 HomeView 的 UIHostingController
+        let homeView = UIHostingController(rootView: HomeView().environmentObject(tabBarManager) )
+        
+        // 设置根视图控制器为 HomeView，切断与当前的 NavigationStack 的关系
+//        if let window = UIApplication.shared.windows.first {
+//            window.rootViewController = homeView
+//            window.makeKeyAndVisible()
+//        }
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            if let window = windowScene.windows.first {
+                window.rootViewController = UIHostingController(rootView: HomeView().environmentObject(tabBarManager))
+                window.makeKeyAndVisible()
+            }
+        }
+    }
 }
 
 struct PasswordLoginView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             LoginPasswordView(emailOrUsername: "example@example.com")
+                .environmentObject(TabBarManager()) // 注入环境对象
         }
     }
 }

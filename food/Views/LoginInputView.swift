@@ -6,6 +6,8 @@ struct LoginInputView: View {
     @State private var isNextEnabled: Bool = false // 控制下一步按钮是否启用
     @State private var navigateToCreatePassword = false // 控制跳转
     @State private var email: String = ""
+   
+    @EnvironmentObject var tabBarManager: TabBarManager
     var body: some View {
         ZStack {
             ScrollView { // 使用 ScrollView 包裹内容
@@ -42,10 +44,8 @@ struct LoginInputView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.black)
             },
-            trailing: NavigationLink(destination: LoginPasswordView(emailOrUsername: email), isActive: $navigateToCreatePassword) {
-                Button(action: {
-                    navigateToCreatePassword = true
-                }) {
+            trailing: NavigationLink(destination: LoginPasswordView(emailOrUsername: email).environmentObject(tabBarManager)) {
+               
                     Text("下一步")
                         .font(.system(size: 12, weight: .medium)) // 调整字体大小为 8
                         .padding(.horizontal, 16) // 调整左右内边距
@@ -53,16 +53,17 @@ struct LoginInputView: View {
                         .foregroundColor(.white)
                         .background(Color.black)
                         .cornerRadius(25) // 调整圆角大小
-                }
+                
             }
         )
     }
 }
 
-struct LoginInputView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            LoginInputView()
-        }
-    }
-}
+//struct LoginInputView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        NavigationView {
+//            LoginInputView()
+//                .environmentObject(TabBarManager()) // 注入环境对象
+//        }
+//    }
+//}

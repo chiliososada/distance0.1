@@ -169,11 +169,6 @@ struct AboutAppView: View {
     }
 }
 
-struct SideMenu_Previews: PreviewProvider {
-    static var previews: some View {
-        SideMenu(showMenu: .constant(true)) // 使用常量绑定来预览菜单
-    }
-}
 
 // 获取屏幕大小的扩展方法
 extension View {
@@ -181,3 +176,10 @@ extension View {
         return UIScreen.main.bounds
     }
 }
+
+//struct SideMenu_Previews: PreviewProvider {
+//    static var previews: some View {
+//        SideMenu(showMenu: .constant(true)) // 使用常量绑定来预览菜单
+//    }
+//}
+

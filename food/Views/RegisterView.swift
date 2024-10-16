@@ -129,10 +129,10 @@ struct RegisterView: View {
     }
 }
 
-struct RegisterView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView { // 添加 NavigationView 以便能够展示导航功能
-            RegisterView()
-        }
-    }
-}
+//struct RegisterView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        NavigationView { // 添加 NavigationView 以便能够展示导航功能
+//            RegisterView()
+//        }
+//    }
+//}
