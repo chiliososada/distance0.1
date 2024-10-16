@@ -7,20 +7,7 @@ struct RecommendedRecipeCardView: View {
     let busynessLevel: Color // Represent busyness level with a color
     
     var body: some View {
-        HStack(spacing: 10) { // Use HStack to add the vertical strip and the content
-            // Left vertical bar representing busyness level
-//            Rectangle()
-//                .fill(
-//                    LinearGradient(
-//                        gradient: Gradient(colors: [busynessLevel.opacity(0.7), busynessLevel]), // Subtle gradient effect
-//                        startPoint: .top,
-//                        endPoint: .bottom
-//                    )
-//                )
-//                .frame(width: 5) // Width of the vertical bar
-//                .cornerRadius(2.5) // Half of the width to make it fully rounded
-//                .shadow(color: busynessLevel.opacity(0.5), radius: 2, x: 0, y: 2) // Subtle shadow
-            
+        HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 10) {
                 // First row: Profile Image and Name
                 HStack(alignment: .top) {

@@ -82,7 +82,7 @@ struct PostInputView: View {
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
                                                     .frame(width: 100, height: 100)
-                                                    .foregroundColor(.gray)
+                                                    .foregroundColor(.blue)
                                                 Image(systemName: "plus")
                                                     .font(.title)
                                                     .foregroundColor(.gray)
@@ -109,7 +109,7 @@ struct PostInputView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.blue)
                                 )
                                 .padding(.horizontal)
                         }
@@ -157,7 +157,7 @@ struct PostInputView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.blue)
                                 )
                                 .padding(.horizontal)
                             } else {
@@ -183,7 +183,7 @@ struct PostInputView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.blue)
                                 )
                                 .padding(.horizontal)
                         }
