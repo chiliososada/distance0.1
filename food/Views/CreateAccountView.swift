@@ -9,6 +9,7 @@ struct CreateAccountView: View {
     @State private var confirmPassword: String = ""
     @State private var navigateToCreateEmailCode = false // 控制跳转
     @State private var keyboardHeight: CGFloat = 0
+    @State private var isPasswordVisible: Bool = false // 控制密码是否可见
     @FocusState private var focusedField: Field? // 用于管理焦点状态
 
     // 定义表单中的字段
@@ -25,30 +26,29 @@ struct CreateAccountView: View {
 
     var body: some View {
         ZStack {
-            ScrollView { // 使用 ScrollView 包裹内容
-                VStack(spacing: 30) { // 使用更大的 spacing 来美化布局
+            ScrollView {
+                VStack(spacing: 30) {
                     // 标题
                     HStack {
                         Text("创建你的账号")
-                            .font(.system(size: 28, weight: .bold)) // 调整字体大小
+                            .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.black)
-                        
                         Spacer()
                     }
                     .padding(.horizontal)
-                    .padding(.top, 30) // 增加顶部空间
+                    .padding(.top, 30)
                     
                     // 名字输入框
                     InputField(placeholder: "名字", text: $name, systemImage: name.isEmpty ? "" : "checkmark.circle.fill", isSecure: false)
-                        .focused($focusedField, equals: .name) // 聚焦状态
-                        .submitLabel(.next) // Return 键显示为 "Next"
-                        .onSubmit { focusedField = .emailOrPhone } // 切换到下一个输入框
+                        .focused($focusedField, equals: .name)
+                        .submitLabel(.next)
+                        .onSubmit { focusedField = .emailOrPhone }
                     
-                    // 手机号码或邮箱输入框（传递的邮箱地址显示在此）
-                    InputField(placeholder: "手机号码或邮箱", text: $emailOrPhone, systemImage: "", isSecure: false)
-                        .focused($focusedField, equals: .emailOrPhone) // 聚焦状态
-                        .submitLabel(.next) // Return 键显示为 "Next"
-                        .onSubmit { focusedField = .password } // 切换到下一个输入框
+                    // 邮箱输入框
+                    InputField(placeholder: "邮箱", text: $emailOrPhone, systemImage: "", isSecure: false)
+                        .focused($focusedField, equals: .emailOrPhone)
+                        .submitLabel(.next)
+                        .onSubmit { focusedField = .password }
                     
                     // 出生日期选择器
                     HStack {
@@ -62,29 +62,28 @@ struct CreateAccountView: View {
                     .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)
                     
                     // 密码输入框
-                    InputField(placeholder: "密码", text: $password, systemImage: "", isSecure: true)
-                        .focused($focusedField, equals: .password) // 聚焦状态
-                        .submitLabel(.next) // Return 键显示为 "Next"
-                        .onSubmit { focusedField = .confirmPassword } // 切换到下一个输入框
+                    PasswordInputField(placeholder: "密码", text: $password, isPasswordVisible: $isPasswordVisible)
+                        .focused($focusedField, equals: .password)
+                        .submitLabel(.next)
+                        .onSubmit { focusedField = .confirmPassword }
                     
                     // 确认密码输入框
-                    InputField(placeholder: "确认密码", text: $confirmPassword, systemImage: "", isSecure: true)
-                        .focused($focusedField, equals: .confirmPassword) // 聚焦状态
-                        .submitLabel(.done) // 最后的输入框显示 "Done"
+                    PasswordInputField(placeholder: "确认密码", text: $confirmPassword, isPasswordVisible: $isPasswordVisible)
+                        .focused($focusedField, equals: .confirmPassword)
+                        .submitLabel(.done)
                     
-                    Spacer() // This pushes内容 upward
+                    Spacer()
                 }
                 .padding(.horizontal, 20)
                 .background(Color.white)
-                .padding(.bottom, keyboardHeight) // Adjust content padding based on keyboard height
+                .padding(.bottom, keyboardHeight)
             }
-            .ignoresSafeArea(.keyboard) // 避免键盘遮挡内容
+            .ignoresSafeArea(.keyboard)
             .onAppear {
-                // 监听键盘事件
                 NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { notification in
                     if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
                         withAnimation {
-                            self.keyboardHeight = keyboardFrame.height - 20 // 适当减少一些偏移量，确保输入框可见
+                            self.keyboardHeight = keyboardFrame.height - 20
                         }
                     }
                 }
@@ -98,7 +97,7 @@ struct CreateAccountView: View {
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(
             leading: Button(action: {
-                presentationMode.wrappedValue.dismiss() // 后退功能
+                presentationMode.wrappedValue.dismiss()
             }) {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 20, weight: .medium))
@@ -109,50 +108,20 @@ struct CreateAccountView: View {
                     navigateToCreateEmailCode = true
                 }) {
                     Text("下一步")
-                        .font(.system(size: 12, weight: .medium)) // 调整字体大小为 8
-                        .padding(.horizontal, 16) // 调整左右内边距
-                        .padding(.vertical, 6) // 调整上下内边距
+                        .font(.system(size: 12, weight: .medium))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
                         .foregroundColor(.white)
                         .background(Color.black)
-                        .cornerRadius(25) // 调整圆角大小
+                        .cornerRadius(25)
                 }
             }
         )
     }
 }
 
-// 自定义输入框组件
-struct InputField: View {
-    var placeholder: String
-    @Binding var text: String
-    var systemImage: String
-    var isSecure: Bool
 
-    var body: some View {
-        HStack {
-            if isSecure {
-                SecureField(placeholder, text: $text)
-                    .font(.system(size: 18))
-                    .padding(.vertical, 12)
-                    .foregroundColor(.black)
-            } else {
-                TextField(placeholder, text: $text)
-                    .font(.system(size: 18))
-                    .padding(.vertical, 12)
-                    .foregroundColor(.black)
-            }
 
-            // 如果有图标，则显示
-            if !systemImage.isEmpty {
-                Image(systemName: systemImage)
-                    .foregroundColor(.black)
-                    .font(.system(size: 20))
-            }
-        }
-        .padding(.horizontal)
-        .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)
-    }
-}
 
 struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {

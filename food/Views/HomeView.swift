@@ -4,15 +4,8 @@ struct HomeView: View {
     @State private var selectedTab = 0
  //   @Binding var selectedTab: Int // 传递 selectedTab 绑定
     @State private var isShowingPostInputView = false
-    
-    
     @State private var isViewTabBarHidden = false
-    
-    
     @EnvironmentObject var tabBarManager: TabBarManager
-    
-    
-    
     @State private var tabState: Visibility = .visible
     @State var showMenu: Bool = false
     @State var offset: CGFloat = 0
@@ -20,12 +13,10 @@ struct HomeView: View {
     @GestureState var gestureOffSet: CGFloat = 0
     @State private var search: String = ""
     @Environment(\.horizontalSizeClass) var horizontalSizeClass  // 检测 iPad 或 iPhone
-    @State private var isNavigationBarHidden: Bool = false  // Track navigation bar visibility
+    @State  var isNavigationBarHidden: Bool = false  // Track navigation bar visibility
 
     
     var body: some View {
-       
-        
         let sideBarWidth = getRect().width * 0.7
         NavigationView {
             ZStack {
@@ -57,37 +48,29 @@ struct HomeView: View {
                         })
                         .onEnded(onEnd(value:))
                 )
+            }
+            .navigationViewStyle(StackNavigationViewStyle())
+            .animation(.easeOut, value: offset == 0)
+            .onChange(of: showMenu) {
+                if showMenu && offset == 0 {
+                    offset = sideBarWidth
+                    lastStoredOffset = offset
+                }
                 
-//                // 悬浮按钮
-//                if !isTabBarHidden && !showMenu{
-//                    VStack {
-//                        FloatingActionButton(isShowingPostInputView: $isShowingPostInputView)
-//                    }
-//                }
+                if !showMenu && offset == sideBarWidth {
+                    offset = 0
+                    lastStoredOffset = 0
+                }
             }
-        }
-        .navigationViewStyle(StackNavigationViewStyle())
-        .animation(.easeOut, value: offset == 0)
-        .onChange(of: showMenu) {
-            if showMenu && offset == 0 {
-                offset = sideBarWidth
-                lastStoredOffset = offset
+            .onChange(of: gestureOffSet) {
+                onChange()
             }
-
-            if !showMenu && offset == sideBarWidth {
-                offset = 0
-                lastStoredOffset = 0
-            }
+            .ignoresSafeArea(edges: .bottom)
+            
         }
-        .onChange(of: gestureOffSet) {
-            onChange()
-        }
-        .ignoresSafeArea(edges: .bottom)
-       
     }
     var tabViewContent: some View {
         VStack {
-          
             TabView(selection: $selectedTab) {
                 // 主页 Tab
                 NavigationStack {
@@ -108,6 +91,7 @@ struct HomeView: View {
                 }
                 
                 .navigationViewStyle(StackNavigationViewStyle())
+               
                 .tabItem {
                     Image(systemName: "house.fill")
                 }
@@ -119,14 +103,6 @@ struct HomeView: View {
                         Image(systemName: "location.fill")
                     }
                     .tag(1)
-                // 发布按钮 Tab
-//              
-//                PostInputView(isPresented: $isShowingPostInputView, selectedTab: $selectedTab)
-//                    .environmentObject(tabBarManager) // 传递环境对象
-//                    .tabItem {
-//                        Image(systemName: "plus.circle.fill")
-//                    }
-//                       .tag(2)
                 // 发布按钮 Tab (This will trigger a sheet)
                  Text("") // Empty content since we're using a sheet
                      .tabItem {

@@ -9,11 +9,11 @@ import SwiftUI
 
 struct ContentView: View {
     
-    
+    @StateObject private var tabBarManager = TabBarManager()
     var body: some View {
         VStack {
            // HomeView()
-            HomeLoginView() 
+            HomeLoginView() .environmentObject(tabBarManager)
         }
     }
 }

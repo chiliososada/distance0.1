@@ -10,15 +10,14 @@ struct RegisterView: View {
             ScrollView { // 使用 ScrollView 包裹内容
                 // 标题
                 HStack {
-                    Text("注册 Distance")
-                        .font(.system(size: 24, weight: .bold))
+                    Text("开始注册Distance吧")
+                        .font(.system(size: 28, weight: .bold)) // 调整字体大小
                         .foregroundColor(.black)
-                    
                     Spacer()
                 }
                 .padding(.horizontal)
-                .padding(.top, 40)
-                
+                .padding(.top, 30) // 增加顶部空间
+                .padding(.bottom, 40)
                 // Google 登录按钮
                 Button(action: {
                     print("Google Login tapped")
@@ -58,7 +57,7 @@ struct RegisterView: View {
                     .overlay(RoundedRectangle(cornerRadius: 25).stroke(Color.gray.opacity(0.3), lineWidth: 1))
                 }
                 .padding(.horizontal)
-                
+                .padding(.bottom, 20)
                 // 分割线和 "或" 文本
                 HStack {
                     Rectangle()
@@ -78,9 +77,15 @@ struct RegisterView: View {
                 // 输入框
                 TextField("邮件地址", text: $emailOrPhone)
                     .padding()
-                    .background(Color.gray.opacity(0.1))
+                    .background(Color.white.opacity(0.1))
                     .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10) // 添加圆角的边框
+                            .stroke(Color.black, lineWidth: 1) // 设置边框颜色为黑色，宽度为 1
+                    )
                     .padding(.horizontal)
+                    .submitLabel(.done) // Return 键显示为 "Done"
+                   
                 
                 // "下一步" 按钮
                 NavigationLink(destination: CreateAccountView(emailOrPhone: emailOrPhone), isActive: $navigateToCreateAccount) {

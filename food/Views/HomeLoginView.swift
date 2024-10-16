@@ -7,7 +7,7 @@ struct HomeLoginView: View {
         NavigationStack { VStack(spacing: 40) {
                 VerticalLineAnimationView().frame(height: 200) .padding(.top, 100)
                 // Buttons section in the bottom half
-                Text("发现你周围正在发生的新鲜事。").bold()
+                Text("参加你周围正在发生的新鲜事。").bold()
                 HStack(spacing: 20) {
                     NavigationLink(destination: RegisterView()) {
                         Text("注册")
@@ -21,9 +21,7 @@ struct HomeLoginView: View {
                             )
                     }
                     
-                    Button(action: {
-                        print("Login button tapped")
-                    }) {
+                    NavigationLink(destination: LoginInputView()) {
                         Text("登陆")
                             .frame(width: 100, height: 40) // Adjusted button size
                             .background(Color.black)

@@ -7,14 +7,17 @@ struct VerificationView: View {
     @State private var navigateToNextScreen = false // 控制跳转
 
     var body: some View {
-        VStack {
-            // 标题和描述
-            Text("我们向你发送了一个代码")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.black)
-                .padding(.top, 20)
-                .padding(.horizontal)
-
+        VStack() {
+            // 标题
+            HStack {
+                Text("我们向你发送了一个代码")
+                    .font(.system(size: 28, weight: .bold)) // 调整字体大小
+                    .foregroundColor(.black)
+                
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.top, 30) // 增加顶部空间
             Text("在下面输入以验证\(emailPlaceholder)")
                 .font(.system(size: 16))
                 .foregroundColor(.gray)
@@ -44,7 +47,7 @@ struct VerificationView: View {
                     navigateToNextScreen = true
                 }
             }) {
-                Text("下一步")
+                Text("完成")
                     .font(.system(size: 18, weight: .medium))
                     .frame(maxWidth: .infinity)
                     .padding()
@@ -62,13 +65,6 @@ struct VerificationView: View {
                 presentationMode.wrappedValue.dismiss() // 后退功能
             }) {
                 Image(systemName: "arrow.left")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.black)
-            },
-            trailing: Button(action: {
-                presentationMode.wrappedValue.dismiss() // 关闭页面
-            }) {
-                Image(systemName: "xmark")
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.black)
             }

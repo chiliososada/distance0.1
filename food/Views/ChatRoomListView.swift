@@ -178,6 +178,6 @@ struct ChatRoomListView: View {
 
 struct ChatRoomListView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatRoomListView()
+        ChatRoomListView().environmentObject(TabBarManager())
     }
 }
