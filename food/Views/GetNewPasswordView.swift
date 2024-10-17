@@ -1,17 +1,23 @@
+//
+//  GetNewPasswordView.swift
+//  food
+//
+//  Created by toyousoft on 2024/10/17.
+//
+
 import SwiftUI
 
-struct CreateAccountView: View {
+struct GetNewPasswordView: View {
     @Environment(\.presentationMode) var presentationMode // 用于后退功能
-    @State private var name: String = ""
-    @State var emailOrPhone: String // 通过初始化器传递邮箱或手机号
-    @State private var birthdate: Date = Date() // 使用 Date 类型
+   
     @State private var password: String = ""
     @State private var confirmPassword: String = ""
-    @State private var navigateToCreateEmailCode = false // 控制跳转
+    
     @State private var keyboardHeight: CGFloat = 0
     @State private var isPasswordVisible: Bool = false // 控制密码是否可见
     @FocusState private var focusedField: Field? // 用于管理焦点状态
-
+    
+    @State private var navigateToPasswordChanged = false // 控制跳转
     // 定义表单中的字段
     enum Field: Hashable {
         case name
@@ -20,17 +26,14 @@ struct CreateAccountView: View {
         case confirmPassword
     }
 
-    init(emailOrPhone: String) {
-        self._emailOrPhone = State(initialValue: emailOrPhone)
-    }
-
+   
     var body: some View {
         ZStack {
             ScrollView {
                 VStack(spacing: 30) {
                     // 标题
                     HStack {
-                        Text("创建你的账号")
+                        Text("请选择你的密码")
                             .font(.system(size: 28, weight: .bold))
                             .foregroundColor(.black)
                         Spacer()
@@ -38,28 +41,12 @@ struct CreateAccountView: View {
                     .padding(.horizontal)
                     .padding(.top, 30)
                     
-                    // 名字输入框
-                    InputField(placeholder: "名字", text: $name, systemImage: name.isEmpty ? "" : "checkmark.circle.fill", isSecure: false)
-                        .focused($focusedField, equals: .name)
-                        .submitLabel(.next)
-                        .onSubmit { focusedField = .emailOrPhone }
-                    
-                    // 邮箱输入框
-                    InputField(placeholder: "邮箱", text: $emailOrPhone, systemImage: "", isSecure: false)
-                        .focused($focusedField, equals: .emailOrPhone)
-                        .submitLabel(.next)
-                        .onSubmit { focusedField = .password }
-                    
-                    // 出生日期选择器
-                    HStack {
-                        DatePicker("出生日期", selection: $birthdate, displayedComponents: .date)
-                            .datePickerStyle(.compact)
-                            .font(.system(size: 18))
-                            .padding(.vertical, 12)
-                            .foregroundColor(.black)
-                    }
-                    .padding(.horizontal)
-                    .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)
+                    // 小字文本
+                        Text("确保你的新密码至少包含 8 个字符。尝试在其中使用数字、字母和标点符号，以便创建一个更安全的密码")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                            .padding(.horizontal)
+                           
                     
                     // 密码输入框
                     PasswordInputField(placeholder: "密码", text: $password, isPasswordVisible: $isPasswordVisible)
@@ -103,10 +90,8 @@ struct CreateAccountView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.black)
             },
-            trailing: NavigationLink(destination: VerificationView(), isActive: $navigateToCreateEmailCode) {
-                Button(action: {
-                    navigateToCreateEmailCode = true
-                }) {
+            trailing: NavigationLink(destination: PasswordChangedView()  .environmentObject(TabBarManager())) {
+              
                     Text("下一步")
                         .font(.system(size: 12, weight: .medium))
                         .padding(.horizontal, 16)
@@ -114,7 +99,7 @@ struct CreateAccountView: View {
                         .foregroundColor(.white)
                         .background(Color.black)
                         .cornerRadius(25)
-                }
+                
             }
         )
     }
@@ -123,10 +108,10 @@ struct CreateAccountView: View {
 
 
 
-struct CreateAccountView_Previews: PreviewProvider {
+struct GetNewPasswordView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
-            CreateAccountView(emailOrPhone: "example@example.com")
+            GetNewPasswordView()
                 .environmentObject(TabBarManager()) // 注入环境对象
         }
     }

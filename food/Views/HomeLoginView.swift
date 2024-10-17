@@ -9,7 +9,7 @@ struct HomeLoginView: View {
                 // Buttons section in the bottom half
                 Text("参加你周围正在发生的新鲜事。").bold()
                 HStack(spacing: 20) {
-                    NavigationLink(destination: RegisterView()) {
+                    NavigationLink(destination: RegisterView().environmentObject(tabBarManager)) {
                         Text("注册")
                             .frame(width: 100, height: 40) // Adjusted button size
                             .background(Color.white)
@@ -248,6 +248,9 @@ struct ImageModel: Identifiable {
     var color: Color?
 }
 
-//#Preview {
-//    HomeLoginView()
-//}
+struct HomeLoginView_Previews: PreviewProvider {
+    static var previews: some View {
+        HomeLoginView()
+            .environmentObject(TabBarManager()) // 确保注入 TabBarManager 环境对象
+    }
+}

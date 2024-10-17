@@ -4,7 +4,8 @@ struct RegisterView: View {
     @Environment(\.presentationMode) var presentationMode // 用于后退功能
     @State private var emailOrPhone: String = ""
     @State private var navigateToCreateAccount = false // 控制跳转
-
+    @EnvironmentObject var tabBarManager: TabBarManager
+    
     var body: some View {
         VStack(spacing: 20) {
             ScrollView { // 使用 ScrollView 包裹内容
@@ -25,7 +26,7 @@ struct RegisterView: View {
                     HStack {
                         Image("google")
                             .resizable()
-                            .frame(width: 24, height: 24)
+                            .frame(width: 20, height: 20)
                             .foregroundColor(.gray)
                         Text("使用 Google 账号登录")
                             .font(.system(size: 16))
@@ -45,7 +46,9 @@ struct RegisterView: View {
                 }) {
                     HStack {
                         Image(systemName: "applelogo")
-                            .foregroundColor(.black)
+                            .resizable()
+                            .frame(width: 20, height: 20)
+                            .foregroundColor(.blue)
                         Text("使用 Apple 登录")
                             .font(.system(size: 16))
                             .foregroundColor(.black)
@@ -104,16 +107,14 @@ struct RegisterView: View {
                 }
                 
                 // 忘记密码按钮
-                Button(action: {
-                    print("Forgot password tapped")
-                }) {
+                NavigationLink(destination: ForgetPasswordAccountView().environmentObject(tabBarManager)) {
                     Text("忘记密码?")
                         .font(.system(size: 14))
                         .foregroundColor(.blue)
                 }
                 .padding(.top)
-                
-                Spacer()
+                .padding(.horizontal)
+              
             }}
         .background(Color.white)
         .navigationBarBackButtonHidden(true) // 隐藏默认返回按钮
@@ -129,10 +130,10 @@ struct RegisterView: View {
     }
 }
 
-//struct RegisterView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        NavigationView { // 添加 NavigationView 以便能够展示导航功能
-//            RegisterView()
-//        }
-//    }
-//}
+struct RegisterView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView { // 添加 NavigationView 以便能够展示导航功能
+            RegisterView().environmentObject(TabBarManager())
+        }
+    }
+}

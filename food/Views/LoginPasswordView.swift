@@ -85,16 +85,15 @@ struct LoginPasswordView: View {
                     }
                     .padding(.horizontal)
                     
-                    // "忘记密码?" 按钮
-                    Button(action: {
-                        // 处理忘记密码操作
-                    }) {
+                    // 忘记密码按钮
+                    NavigationLink(destination: ForgetPasswordAccountView().environmentObject(tabBarManager)) {
                         Text("忘记密码?")
-                            .font(.system(size: 16))
+                            .font(.system(size: 14))
                             .foregroundColor(.blue)
                     }
+                   
                     .padding(.horizontal)
-                    .padding(.bottom, 10)
+                   
                 }
                 .padding(.horizontal, 20)
                 .background(Color.white)
@@ -116,14 +115,6 @@ struct LoginPasswordView: View {
     }
     
     func goToHomeView() {
-        // 创建 HomeView 的 UIHostingController
-        let homeView = UIHostingController(rootView: HomeView().environmentObject(tabBarManager) )
-        
-        // 设置根视图控制器为 HomeView，切断与当前的 NavigationStack 的关系
-//        if let window = UIApplication.shared.windows.first {
-//            window.rootViewController = homeView
-//            window.makeKeyAndVisible()
-//        }
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
             if let window = windowScene.windows.first {
                 window.rootViewController = UIHostingController(rootView: HomeView().environmentObject(tabBarManager))

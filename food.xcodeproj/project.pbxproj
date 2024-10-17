@@ -22,6 +22,11 @@
 		687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266642CBA579500F19703 /* EditAnnouncementView.swift */; };
 		687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DBF202CA4401100371A2F /* RecipeDetailView.swift */; };
 		689315072CBFE37A00FCD327 /* LoginPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315062CBFE37200FCD327 /* LoginPasswordView.swift */; };
+		689315182CC0CAC500FCD327 /* ForgetPasswordAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315172CC0CA9B00FCD327 /* ForgetPasswordAccountView.swift */; };
+		6893151A2CC0CF7E00FCD327 /* FoundEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315192CC0CF6D00FCD327 /* FoundEmailView.swift */; };
+		6893151C2CC0D0CC00FCD327 /* ForgetCodeInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6893151B2CC0D0B600FCD327 /* ForgetCodeInputView.swift */; };
+		689315212CC0D3A000FCD327 /* GetNewPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315202CC0D38C00FCD327 /* GetNewPasswordView.swift */; };
+		689315232CC0D5B200FCD327 /* PasswordChangedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315222CC0D5B000FCD327 /* PasswordChangedView.swift */; };
 		68E2F8F02CA80802001C2496 /* PostInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8EF2CA807F5001C2496 /* PostInputView.swift */; };
 		68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */; };
 		68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */; };
@@ -87,6 +92,11 @@
 		687266642CBA579500F19703 /* EditAnnouncementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnouncementView.swift; sourceTree = "<group>"; };
 		687DBF202CA4401100371A2F /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
 		689315062CBFE37200FCD327 /* LoginPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginPasswordView.swift; sourceTree = "<group>"; };
+		689315172CC0CA9B00FCD327 /* ForgetPasswordAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetPasswordAccountView.swift; sourceTree = "<group>"; };
+		689315192CC0CF6D00FCD327 /* FoundEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundEmailView.swift; sourceTree = "<group>"; };
+		6893151B2CC0D0B600FCD327 /* ForgetCodeInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetCodeInputView.swift; sourceTree = "<group>"; };
+		689315202CC0D38C00FCD327 /* GetNewPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetNewPasswordView.swift; sourceTree = "<group>"; };
+		689315222CC0D5B000FCD327 /* PasswordChangedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordChangedView.swift; sourceTree = "<group>"; };
 		68E2F8EF2CA807F5001C2496 /* PostInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputView.swift; sourceTree = "<group>"; };
 		68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputLocation.swift; sourceTree = "<group>"; };
 		68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabContentView.swift; sourceTree = "<group>"; };
@@ -222,6 +232,11 @@
 		8821895625BEC81300820A7E /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				689315222CC0D5B000FCD327 /* PasswordChangedView.swift */,
+				689315202CC0D38C00FCD327 /* GetNewPasswordView.swift */,
+				6893151B2CC0D0B600FCD327 /* ForgetCodeInputView.swift */,
+				689315192CC0CF6D00FCD327 /* FoundEmailView.swift */,
+				689315172CC0CA9B00FCD327 /* ForgetPasswordAccountView.swift */,
 				689315062CBFE37200FCD327 /* LoginPasswordView.swift */,
 				68E3FD4A2CBFDE67007BB4A2 /* LoginInputView.swift */,
 				68E3FD482CBFB739007BB4A2 /* VerificationView.swift */,
@@ -413,6 +428,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6841B1502CB6BCC700100A5A /* ChatMessageView.swift in Sources */,
+				689315212CC0D3A000FCD327 /* GetNewPasswordView.swift in Sources */,
 				689315072CBFE37A00FCD327 /* LoginPasswordView.swift in Sources */,
 				6841B12F2CB6310000100A5A /* ChatListView.swift in Sources */,
 				68E3FD432CBF71F9007BB4A2 /* VerticaLineAnimationView.swift in Sources */,
@@ -427,9 +443,12 @@
 				6872665B2CB769A900F19703 /* ChatSettingsView.swift in Sources */,
 				8821892B25BEC29900820A7E /* ContentView.swift in Sources */,
 				68E3FD4B2CBFDE73007BB4A2 /* LoginInputView.swift in Sources */,
+				689315232CC0D5B200FCD327 /* PasswordChangedView.swift in Sources */,
+				689315182CC0CAC500FCD327 /* ForgetPasswordAccountView.swift in Sources */,
 				687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */,
 				68209D102CAE94D400395C34 /* MyReviewRow.swift in Sources */,
 				687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */,
+				6893151A2CC0CF7E00FCD327 /* FoundEmailView.swift in Sources */,
 				68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */,
 				8821896E25BEFE3C00820A7E /* SearchAndFilterView.swift in Sources */,
 				6841B12B2CB6307F00100A5A /* ChatDetailView.swift in Sources */,
@@ -446,6 +465,7 @@
 				68E3FD452CBF8F93007BB4A2 /* RegisterView.swift in Sources */,
 				68E3FD412CBF61C0007BB4A2 /* HomeLoginView.swift in Sources */,
 				8821897825BF257E00820A7E /* SectionTitleView.swift in Sources */,
+				6893151C2CC0D0CC00FCD327 /* ForgetCodeInputView.swift in Sources */,
 				68E3FD3D2CBE6D51007BB4A2 /* MarqueeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

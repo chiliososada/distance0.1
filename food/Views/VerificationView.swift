@@ -5,7 +5,8 @@ struct VerificationView: View {
     @State private var code: [String] = Array(repeating: "", count: 6) // 验证码，每个输入框一个字符
     @FocusState private var focusedField: Int? // 用于跟踪当前聚焦的输入框
     @State private var navigateToNextScreen = false // 控制跳转
-
+    @EnvironmentObject var tabBarManager: TabBarManager
+    
     var body: some View {
         VStack() {
             // 标题
@@ -29,8 +30,8 @@ struct VerificationView: View {
                 ForEach(0..<6, id: \.self) { index in
                     CodeInputBox(text: $code[index])
                         .focused($focusedField, equals: index) // 聚焦当前输入框
-                        .onChange(of: code[index]) { newValue in
-                            if newValue.count == 1 { // 如果输入了一位字符，自动切换到下一个框
+                        .onChange(of: code[index]) {
+                            if code[index].count == 1 { // 如果输入了一位字符，自动切换到下一个框
                                 focusedField = index + 1
                             }
                         }
@@ -46,6 +47,8 @@ struct VerificationView: View {
                 if code.joined().count == 6 {
                     navigateToNextScreen = true
                 }
+                // 触发跳转到 HomeView 并关闭当前视图栈
+                goToHomeView()
             }) {
                 Text("完成")
                     .font(.system(size: 18, weight: .medium))
@@ -69,39 +72,30 @@ struct VerificationView: View {
                     .foregroundColor(.black)
             }
         )
+    
     }
 
     // 示例邮箱占位符
     var emailPlaceholder: String {
         return "chiliososada@gmail.com"
     }
-}
-
-// 自定义验证码输入框样式
-struct CodeInputBox: View {
-    @Binding var text: String // 绑定到验证码输入的数组
-    var body: some View {
-        TextField("", text: $text)
-            .font(.system(size: 24, weight: .medium))
-            .frame(width: 40, height: 40)
-            .multilineTextAlignment(.center) // 文字居中
-            .keyboardType(.numberPad) // 数字键盘
-            .cornerRadius(8)
-            .overlay(Rectangle().frame(height: 2).foregroundColor(.black), alignment: .bottom) // 底部线条
-            .onReceive(text.publisher.collect()) { newValue in
-                // 限制输入为一位数字
-                if newValue.count > 1 {
-                    text = String(newValue.last!)
-                }
+    func goToHomeView() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            if let window = windowScene.windows.first {
+                window.rootViewController = UIHostingController(rootView: HomeView().environmentObject(tabBarManager))
+                window.makeKeyAndVisible()
             }
+        }
     }
 }
 
-//struct VerificationView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        NavigationView {
-//            VerificationView()
-//                .environmentObject(TabBarManager()) // 注入环境对象
-//        }
-//    }
-//}
+
+
+struct VerificationView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            VerificationView()
+                .environmentObject(TabBarManager()) // 注入环境对象
+        }
+    }
+}

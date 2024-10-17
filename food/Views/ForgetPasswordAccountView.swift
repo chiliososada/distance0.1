@@ -1,6 +1,13 @@
+//
+//  ForgetPasswordAccountView.swift
+//  food
+//
+//  Created by toyousoft on 2024/10/17.
+//
+
 import SwiftUI
 
-struct LoginInputView: View {
+struct ForgetPasswordAccountView: View {
     @Environment(\.presentationMode) var presentationMode // 用于后退功能
     @State private var emailOrPhone: String = "" // 输入框内容
     @State private var isNextEnabled: Bool = false // 控制下一步按钮是否启用
@@ -12,11 +19,9 @@ struct LoginInputView: View {
         ZStack {
             ScrollView { // 使用 ScrollView 包裹内容
                 VStack(spacing: 30) { // 使用更大的 spacing 来美化布局
-                    
-                    
                     // 标题
                     HStack {
-                        Text("要开始登录，请先输入你的邮箱")
+                        Text("查找你的账号，请先输入你的电子邮箱")
                             .font(.system(size: 28, weight: .bold)) // 调整字体大小
                             .foregroundColor(.black)
                         
@@ -30,49 +35,6 @@ struct LoginInputView: View {
                         .submitLabel(.done)  // 键盘上显示 "Done" 按钮
                     
                     Spacer() // This pushes内容 upward
-                    // Google 登录按钮
-                    Button(action: {
-                        print("Google Login tapped")
-                    }) {
-                        HStack {
-                            Image("google")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                                .foregroundColor(.gray)
-                            Text("使用 Google 账号登录")
-                                .font(.system(size: 16))
-                                .foregroundColor(.black)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(25)
-                        .overlay(RoundedRectangle(cornerRadius: 25).stroke(Color.gray.opacity(0.3), lineWidth: 1))
-                    }
-                    .padding(.horizontal)
-                    
-                    // Apple 登录按钮
-                    Button(action: {
-                        print("Apple Login tapped")
-                    }) {
-                        HStack {
-                            Image(systemName: "applelogo")
-                                .resizable()
-                                .frame(width: 20, height: 20)
-                                .foregroundColor(.blue)
-                            Text("使用 Apple 登录")
-                                .font(.system(size: 16))
-                                .foregroundColor(.black)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(25)
-                        .overlay(RoundedRectangle(cornerRadius: 25).stroke(Color.gray.opacity(0.3), lineWidth: 1))
-                    }
-                    .padding(.horizontal)
-                    .padding(.bottom, 20)
-                 
                 }
                 .padding(.horizontal, 20)
                 .background(Color.white)
@@ -89,7 +51,7 @@ struct LoginInputView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.black)
             },
-            trailing: NavigationLink(destination: LoginPasswordView(emailOrUsername: email).environmentObject(tabBarManager)) {
+            trailing: NavigationLink(destination: FoundEmailView(email: email).environmentObject(tabBarManager)) {
                
                     Text("下一步")
                         .font(.system(size: 12, weight: .medium)) // 调整字体大小为 8
@@ -103,12 +65,9 @@ struct LoginInputView: View {
         )
     }
 }
-
-struct LoginInputView_Previews: PreviewProvider {
+struct ForgetPasswordAccountView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView {
-            LoginInputView()
-                .environmentObject(TabBarManager()) // 注入环境对象
-        }
+        ForgetPasswordAccountView()
+            .environmentObject(TabBarManager()) // 注入环境对象
     }
 }
