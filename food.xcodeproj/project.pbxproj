@@ -21,22 +21,9 @@
 		687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266622CB8FD5100F19703 /* SearchFilterView.swift */; };
 		687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266642CBA579500F19703 /* EditAnnouncementView.swift */; };
 		687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DBF202CA4401100371A2F /* RecipeDetailView.swift */; };
-		689315072CBFE37A00FCD327 /* LoginPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315062CBFE37200FCD327 /* LoginPasswordView.swift */; };
-		689315182CC0CAC500FCD327 /* ForgetPasswordAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315172CC0CA9B00FCD327 /* ForgetPasswordAccountView.swift */; };
-		6893151A2CC0CF7E00FCD327 /* FoundEmailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315192CC0CF6D00FCD327 /* FoundEmailView.swift */; };
-		6893151C2CC0D0CC00FCD327 /* ForgetCodeInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6893151B2CC0D0B600FCD327 /* ForgetCodeInputView.swift */; };
-		689315212CC0D3A000FCD327 /* GetNewPasswordView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315202CC0D38C00FCD327 /* GetNewPasswordView.swift */; };
-		689315232CC0D5B200FCD327 /* PasswordChangedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689315222CC0D5B000FCD327 /* PasswordChangedView.swift */; };
 		68E2F8F02CA80802001C2496 /* PostInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8EF2CA807F5001C2496 /* PostInputView.swift */; };
 		68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */; };
 		68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */; };
-		68E3FD3D2CBE6D51007BB4A2 /* MarqueeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E3FD3C2CBE6D48007BB4A2 /* MarqueeView.swift */; };
-		68E3FD412CBF61C0007BB4A2 /* HomeLoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E3FD402CBF61BA007BB4A2 /* HomeLoginView.swift */; };
-		68E3FD432CBF71F9007BB4A2 /* VerticaLineAnimationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E3FD422CBF71E9007BB4A2 /* VerticaLineAnimationView.swift */; };
-		68E3FD452CBF8F93007BB4A2 /* RegisterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E3FD442CBF8F8F007BB4A2 /* RegisterView.swift */; };
-		68E3FD472CBF921F007BB4A2 /* CreateAccountView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E3FD462CBF921C007BB4A2 /* CreateAccountView.swift */; };
-		68E3FD492CBFB73B007BB4A2 /* VerificationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E3FD482CBFB739007BB4A2 /* VerificationView.swift */; };
-		68E3FD4B2CBFDE73007BB4A2 /* LoginInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E3FD4A2CBFDE67007BB4A2 /* LoginInputView.swift */; };
 		68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5942CA64491000CA80B /* NearbyView.swift */; };
 		68EBD5972CA64BA4000CA80B /* MapButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */; };
 		8821892925BEC29900820A7E /* foodApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821892825BEC29900820A7E /* foodApp.swift */; };
@@ -91,22 +78,9 @@
 		687266622CB8FD5100F19703 /* SearchFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchFilterView.swift; sourceTree = "<group>"; };
 		687266642CBA579500F19703 /* EditAnnouncementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnouncementView.swift; sourceTree = "<group>"; };
 		687DBF202CA4401100371A2F /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
-		689315062CBFE37200FCD327 /* LoginPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginPasswordView.swift; sourceTree = "<group>"; };
-		689315172CC0CA9B00FCD327 /* ForgetPasswordAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetPasswordAccountView.swift; sourceTree = "<group>"; };
-		689315192CC0CF6D00FCD327 /* FoundEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundEmailView.swift; sourceTree = "<group>"; };
-		6893151B2CC0D0B600FCD327 /* ForgetCodeInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForgetCodeInputView.swift; sourceTree = "<group>"; };
-		689315202CC0D38C00FCD327 /* GetNewPasswordView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GetNewPasswordView.swift; sourceTree = "<group>"; };
-		689315222CC0D5B000FCD327 /* PasswordChangedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasswordChangedView.swift; sourceTree = "<group>"; };
 		68E2F8EF2CA807F5001C2496 /* PostInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputView.swift; sourceTree = "<group>"; };
 		68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputLocation.swift; sourceTree = "<group>"; };
 		68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabContentView.swift; sourceTree = "<group>"; };
-		68E3FD3C2CBE6D48007BB4A2 /* MarqueeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarqueeView.swift; sourceTree = "<group>"; };
-		68E3FD402CBF61BA007BB4A2 /* HomeLoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeLoginView.swift; sourceTree = "<group>"; };
-		68E3FD422CBF71E9007BB4A2 /* VerticaLineAnimationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerticaLineAnimationView.swift; sourceTree = "<group>"; };
-		68E3FD442CBF8F8F007BB4A2 /* RegisterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegisterView.swift; sourceTree = "<group>"; };
-		68E3FD462CBF921C007BB4A2 /* CreateAccountView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateAccountView.swift; sourceTree = "<group>"; };
-		68E3FD482CBFB739007BB4A2 /* VerificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationView.swift; sourceTree = "<group>"; };
-		68E3FD4A2CBFDE67007BB4A2 /* LoginInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginInputView.swift; sourceTree = "<group>"; };
 		68EBD5942CA64491000CA80B /* NearbyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyView.swift; sourceTree = "<group>"; };
 		68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapButtonsView.swift; sourceTree = "<group>"; };
 		8821892525BEC29900820A7E /* food.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = food.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,6 +112,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		6841B1242CAFE7AB00100A5A /* Heplers */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Heplers; sourceTree = "<group>"; };
 		687DBF1C2CA43F4600371A2F /* Model */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Model; sourceTree = "<group>"; };
+		689315242CC106A900FCD327 /* LoginAndRegister */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = LoginAndRegister; sourceTree = "<group>"; };
 		68E2F8F52CAA72C4001C2496 /* Services */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = Services; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -232,22 +207,10 @@
 		8821895625BEC81300820A7E /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				689315222CC0D5B000FCD327 /* PasswordChangedView.swift */,
-				689315202CC0D38C00FCD327 /* GetNewPasswordView.swift */,
-				6893151B2CC0D0B600FCD327 /* ForgetCodeInputView.swift */,
-				689315192CC0CF6D00FCD327 /* FoundEmailView.swift */,
-				689315172CC0CA9B00FCD327 /* ForgetPasswordAccountView.swift */,
-				689315062CBFE37200FCD327 /* LoginPasswordView.swift */,
-				68E3FD4A2CBFDE67007BB4A2 /* LoginInputView.swift */,
-				68E3FD482CBFB739007BB4A2 /* VerificationView.swift */,
-				68E3FD462CBF921C007BB4A2 /* CreateAccountView.swift */,
-				68E3FD442CBF8F8F007BB4A2 /* RegisterView.swift */,
-				68E3FD402CBF61BA007BB4A2 /* HomeLoginView.swift */,
-				68E3FD3C2CBE6D48007BB4A2 /* MarqueeView.swift */,
-				68E3FD422CBF71E9007BB4A2 /* VerticaLineAnimationView.swift */,
-				687266642CBA579500F19703 /* EditAnnouncementView.swift */,
+				689315242CC106A900FCD327 /* LoginAndRegister */,
 				6841B1242CAFE7AB00100A5A /* Heplers */,
 				687266602CB7970200F19703 /* SideMenu.swift */,
+				687266642CBA579500F19703 /* EditAnnouncementView.swift */,
 				8821898125BF2DE800820A7E /* HomeView.swift */,
 				687DBF202CA4401100371A2F /* RecipeDetailView.swift */,
 				6872665C2CB78CD600F19703 /* FloatingActionButton.swift */,
@@ -305,6 +268,7 @@
 			fileSystemSynchronizedGroups = (
 				6841B1242CAFE7AB00100A5A /* Heplers */,
 				687DBF1C2CA43F4600371A2F /* Model */,
+				689315242CC106A900FCD327 /* LoginAndRegister */,
 				68E2F8F52CAA72C4001C2496 /* Services */,
 			);
 			name = food;
@@ -354,8 +318,9 @@
 		8821891D25BEC29900820A7E /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				BuildIndependentTargetsInParallel = YES;
 				LastSwiftUpdateCheck = 1230;
-				LastUpgradeCheck = 1230;
+				LastUpgradeCheck = 1600;
 				TargetAttributes = {
 					8821892425BEC29900820A7E = {
 						CreatedOnToolsVersion = 12.3;
@@ -428,11 +393,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				6841B1502CB6BCC700100A5A /* ChatMessageView.swift in Sources */,
-				689315212CC0D3A000FCD327 /* GetNewPasswordView.swift in Sources */,
-				689315072CBFE37A00FCD327 /* LoginPasswordView.swift in Sources */,
 				6841B12F2CB6310000100A5A /* ChatListView.swift in Sources */,
-				68E3FD432CBF71F9007BB4A2 /* VerticaLineAnimationView.swift in Sources */,
-				68E3FD492CBFB73B007BB4A2 /* VerificationView.swift in Sources */,
 				8821895825BEC82400820A7E /* HomeNavBarView.swift in Sources */,
 				6841B12D2CB630C600100A5A /* ChatRoomRow.swift in Sources */,
 				687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */,
@@ -442,13 +403,9 @@
 				6872665D2CB78CE300F19703 /* FloatingActionButton.swift in Sources */,
 				6872665B2CB769A900F19703 /* ChatSettingsView.swift in Sources */,
 				8821892B25BEC29900820A7E /* ContentView.swift in Sources */,
-				68E3FD4B2CBFDE73007BB4A2 /* LoginInputView.swift in Sources */,
-				689315232CC0D5B200FCD327 /* PasswordChangedView.swift in Sources */,
-				689315182CC0CAC500FCD327 /* ForgetPasswordAccountView.swift in Sources */,
 				687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */,
 				68209D102CAE94D400395C34 /* MyReviewRow.swift in Sources */,
 				687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */,
-				6893151A2CC0CF7E00FCD327 /* FoundEmailView.swift in Sources */,
 				68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */,
 				8821896E25BEFE3C00820A7E /* SearchAndFilterView.swift in Sources */,
 				6841B12B2CB6307F00100A5A /* ChatDetailView.swift in Sources */,
@@ -460,13 +417,8 @@
 				6841B1292CB15C8600100A5A /* ChatRoomListView.swift in Sources */,
 				68209D0E2CAE779500395C34 /* ProFileView.swift in Sources */,
 				68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */,
-				68E3FD472CBF921F007BB4A2 /* CreateAccountView.swift in Sources */,
 				68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */,
-				68E3FD452CBF8F93007BB4A2 /* RegisterView.swift in Sources */,
-				68E3FD412CBF61C0007BB4A2 /* HomeLoginView.swift in Sources */,
 				8821897825BF257E00820A7E /* SectionTitleView.swift in Sources */,
-				6893151C2CC0D0CC00FCD327 /* ForgetCodeInputView.swift in Sources */,
-				68E3FD3D2CBE6D51007BB4A2 /* MarqueeView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -506,6 +458,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -539,6 +492,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -567,6 +521,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -600,6 +555,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -665,7 +621,6 @@
 		8821894E25BEC29B00820A7E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = foodTests/Info.plist;
@@ -686,7 +641,6 @@
 		8821894F25BEC29B00820A7E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = foodTests/Info.plist;
@@ -707,7 +661,6 @@
 		8821895125BEC29B00820A7E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = foodUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -726,7 +679,6 @@
 		8821895225BEC29B00820A7E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_FILE = foodUITests/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

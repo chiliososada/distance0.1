@@ -1,4 +1,4 @@
-//
+
 //  ForgetCodeInputView.swift
 //  food
 //
@@ -15,8 +15,8 @@ struct ForgetCodeInputView: View {
     var email: String // 从上一个页面传递过来的邮箱
 
     var body: some View {
-        NavigationStack {
-            VStack() {
+      
+            VStack{
                 // 标题
                 HStack {
                     Text("我们已发送代码到你的邮箱")
@@ -82,7 +82,7 @@ struct ForgetCodeInputView: View {
                         .foregroundColor(.black)
                 }
             )
-        }.navigationBarBackButtonHidden(true) // 隐藏默认返回按钮
+        .navigationBarBackButtonHidden(true) // 隐藏默认返回按钮
     }
 }
 
@@ -96,3 +96,5 @@ struct CodeInputView_Previews: PreviewProvider {
         }
     }
 }
+ 
+

@@ -80,11 +80,7 @@ struct NearbyView: View {
                 position = .automatic
             }
             .onChange(of: seletedResult) {
-                if let result = seletedResult {
-                    showBottomSheet = true
-                } else {
-                    showBottomSheet = false
-                }
+                showBottomSheet = seletedResult != nil
             }
             .onMapCameraChange{newValue in
                 visibleRegion = newValue.region

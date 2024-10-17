@@ -4,11 +4,12 @@ struct RegisterView: View {
     @Environment(\.presentationMode) var presentationMode // 用于后退功能
     @State private var emailOrPhone: String = ""
     @State private var navigateToCreateAccount = false // 控制跳转
+    @State private var navigateToForgetPassword = false // 控制跳转到忘记密码
     @EnvironmentObject var tabBarManager: TabBarManager
     
     var body: some View {
         VStack(spacing: 20) {
-            ScrollView { // 使用 ScrollView 包裹内容
+            ScrollView {
                 // 标题
                 HStack {
                     Text("开始注册Distance吧")
@@ -17,8 +18,9 @@ struct RegisterView: View {
                     Spacer()
                 }
                 .padding(.horizontal)
-                .padding(.top, 30) // 增加顶部空间
+                .padding(.top, 30)
                 .padding(.bottom, 40)
+
                 // Google 登录按钮
                 Button(action: {
                     print("Google Login tapped")
@@ -39,7 +41,7 @@ struct RegisterView: View {
                     .overlay(RoundedRectangle(cornerRadius: 25).stroke(Color.gray.opacity(0.3), lineWidth: 1))
                 }
                 .padding(.horizontal)
-                
+
                 // Apple 登录按钮
                 Button(action: {
                     print("Apple Login tapped")
@@ -61,63 +63,68 @@ struct RegisterView: View {
                 }
                 .padding(.horizontal)
                 .padding(.bottom, 20)
+
                 // 分割线和 "或" 文本
                 HStack {
                     Rectangle()
                         .frame(height: 1)
                         .foregroundColor(.gray.opacity(0.5))
-                    
                     Text("或")
                         .font(.system(size: 14))
                         .foregroundColor(.gray)
-                    
                     Rectangle()
                         .frame(height: 1)
                         .foregroundColor(.gray.opacity(0.5))
                 }
                 .padding(.horizontal)
-                
+
                 // 输入框
                 TextField("邮件地址", text: $emailOrPhone)
                     .padding()
                     .background(Color.white.opacity(0.1))
                     .cornerRadius(10)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 10) // 添加圆角的边框
-                            .stroke(Color.black, lineWidth: 1) // 设置边框颜色为黑色，宽度为 1
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(Color.black, lineWidth: 1)
                     )
                     .padding(.horizontal)
-                    .submitLabel(.done) // Return 键显示为 "Done"
-                   
+                    .submitLabel(.done)
                 
                 // "下一步" 按钮
-                NavigationLink(destination: CreateAccountView(emailOrPhone: emailOrPhone), isActive: $navigateToCreateAccount) {
-                    Button(action: {
-                        navigateToCreateAccount = true // 设置跳转
-                    }) {
-                        Text("下一步")
-                            .font(.system(size: 18, weight: .medium))
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .foregroundColor(.white)
-                            .background(Color.black)
-                            .cornerRadius(25)
-                    }
-                    .padding(.horizontal)
+                Button(action: {
+                    navigateToCreateAccount = true // 设置跳转
+                }) {
+                    Text("下一步")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .foregroundColor(.white)
+                        .background(Color.black)
+                        .cornerRadius(25)
                 }
-                
-                // 忘记密码按钮
-                NavigationLink(destination: ForgetPasswordAccountView().environmentObject(tabBarManager)) {
+                .padding(.horizontal)
+                .navigationDestination(isPresented: $navigateToCreateAccount) {
+                    CreateAccountView(emailOrPhone: emailOrPhone) // 跳转到下一个页面
+                }
+
+                // 优化后的 "忘记密码?" 按钮
+                Button(action: {
+                    navigateToForgetPassword = true // 设置跳转到忘记密码
+                }) {
                     Text("忘记密码?")
                         .font(.system(size: 14))
                         .foregroundColor(.blue)
                 }
                 .padding(.top)
                 .padding(.horizontal)
-              
-            }}
+                .navigationDestination(isPresented: $navigateToForgetPassword) {
+                    ForgetPasswordAccountView()
+                        .environmentObject(tabBarManager) // 跳转到忘记密码页面并注入环境对象
+                }
+            }
+        }
         .background(Color.white)
-        .navigationBarBackButtonHidden(true) // 隐藏默认返回按钮
+        .navigationBarBackButtonHidden(true)
         .navigationBarItems(
             leading: Button(action: {
                 presentationMode.wrappedValue.dismiss() // 后退功能
@@ -132,8 +139,6 @@ struct RegisterView: View {
 
 struct RegisterView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView { // 添加 NavigationView 以便能够展示导航功能
-            RegisterView().environmentObject(TabBarManager())
-        }
+        RegisterView().environmentObject(TabBarManager())
     }
 }

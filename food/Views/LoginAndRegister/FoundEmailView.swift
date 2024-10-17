@@ -1,15 +1,8 @@
-//
-//  ForgetPasswordMailView.swift
-//  food
-//
-//  Created by toyousoft on 2024/10/17.
-//
-
 import SwiftUI
 
 struct FoundEmailView: View {
     @Environment(\.presentationMode) var presentationMode // 用于后退功能
-    @State  var email: String // 从上一个页面传递过来的电子邮箱
+    @State var email: String // 从上一个页面传递过来的电子邮箱
     @EnvironmentObject var tabBarManager: TabBarManager
     @State private var navigateToCodeInput = false // 控制跳转
 
@@ -37,12 +30,12 @@ struct FoundEmailView: View {
                 }
                 .padding(.horizontal, 20)
                 .background(Color.white)
-                
-            }}
-           .ignoresSafeArea(.keyboard) // 避免键盘遮挡内容
-           .background(Color.white)
-           .navigationBarBackButtonHidden(true) // 隐藏默认的返回按钮
-           .navigationBarItems(
+            }
+        }
+        .ignoresSafeArea(.keyboard) // 避免键盘遮挡内容
+        .background(Color.white)
+        .navigationBarBackButtonHidden(true) // 隐藏默认的返回按钮
+        .navigationBarItems(
             leading: Button(action: {
                 presentationMode.wrappedValue.dismiss() // 后退功能
             }) {
@@ -50,25 +43,32 @@ struct FoundEmailView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundColor(.black)
             },
-            trailing: NavigationLink(destination: ForgetCodeInputView(email: email).environmentObject(tabBarManager)) {
-               
-                    Text("下一步")
-                        .font(.system(size: 12, weight: .medium)) // 调整字体大小为 8
-                        .padding(.horizontal, 16) // 调整左右内边距
-                        .padding(.vertical, 6) // 调整上下内边距
-                        .foregroundColor(.white)
-                        .background(Color.black)
-                        .cornerRadius(25) // 调整圆角大小
-                
+            trailing: Button(action: {
+                navigateToCodeInput = true
+            }) {
+                Text("下一步")
+                    .font(.system(size: 12, weight: .medium)) // 调整字体大小
+                    .padding(.horizontal, 16) // 调整左右内边距
+                    .padding(.vertical, 6) // 调整上下内边距
+                    .foregroundColor(.white)
+                    .background(Color.black)
+                    .cornerRadius(25) // 调整圆角大小
             }
+            .disabled(email.isEmpty) // 当 email 为空时禁用按钮
         )
+        .navigationDestination(isPresented: $navigateToCodeInput) {
+            ForgetCodeInputView(email: email)
+                .environmentObject(tabBarManager)
+        }
     }
 }
 
 // 为新页面添加预览
 struct FoundEmailView_Previews: PreviewProvider {
     static var previews: some View {
-        FoundEmailView(email: "example@example.com")
-            .environmentObject(TabBarManager()) // 注入环境对象
+        NavigationStack {
+            FoundEmailView(email: "example@example.com")
+                .environmentObject(TabBarManager()) // 注入环境对象
+        }
     }
 }
