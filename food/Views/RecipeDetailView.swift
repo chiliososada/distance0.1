@@ -268,7 +268,7 @@ struct RecipeDetailView: View {
 }
 
 // Mock Data for Preview
-struct RecommendedRecipe: Identifiable {
+struct RecommendedRecipe: Identifiable, Hashable {
     let id = UUID() // Unique identifier for each recipe
     let imageName: String
     let title: String

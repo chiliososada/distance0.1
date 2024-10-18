@@ -34,7 +34,7 @@ struct SideMenu: View {
                 ScrollView(.vertical, showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 10) {
                         // Profile按钮
-                        MenuItem(title: "Profile", icon: "person.circle", destination: ProfilesView(), showMenu: $showMenu)
+                        MenuItem(title: "Profile", icon: "person.circle", destination: ProfileEditorView(), showMenu: $showMenu)
 
                         // Security按钮
                         MenuItem(title: "Security", icon: "shield", destination: SecurityView(), showMenu: $showMenu)
@@ -114,20 +114,20 @@ func TabButton(title: String, image: String) -> some View {
 }
 
 // Profile 页面
-struct ProfilesView: View {
-    var body: some View {
-        VStack {
-            Text("Profile Page")
-                .font(.largeTitle)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                .background(Color.white)
-                .ignoresSafeArea() // 确保忽略安全区域，填充整个屏幕
-        }
-        .navigationTitle("Profile")
-        .navigationBarTitleDisplayMode(.inline)
-        .ignoresSafeArea() // 确保忽略安全区域，填充整个屏幕
-    }
-}
+//struct ProfilesView: View {
+//    var body: some View {
+//        VStack {
+//            Text("Profile Page")
+//                .font(.largeTitle)
+//                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+//                .background(Color.white)
+//                .ignoresSafeArea() // 确保忽略安全区域，填充整个屏幕
+//        }
+//        .navigationTitle("Profile")
+//        .navigationBarTitleDisplayMode(.inline)
+//        .ignoresSafeArea() // 确保忽略安全区域，填充整个屏幕
+//    }
+//}
 
 // Security 页面
 struct SecurityView: View {

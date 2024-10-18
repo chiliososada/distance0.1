@@ -26,15 +26,15 @@ struct LoginInputView: View {
                     // 电子邮箱输入框
                     InputField(placeholder: "电子邮箱", text: $email, systemImage: email.isEmpty ? "" : "checkmark.circle.fill", isSecure: false)
                         .submitLabel(.done)  // 键盘上显示 "Done" 按钮
-                        .onChange(of: email) { 
+                        .onChange(of: email) {
                             // 监听邮箱内容的变化并启用或禁用“下一步”按钮
                             isNextEnabled = !email.isEmpty
                         }
                     
                     Spacer() // Pushes content upward
-
+                   
                     // Google 登录按钮
-                    Button(action: {
+                    if showBackButton {Button(action: {
                         print("Google Login tapped")
                     }) {
                         HStack {
@@ -53,9 +53,9 @@ struct LoginInputView: View {
                         .overlay(RoundedRectangle(cornerRadius: 25).stroke(Color.gray.opacity(0.3), lineWidth: 1))
                     }
                     .padding(.horizontal)
-                    
+                    }
                     // Apple 登录按钮
-                    Button(action: {
+                    if showBackButton { Button(action: {
                         print("Apple Login tapped")
                     }) {
                         HStack {
@@ -75,8 +75,8 @@ struct LoginInputView: View {
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 20)
-                 
-                }
+                        
+                    }}
                 .padding(.horizontal, 20)
                 .background(Color.white)
                 
