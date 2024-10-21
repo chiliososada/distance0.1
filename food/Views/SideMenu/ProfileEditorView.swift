@@ -49,7 +49,9 @@ struct ProfileEditorView: View {
     @State private var nickname: String = "东京 it 小白"
     @State private var bio: String = "美妙的生活由此开始~"
     @State private var idNumber: String = "178385"
-    @State private var birthDate = Date() // 添加日期选择器状态
+    @State private var selectedGender = "男" // 默认性别
+    let genders = ["男", "女", "其他"] // 性别选项
+    
     @State private var showImagePicker = false
     @State private var showImagePickerOptions = false
     @State private var selectedImage: UIImage? // 保存用户选择的头像
@@ -116,15 +118,19 @@ struct ProfileEditorView: View {
                             InputField(placeholder: "请输入昵称", text: $nickname, systemImage: "", isSecure: false)
                         }
                         
-                        // 出生年月日，只占用一行显示
+                        // 性别选择器
                         VStack(alignment: .leading) {
-                            Text("出生年月日")
+                            Text("性别")
                                 .font(.headline)
                             HStack {
-                                DatePicker("", selection: $birthDate, displayedComponents: .date)
-                                    .datePickerStyle(CompactDatePickerStyle()) // 使用紧凑样式，仅占一行
-                                    .labelsHidden() // 隐藏标签
-                                Spacer()
+                                Picker("性别", selection: $selectedGender) {
+                                    ForEach(genders, id: \.self) { gender in
+                                        Text(gender)
+                                            .tag(gender)
+                                    }
+                                }
+                                .pickerStyle(SegmentedPickerStyle()) // 使用分段选择器样式
+                                .padding(.vertical, 12)
                             }
                             .padding(.horizontal)
                             .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)

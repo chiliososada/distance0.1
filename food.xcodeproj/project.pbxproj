@@ -20,6 +20,7 @@
 		687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266622CB8FD5100F19703 /* SearchFilterView.swift */; };
 		687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266642CBA579500F19703 /* EditAnnouncementView.swift */; };
 		687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DBF202CA4401100371A2F /* RecipeDetailView.swift */; };
+		6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6893160D2CC6A7CA00FCD327 /* MapItemPicker */; };
 		68E2F8F02CA80802001C2496 /* PostInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8EF2CA807F5001C2496 /* PostInputView.swift */; };
 		68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */; };
 		68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */; };
@@ -120,6 +121,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -344,6 +346,9 @@
 				Base,
 			);
 			mainGroup = 8821891C25BEC29900820A7E;
+			packageReferences = (
+				6893160C2CC6A7CA00FCD327 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */,
+			);
 			productRefGroup = 8821892625BEC29900820A7E /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -733,6 +738,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		6893160C2CC6A7CA00FCD327 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/lorenzofiamingo/swiftui-map-item-picker";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		6893160D2CC6A7CA00FCD327 /* MapItemPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 6893160C2CC6A7CA00FCD327 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */;
+			productName = MapItemPicker;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 8821891D25BEC29900820A7E /* Project object */;
 }

@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import MapItemPicker
 
 struct PostInputView: View {
     @State private var titleText: String = ""
@@ -24,12 +25,22 @@ struct PostInputView: View {
     @State private var selectedImages: [UIImage] = []
     @State private var isShowingImagePicker = false
 
+    
+    //
+    @State private var showingPicker = false
     var body: some View {
         NavigationView {
             ZStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) { // 减小了 `spacing`
-                        
+                        Button("Choose location") {
+                                   showingPicker = true
+                               }
+                               .mapItemPicker(isPresented: $showingPicker) { item in
+                                   if let name = item?.name {
+                                       print("Selected \(name)")
+                                   }
+                               }
                         // 1. 位置信息展示
                         if let location = selectedLocation {
                             HStack {

@@ -4,7 +4,9 @@ struct CreateAccountView: View {
     @Environment(\.presentationMode) var presentationMode // 用于后退功能
     @State private var name: String = ""
     @State var emailOrPhone: String // 通过初始化器传递邮箱或手机号
-    @State private var birthdate: Date = Date() // 使用 Date 类型
+    @State private var selectedGender = "男" // 默认性别
+    let genders = ["男", "女", "其他"] // 性别选项
+    
     @State private var password: String = ""
     @State private var confirmPassword: String = ""
     @State private var navigateToCreateEmailCode = false // 控制跳转
@@ -37,40 +39,62 @@ struct CreateAccountView: View {
                     }
                     .padding(.horizontal)
                     .padding(.top, 30)
-                    
+
                     // 名字输入框
-                    InputField(placeholder: "名字", text: $name, systemImage: name.isEmpty ? "" : "checkmark.circle.fill", isSecure: false)
-                        .focused($focusedField, equals: .name)
-                        .submitLabel(.next)
-                        .onSubmit { focusedField = .emailOrPhone }
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("名字")
+                            .font(.headline)
+                        InputField(placeholder: "名字", text: $name, systemImage: name.isEmpty ? "" : "checkmark.circle.fill", isSecure: false)
+                            .focused($focusedField, equals: .name)
+                            .submitLabel(.next)
+                            .onSubmit { focusedField = .emailOrPhone }
+                    }
                     
                     // 邮箱输入框
-                    InputField(placeholder: "邮箱", text: $emailOrPhone, systemImage: "", isSecure: false)
-                        .focused($focusedField, equals: .emailOrPhone)
-                        .submitLabel(.next)
-                        .onSubmit { focusedField = .password }
-                    
-                    // 出生日期选择器
-                    HStack {
-                        DatePicker("出生日期", selection: $birthdate, displayedComponents: .date)
-                            .datePickerStyle(.compact)
-                            .font(.system(size: 18))
-                            .padding(.vertical, 12)
-                            .foregroundColor(.black)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("邮箱")
+                            .font(.headline)
+                        InputField(placeholder: "邮箱", text: $emailOrPhone, systemImage: "", isSecure: false)
+                            .focused($focusedField, equals: .emailOrPhone)
+                            .submitLabel(.next)
+                            .onSubmit { focusedField = .password }
                     }
-                    .padding(.horizontal)
-                    .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)
+                    
+                    // 性别选择器
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("性别")
+                            .font(.headline)
+                        HStack {
+                            Picker("性别", selection: $selectedGender) {
+                                ForEach(genders, id: \.self) { gender in
+                                    Text(gender).tag(gender)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                            .padding(.vertical, 12)
+                        }
+                        .padding(.horizontal)
+                        .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)
+                    }
                     
                     // 密码输入框
-                    PasswordInputField(placeholder: "密码", text: $password, isPasswordVisible: $isPasswordVisible)
-                        .focused($focusedField, equals: .password)
-                        .submitLabel(.next)
-                        .onSubmit { focusedField = .confirmPassword }
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("密码")
+                            .font(.headline)
+                        PasswordInputField(placeholder: "密码", text: $password, isPasswordVisible: $isPasswordVisible)
+                            .focused($focusedField, equals: .password)
+                            .submitLabel(.next)
+                            .onSubmit { focusedField = .confirmPassword }
+                    }
                     
                     // 确认密码输入框
-                    PasswordInputField(placeholder: "确认密码", text: $confirmPassword, isPasswordVisible: $isPasswordVisible)
-                        .focused($focusedField, equals: .confirmPassword)
-                        .submitLabel(.done)
+                    VStack(alignment: .leading, spacing: 5) {
+                        Text("确认密码")
+                            .font(.headline)
+                        PasswordInputField(placeholder: "确认密码", text: $confirmPassword, isPasswordVisible: $isPasswordVisible)
+                            .focused($focusedField, equals: .confirmPassword)
+                            .submitLabel(.done)
+                    }
                     
                     Spacer()
                 }

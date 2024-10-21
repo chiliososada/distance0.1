@@ -37,7 +37,7 @@ struct SideMenu: View {
                         MenuItem(title: "Profile", icon: "person.circle", destination: ProfileEditorView(), showMenu: $showMenu)
 
                         // Security按钮
-                        MenuItem(title: "Security", icon: "shield", destination: SecurityView(), showMenu: $showMenu)
+                        MenuItem(title: "Setting", icon: "shield", destination: PersonSettingsView(), showMenu: $showMenu)
 
                         Divider()
 
