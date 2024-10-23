@@ -20,11 +20,6 @@ struct MapButtonsView: View {
         var body: some View {
                 VStack(spacing: 5) { // 使用 VStack 使内容垂直排列
                     // 搜索框
-//                    TextField("请搜索你要关心的事情", text: $searchText, onCommit: {
-//                        search(for: searchText) // 用户点击 return 键时，执行搜索
-//                    })
-//                    .textFieldStyle(.roundedBorder)
-//                    .padding(.horizontal)
                     SearchAndFilterView(search: $search)
                     // 按钮区域
                     HStack(spacing: 10) { // 内部 VStack 使按钮垂直排列
@@ -83,4 +78,12 @@ struct MapButtonsView: View {
        }
 }
 
-
+// 为 MapButtonsView 添加 SwiftUI 预览
+struct MapButtonsView_Previews: PreviewProvider {
+    @State static var position: MapCameraPosition = .automatic
+    @State static var searchResults: [MKMapItem] = []
+    
+    static var previews: some View {
+        MapButtonsView(position: $position, searchResults: $searchResults)
+    }
+}

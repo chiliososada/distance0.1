@@ -7,59 +7,45 @@ struct PostInputView: View {
     @State private var bodyText: String = ""
     @Binding var isPresented: Bool
     @Binding var selectedTab: Int // 用于控制跳转到主页的 Tab
-       
-    @Environment(\.dismiss) var dismiss
-//    @EnvironmentObject var tabBarManager: TabBarManager
     
+    @Environment(\.dismiss) var dismiss
+    //    @EnvironmentObject var tabBarManager: TabBarManager
+    @State private var previousLocation: CLLocation?
     
     @FocusState private var isTextFieldFocused: Bool
     @State private var keyboardHeight: CGFloat = 0
     @State private var offset: CGFloat = 0
     @State private var showSecondView = false
-    @State private var selectedLocation: NearbyLocationData?
+    //    @State private var selectedLocation: NearbyLocationData?
     @State private var tagsInput: String = "" // 输入的标签
     @State private var tags: [String] = [] // 存储的标签
     private let maxTags = 3 // 最大标签数量
-
+    
     // 图片选择相关状态
     @State private var selectedImages: [UIImage] = []
     @State private var isShowingImagePicker = false
-
-    
-    //
     @State private var showingPicker = false
+    
+    @StateObject private var locationManager = LocationManager.shared
+    @State  private var userLocationText: String = "" // 默认位置文本
+    
+    
+    
+    
+    @Environment(\.presentationMode) var presentationMode // 用于后退功能
+    let times = ["1天", "1周", "1月"]
+    @State private var selectedTimeIndex = 0
+    
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ZStack {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 12) { // 减小了 `spacing`
-                        Button("Choose location") {
-                                   showingPicker = true
-                               }
-                               .mapItemPicker(isPresented: $showingPicker) { item in
-                                   if let name = item?.name {
-                                       print("Selected \(name)")
-                                   }
-                               }
-                        // 1. 位置信息展示
-                        if let location = selectedLocation {
-                            HStack {
-                                Image(systemName: "mappin.and.ellipse")
-                                    .font(.title)
-                                    .foregroundColor(.red)
-                                Text(location.name)
-                                    .font(.headline)
-                                    .foregroundColor(.primary)
-                            }
-                            .padding([.top, .horizontal])
-                        }
-                        
                         // 2. 图片选择和展示部分
                         VStack(alignment: .leading, spacing: 8) {
                             Text("添加图片 (最多6张)")
                                 .font(.headline)
                                 .padding(.horizontal)
-                            
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: 10) {
                                     // 展示已选图片，并带有删除按钮
@@ -93,7 +79,7 @@ struct PostInputView: View {
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
                                                     .frame(width: 100, height: 100)
-                                                    .foregroundColor(.blue)
+                                                    .foregroundColor(.black)
                                                 Image(systemName: "plus")
                                                     .font(.title)
                                                     .foregroundColor(.gray)
@@ -104,9 +90,82 @@ struct PostInputView: View {
                                 .padding(.horizontal)
                             }
                         }
-
-                        Divider()
+                        
+                        
+                        
+                        // 位置
+                        VStack(alignment: .leading) {
+                            Text("位置")
+                                .font(.headline)
+                                .padding(.horizontal)
+                            
+                            HStack(spacing: 2) { // 减少 HStack 的 spacing
+                                if !userLocationText.isEmpty {
+                                    Image(systemName: "mappin.and.ellipse") // 使用系统图标表示位置
+                                        .foregroundColor(.blue) // 可选：设置图标颜色
+                                }
+                                
+                                Text(userLocationText.isEmpty ? "获取位置中..." : userLocationText)
+                                    .font(.system(size: 14)) // 设置字体大小为 14
+                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 0) // 去除左右额外的 padding
+                                Spacer()
+                                
+                                Button("更换位置") {
+                                    showingPicker = true
+                                }
+                                .foregroundColor(.blue)  // 设置文本颜色为白色
+                            }
+                            .mapItemPicker(isPresented: $showingPicker) { item in
+                                if let placemark = item?.placemark {
+                                    // 创建一个数组来存储非空的地址部分
+                                    var addressComponents: [String] = []
+                                    
+                                    // 提取地址信息，如果非空则加入数组
+                                    if let name = placemark.name, !name.isEmpty {
+                                        addressComponents.append(name) // 地点名称，如“京成立石駅”
+                                    }
+                                    if let locality = placemark.locality, !locality.isEmpty {
+                                        addressComponents.append(locality) // 市区，如“東京都葛飾区”
+                                    }
+                                    if let subLocality = placemark.subLocality, !subLocality.isEmpty {
+                                        addressComponents.append(subLocality) // 街道/较小的区划，如“立石”
+                                    }
+                                    if let administrativeArea = placemark.administrativeArea, !administrativeArea.isEmpty {
+                                        addressComponents.append(administrativeArea) // 都道府县，如“東京都”
+                                    }
+                                    
+                                    // 使用 ", " 将非空的地址部分拼接为完整地址
+                                    userLocationText = addressComponents.joined(separator: ", ")
+                                    
+                                    // 提取经纬度
+                                    if let location = placemark.location {
+                                        let latitude = location.coordinate.latitude
+                                        let longitude = location.coordinate.longitude
+                                        
+                                        // 输出经纬度
+                                        print("Latitude: \(latitude), Longitude: \(longitude)")
+                                        // 这里可以将 latitude 和 longitude 赋值给你的变量
+                                    }
+                                }
+                            }
                             .padding(.horizontal)
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            HStack {
+                                Text("有效时长(可续期)")
+                                    .font(.headline)
+                                    .padding(.horizontal) // 确保和其他部分对齐
+                                Picker(selection: $selectedTimeIndex, label: Text("")) {
+                                    ForEach(times.indices, id: \.self) { index in
+                                        Text(times[index]).tag(index)
+                                    }
+                                }
+                                .pickerStyle(SegmentedPickerStyle())
+                                .padding(.horizontal) // 调整 picker 的 padding 使其和其他元素对齐
+                            }
+                        }
                         
                         // 3. 标题输入框
                         VStack(alignment: .leading) {
@@ -120,11 +179,11 @@ struct PostInputView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.black)
                                 )
                                 .padding(.horizontal)
                         }
-
+                        
                         // 标签展示
                         if !tags.isEmpty {
                             ScrollView(.horizontal, showsIndicators: false) {
@@ -152,9 +211,9 @@ struct PostInputView: View {
                                 .padding(.horizontal)
                             }
                         }
-
-                        Divider()
-                            .padding(.horizontal)
+                        
+                        //                        Divider()
+                        //                            .padding(.horizontal)
                         
                         // 标签输入框
                         VStack(alignment: .leading) {
@@ -168,7 +227,7 @@ struct PostInputView: View {
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.black)
                                 )
                                 .padding(.horizontal)
                             } else {
@@ -177,28 +236,28 @@ struct PostInputView: View {
                                     .padding(.horizontal)
                             }
                         }
-
-                        Divider()
-                            .padding(.horizontal)
-
+                        //
+                        //                        Divider()
+                        //                            .padding(.horizontal)
+                        
                         // 5. 正文输入框
                         VStack(alignment: .leading) {
                             Text("正文")
                                 .font(.headline)
                                 .padding(.horizontal)
                                 .padding(.top, -10) // 将正文部分上移
-
+                            
                             TextEditor(text: $bodyText)
                                 .padding(.vertical, 8) // 减少 TextEditor 的 padding
                                 .frame(minHeight: 320)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 8)
                                         .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [5])) // 添加虚线边框
-                                        .foregroundColor(.blue)
+                                        .foregroundColor(.black)
                                 )
                                 .padding(.horizontal)
                         }
-
+                        
                         Spacer()
                     }
                     .padding(.bottom, keyboardHeight)
@@ -208,7 +267,7 @@ struct PostInputView: View {
                 }
             }
             .onAppear {
-                
+                updateLocationText() // 更新位置文本
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     isTextFieldFocused = true
                 }
@@ -219,14 +278,14 @@ struct PostInputView: View {
                 NotificationCenter.default.removeObserver(self)
                 
             }
-
+            
             .sheet(isPresented: $isShowingImagePicker) {
                 // 调用多图片选择的图片选择器
                 MultiImagePicker(images: $selectedImages)
             }
             .navigationBarItems(
                 leading: Button(action: {
-//                    isPresented = false
+                    //                    isPresented = false
                     dismiss() // 关闭当前发布视图
                     selectedTab = 0 // 切换到主页 Tab (假设主页的 tag 是 0)
                     
@@ -235,21 +294,34 @@ struct PostInputView: View {
                         .font(.title2)
                         .foregroundColor(.black)
                 },
-                trailing: Button("Next") {
-                    showSecondView.toggle()
-                }
-                .font(.headline)
-                .foregroundColor(.black)
+                trailing:
+                    Button(action: {
+                        showSecondView = true
+                    }) {
+                        Text("发布")
+                            .font(.system(size: 12, weight: .medium)) // 调整字体大小
+                            .padding(.horizontal, 16) // 调整左右内边距
+                            .padding(.vertical, 6) // 调整上下内边距
+                            .foregroundColor(.white)
+                            .background(Color.black)
+                            .cornerRadius(25) // 调整圆角大小
+                    }
+                
+                // 跳转到新页面
+                    .navigationDestination(isPresented: $showSecondView) {
+                        
+                    }
+                
             )
-            .fullScreenCover(isPresented: $showSecondView) {
-                PostInputLocation(onLocationSelected: { location in
-                    self.selectedLocation = location
-                }, isPresented: $showSecondView)
-            }
+            //            .fullScreenCover(isPresented: $showSecondView) {
+            //                PostInputLocation(onLocationSelected: { location in
+            //                    self.selectedLocation = location
+            //                }, isPresented: $showSecondView)
+            //            }
             
         }
     }
-
+    
     // 添加标签
     private func addTag() {
         let trimmedTag = tagsInput.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -260,12 +332,12 @@ struct PostInputView: View {
             tagsInput = "" // 使用异步操作清空输入框
         }
     }
-
+    
     // 删除标签
     private func removeTag(_ tag: String) {
         tags.removeAll { $0 == tag }
     }
-
+    
     // 监听键盘事件
     private func subscribeToKeyboardEvents() {
         NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { notification in
@@ -275,19 +347,68 @@ struct PostInputView: View {
                 }
             }
         }
-
+        
         NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { _ in
             withAnimation {
                 self.keyboardHeight = 0
             }
         }
     }
-
+    
     // 滚动到输入框可见区域
     private func scrollToActiveTextField() {
         DispatchQueue.main.async {
             withAnimation {
                 self.offset = self.keyboardHeight
+            }
+        }
+    }
+    private func updateLocationText() {
+        guard let location = locationManager.userLocation else {
+            print("User location is not available.")
+            return
+        }
+        
+        // 如果位置没有显著变化，不执行反向地理编码
+        if let previous = previousLocation, location.distance(from: previous) < 100 {
+            print("Location hasn't changed significantly.")
+            return
+        }
+        
+        // 更新上次的已处理位置
+        previousLocation = location
+        
+        // 开始反向地理编码请求
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            if let error = error {
+                print("Failed to get placemark: \(error.localizedDescription)")
+                return
+            }
+            
+            guard let placemark = placemarks?.first else {
+                print("No placemark found.")
+                return
+            }
+            
+            // 更新位置信息逻辑...
+            var addressComponents: [String] = []
+            
+            //            if let name = placemark.name, !name.isEmpty {
+            //                addressComponents.append(name)
+            //            }
+            if let subLocality = placemark.subLocality, !subLocality.isEmpty {
+                addressComponents.append(subLocality)
+            }
+            if let locality = placemark.locality, !locality.isEmpty {
+                addressComponents.append(locality)
+            }
+            if let administrativeArea = placemark.administrativeArea, !administrativeArea.isEmpty {
+                addressComponents.append(administrativeArea)
+            }
+            
+            DispatchQueue.main.async {
+                userLocationText = addressComponents.joined(separator: ", ")
             }
         }
     }

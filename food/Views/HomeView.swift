@@ -18,10 +18,12 @@ struct HomeView: View {
     
     @StateObject private var locationManager = LocationManager.shared
     @State  var userLocationText: String = "" // 默认位置文本
+    
+    @State private var showingPicker = false
+    
+    @State private var previousLocation: CLLocation?
   
-    init() {
-           print("HomeView initialized")
-       }
+   
     var body: some View {
       
         let sideBarWidth = getRect().width * 0.7
@@ -110,10 +112,10 @@ struct HomeView: View {
                                 leading: leadingNavBarItem,
                                 trailing: trailingNavBarItem
                             )   .onAppear {
-                                locationManager.startUpdatingLocation() // 开始获取用户位置
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                                       updateLocationText()  // 延迟调用以确保位置更新完成
-                                   }
+//                                locationManager.startUpdatingLocation() // 开始获取用户位置
+//                                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+//                                       updateLocationText()  // 延迟调用以确保位置更新完成
+//                                   }
                       
                              }
                     }
@@ -185,38 +187,67 @@ struct HomeView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 12, height: 12)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.black)
                     Text(userLocationText)
                         .font(.caption2)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.black)
                         .lineLimit(1)
                         .truncationMode(.tail)
                 }
             }
         }
-
-
     // 更新用户位置文本
-       func updateLocationText() {
-           if let location = locationManager.userLocation {
-               let geocoder = CLGeocoder()
-               geocoder.reverseGeocodeLocation(location) { placemarks, error in
-                   if let placemark = placemarks?.first {
-                       DispatchQueue.main.async {
-                           // 获取都道府县 (例如：东京都)、市区 (例如：葛饰区) 和街道 (例如：立石)
-                           let administrativeArea = placemark.administrativeArea ?? "Unknown" // 都道府县
-                           let locality = placemark.locality ?? "Unknown" // 市区
-                           let subLocality = placemark.subLocality ?? "" // 街道/较小的区划
+  
 
-                           // 拼接完整地址 (例如：东京都 葛饰区 立石)
-                           userLocationText = "\(administrativeArea) \(locality) \(subLocality)"
-                       }
-                   } else {
-                       print("Failed to get placemark: \(String(describing: error))")
-                   }
-               }
-           }
-       }
+    private func updateLocationText() {
+        guard let location = locationManager.userLocation else {
+            print("User location is not available.")
+            return
+        }
+
+        // 如果位置没有显著变化，不执行反向地理编码
+        if let previous = previousLocation, location.distance(from: previous) < 100 {
+            print("Location hasn't changed significantly.")
+            return
+        }
+
+        // 更新上次的已处理位置
+        previousLocation = location
+
+        // 开始反向地理编码请求
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { placemarks, error in
+            if let error = error {
+                print("Failed to get placemark: \(error.localizedDescription)")
+                return
+            }
+
+            guard let placemark = placemarks?.first else {
+                print("No placemark found.")
+                return
+            }
+
+            // 更新位置信息逻辑...
+            var addressComponents: [String] = []
+
+//            if let name = placemark.name, !name.isEmpty {
+//                addressComponents.append(name)
+//            }
+            if let subLocality = placemark.subLocality, !subLocality.isEmpty {
+                addressComponents.append(subLocality)
+            }
+            if let locality = placemark.locality, !locality.isEmpty {
+                addressComponents.append(locality)
+            }
+            if let administrativeArea = placemark.administrativeArea, !administrativeArea.isEmpty {
+                addressComponents.append(administrativeArea)
+            }
+
+            DispatchQueue.main.async {
+                userLocationText = addressComponents.joined(separator: ", ")
+            }
+        }
+    }
     // 防止重复点击的侧滑菜单开关
     private func toggleMenuWithDebounce() {
         if isInteracting { return } // 如果已经在处理中，阻止新的点击

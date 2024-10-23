@@ -21,10 +21,11 @@
 		687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687266642CBA579500F19703 /* EditAnnouncementView.swift */; };
 		687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DBF202CA4401100371A2F /* RecipeDetailView.swift */; };
 		6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6893160D2CC6A7CA00FCD327 /* MapItemPicker */; };
+		689317092CC8CC7700FCD327 /* NearbyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 689317082CC8CC6B00FCD327 /* NearbyView.swift */; };
 		68E2F8F02CA80802001C2496 /* PostInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8EF2CA807F5001C2496 /* PostInputView.swift */; };
-		68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */; };
+		68E2F8FA2CAA7922001C2496 /* PostInputLocation_deleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation_deleted.swift */; };
 		68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */; };
-		68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5942CA64491000CA80B /* NearbyView.swift */; };
+		68EBD5952CA644BB000CA80B /* NearbyViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5942CA64491000CA80B /* NearbyViews.swift */; };
 		68EBD5972CA64BA4000CA80B /* MapButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */; };
 		8821892925BEC29900820A7E /* foodApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821892825BEC29900820A7E /* foodApp.swift */; };
 		8821892B25BEC29900820A7E /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821892A25BEC29900820A7E /* ContentView.swift */; };
@@ -77,10 +78,11 @@
 		687266622CB8FD5100F19703 /* SearchFilterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchFilterView.swift; sourceTree = "<group>"; };
 		687266642CBA579500F19703 /* EditAnnouncementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditAnnouncementView.swift; sourceTree = "<group>"; };
 		687DBF202CA4401100371A2F /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
+		689317082CC8CC6B00FCD327 /* NearbyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyView.swift; sourceTree = "<group>"; };
 		68E2F8EF2CA807F5001C2496 /* PostInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputView.swift; sourceTree = "<group>"; };
-		68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputLocation.swift; sourceTree = "<group>"; };
+		68E2F8F92CAA78F7001C2496 /* PostInputLocation_deleted.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputLocation_deleted.swift; sourceTree = "<group>"; };
 		68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeTabContentView.swift; sourceTree = "<group>"; };
-		68EBD5942CA64491000CA80B /* NearbyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyView.swift; sourceTree = "<group>"; };
+		68EBD5942CA64491000CA80B /* NearbyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyViews.swift; sourceTree = "<group>"; };
 		68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapButtonsView.swift; sourceTree = "<group>"; };
 		8821892525BEC29900820A7E /* food.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = food.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8821892825BEC29900820A7E /* foodApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = foodApp.swift; sourceTree = "<group>"; };
@@ -227,10 +229,11 @@
 				8821896D25BEFE3C00820A7E /* SearchAndFilterView.swift */,
 				687266622CB8FD5100F19703 /* SearchFilterView.swift */,
 				68E2F9012CAD43BB001C2496 /* HomeTabContentView.swift */,
-				68E2F8F92CAA78F7001C2496 /* PostInputLocation.swift */,
+				68E2F8F92CAA78F7001C2496 /* PostInputLocation_deleted.swift */,
 				68E2F8EF2CA807F5001C2496 /* PostInputView.swift */,
 				68EBD5962CA64B3E000CA80B /* MapButtonsView.swift */,
-				68EBD5942CA64491000CA80B /* NearbyView.swift */,
+				68EBD5942CA64491000CA80B /* NearbyViews.swift */,
+				689317082CC8CC6B00FCD327 /* NearbyView.swift */,
 				8821895725BEC82400820A7E /* HomeNavBarView.swift */,
 				8821897225BF073800820A7E /* FreshRecipesView.swift */,
 				8821897C25BF2D7600820A7E /* RecommendedRecipeCardView.swift */,
@@ -410,18 +413,19 @@
 				687266652CBA579900F19703 /* EditAnnouncementView.swift in Sources */,
 				68209D102CAE94D400395C34 /* MyReviewRow.swift in Sources */,
 				687266632CB8FD5100F19703 /* SearchFilterView.swift in Sources */,
-				68EBD5952CA644BB000CA80B /* NearbyView.swift in Sources */,
+				68EBD5952CA644BB000CA80B /* NearbyViews.swift in Sources */,
 				8821896E25BEFE3C00820A7E /* SearchAndFilterView.swift in Sources */,
 				6841B12B2CB6307F00100A5A /* ChatDetailView.swift in Sources */,
 				8821897325BF073800820A7E /* FreshRecipesView.swift in Sources */,
 				6841B1522CB6BD0400100A5A /* ChatAnnouncementView.swift in Sources */,
+				689317092CC8CC7700FCD327 /* NearbyView.swift in Sources */,
 				68EBD5972CA64BA4000CA80B /* MapButtonsView.swift in Sources */,
 				8821898225BF2DE800820A7E /* HomeView.swift in Sources */,
 				8821892925BEC29900820A7E /* foodApp.swift in Sources */,
 				6841B1292CB15C8600100A5A /* ChatRoomListView.swift in Sources */,
 				68209D0E2CAE779500395C34 /* ProFileView.swift in Sources */,
 				68E2F9022CAD43C0001C2496 /* HomeTabContentView.swift in Sources */,
-				68E2F8FA2CAA7922001C2496 /* PostInputLocation.swift in Sources */,
+				68E2F8FA2CAA7922001C2496 /* PostInputLocation_deleted.swift in Sources */,
 				8821897825BF257E00820A7E /* SectionTitleView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
