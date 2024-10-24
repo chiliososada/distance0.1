@@ -55,3 +55,17 @@ struct ChatRoomRow: View {
         .background(Color.white)
     }
 }
+struct ChatRoomRow_Previews: PreviewProvider {
+    static var previews: some View {
+        // 示例数据
+        let exampleChatRoom = ChatRoom(
+            name: "Tina Aalto", lastMessage: "Will probably arrive at 9. See ya!", time: "20:30", avatar: "sample2", isGroupChat: false
+        )
+        
+        // 使用示例数据渲染 ChatRoomRow
+        ChatRoomRow(chatRoom: exampleChatRoom)
+            .previewLayout(.sizeThatFits) // 调整预览布局
+            .padding() // 添加一些间距，便于查看
+            .background(Color.gray.opacity(0.2)) // 背景方便观察效果
+    }
+}
