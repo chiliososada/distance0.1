@@ -7,7 +7,33 @@
 
 import SwiftUI
 import MapKit
+extension CLLocationCoordinate2D {
+    static let parking = CLLocationCoordinate2D(latitude: 35.765, longitude: 139.8485)  // 替换为你的坐标
+    static let parking1 = CLLocationCoordinate2D(latitude: 35.764, longitude: 139.8486)  // 替换为你的坐标
+}
+extension MKCoordinateRegion {
+    static let boston = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(
+            latitude: 42.360256,
+            longitude: -71.057279
+        ),
+        span: MKCoordinateSpan(
+            latitudeDelta: 0.1,
+            longitudeDelta: 0.1
+        )
+    )
 
+    static let northShore = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(
+            latitude: 42.547408,
+            longitude: -70.870085
+        ),
+        span: MKCoordinateSpan(
+            latitudeDelta: 0.5,
+            longitudeDelta: 0.5
+        )
+    )
+}
 struct MapButtonsView: View {
     @State private var searchText = "" // 用于存储搜索框的输入内容
     @Binding var position : MapCameraPosition

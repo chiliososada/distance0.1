@@ -2,43 +2,20 @@ import SwiftUI
 import MapKit
 
 
-extension CLLocationCoordinate2D {
-    static let parking = CLLocationCoordinate2D(latitude: 35.765, longitude: 139.8485)  // 替换为你的坐标
-    static let parking1 = CLLocationCoordinate2D(latitude: 35.764, longitude: 139.8486)  // 替换为你的坐标
-}
-extension MKCoordinateRegion {
-    static let boston = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(
-            latitude: 42.360256,
-            longitude: -71.057279
-        ),
-        span: MKCoordinateSpan(
-            latitudeDelta: 0.1,
-            longitudeDelta: 0.1
-        )
-    )
 
-    static let northShore = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(
-            latitude: 42.547408,
-            longitude: -70.870085
-        ),
-        span: MKCoordinateSpan(
-            latitudeDelta: 0.5,
-            longitudeDelta: 0.5
-        )
-    )
-}
 // 自定义的 Place 模型
-class Place: NSObject, MKAnnotation {
+class Place: NSObject, MKAnnotation, Identifiable {
+    let id: String // 添加唯一标识符
     let name: String
     let coordinate: CLLocationCoordinate2D
     let image: String
     let sponsored: Bool
+    var cachedDistance: Double? // 缓存距离计算结果
     
     var title: String? { name }
     
-    init(name: String, latitude: Double, longitude: Double, sponsored: Bool = false) {
+    init(id: String = UUID().uuidString, name: String, latitude: Double, longitude: Double, sponsored: Bool = false) {
+        self.id = id
         self.name = name
         self.coordinate = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         self.image = "placeholder"
@@ -47,71 +24,377 @@ class Place: NSObject, MKAnnotation {
     }
 }
 
+class MapDataManager: ObservableObject {
+//    @Published private(set) var visiblePlaces: [Place] = []
+//    private var allPlaces: [Place] = [] // 存储所有可能的地点数据
+//    private var loadedRegions: Set<String> = [] // 追踪已加载的区域
+//    private let queue = DispatchQueue(label: "com.app.mapdatamanager", qos: .userInitiated)
+//    private let cache = NSCache<NSString, NSArray>()
+        @Published private(set) var visiblePlaces: [Place] = []
+        @Published private(set) var isLoading = false
+        @Published private(set) var error: Error?
+        
+        private var allPlaces: [Place] = []// 存储所有可能的地点数据
+        private var loadedRegions: Set<String> = []   // 追踪已加载的区域
+        private let queue = DispatchQueue(label: "com.app.mapdatamanager", qos: .userInitiated)
+        private let cache = NSCache<NSString, NSArray>()
+        private var loadingTasks: [String: Task<Void, Never>] = [:] // 追踪加载任务
+        
+        // 添加节流控制
+        private var lastLoadTime: Date = .distantPast
+        private let minimumLoadInterval: TimeInterval = 0.3
+    init() {
+        // 设置缓存限制
+        cache.countLimit = 50 // 最多缓存50个区域的数据
+        cache.totalCostLimit = 50 * 1024 * 1024 // 50MB 限制
+        
+        setupMemoryWarningNotification()
+    }
+    private func setupMemoryWarningNotification() {
+          NotificationCenter.default.addObserver(
+              self,
+              selector: #selector(handleMemoryWarning),
+              name: UIApplication.didReceiveMemoryWarningNotification,
+              object: nil
+          )
+      }
+      @objc private func handleMemoryWarning() {
+            queue.async { [weak self] in
+                self?.cache.removeAllObjects()
+                self?.loadedRegions.removeAll()
+            }
+        }
+    // 加载指定区域的数据
+    func loadPlaces(in region: MKCoordinateRegion) {
+         // 检查加载频率
+         let now = Date()
+         guard now.timeIntervalSince(lastLoadTime) >= minimumLoadInterval else { return }
+         lastLoadTime = now
+         
+         // 取消之前的加载任务
+         loadingTasks.values.forEach { $0.cancel() }
+         
+         let task = Task { [weak self] in
+             guard let self = self else { return }
+             
+             do {
+                 self.isLoading = true
+                 let regionKey = self.getRegionKey(for: region)
+                 
+                 // 检查缓存
+                 if let places = try await self.getCachedPlaces(for: regionKey) {
+                     await self.updateVisiblePlaces(places)
+                     return
+                 }
+                 
+                 // 加载新数据
+                 let newPlaces = try await self.fetchPlacesFromServer(in: region)
+                 try await self.cachePlaces(newPlaces, for: regionKey)
+                 await self.updateVisiblePlaces(newPlaces)
+                 
+             } catch {
+                 await self.handleError(error)
+             }
+             
+             self.isLoading = false
+         }
+         
+         let regionKey = getRegionKey(for: region)
+         loadingTasks[regionKey] = task
+     }
+    private func getCachedPlaces(for key: String) async throws -> [Place]? {
+          return await withCheckedContinuation { continuation in
+              queue.async { [weak self] in
+                  guard let self = self,
+                        self.loadedRegions.contains(key),
+                        let places = self.cache.object(forKey: key as NSString) as? [Place] else {
+                      continuation.resume(returning: nil)
+                      return
+                  }
+                  continuation.resume(returning: places)
+              }
+          }
+      }
+    private func cachePlaces(_ places: [Place], for key: String) async throws {
+            await withCheckedContinuation { continuation in
+                queue.async { [weak self] in
+                    self?.cache.setObject(places as NSArray, forKey: key as NSString)
+                    self?.loadedRegions.insert(key)
+                    continuation.resume()
+                }
+            }
+        }
+    @MainActor
+      private func updateVisiblePlaces(_ places: [Place]) {
+          visiblePlaces = places
+      }
+      
+      @MainActor
+      private func handleError(_ error: Error) {
+          self.error = error
+      }
+    // 清理不可见区域的数据
+    func cleanupInvisibleRegions(currentRegion: MKCoordinateRegion) {
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            
+            let currentRegionKey = self.getRegionKey(for: currentRegion)
+            let regionsToRemove = self.loadedRegions.filter { regionKey in
+                // 检查该区域是否与当前可见区域重叠
+                !self.isRegionOverlapping(regionKey: regionKey, with: currentRegion)
+            }
+            
+            // 移除不可见区域的数据
+            for regionKey in regionsToRemove {
+                self.loadedRegions.remove(regionKey)
+                self.cache.removeObject(forKey: regionKey as NSString)
+            }
+        }
+    }
+    
+    // 生成区域的唯一标识符
+    private func getRegionKey(for region: MKCoordinateRegion) -> String {
+        // 将区域划分为网格，每个网格大小为0.01经纬度
+        let latGrid = Int(region.center.latitude * 100)
+        let lonGrid = Int(region.center.longitude * 100)
+        return "\(latGrid):\(lonGrid)"
+    }
+    
+    // 检查两个区域是否重叠
+    private func isRegionOverlapping(regionKey: String, with currentRegion: MKCoordinateRegion) -> Bool {
+        let components = regionKey.split(separator: ":")
+        guard components.count == 2,
+              let latGrid = Int(components[0]),
+              let lonGrid = Int(components[1]) else {
+            return false
+        }
+        
+        let regionLat = Double(latGrid) / 100.0
+        let regionLon = Double(lonGrid) / 100.0
+        
+        let currentLatMin = currentRegion.center.latitude - currentRegion.span.latitudeDelta/2
+        let currentLatMax = currentRegion.center.latitude + currentRegion.span.latitudeDelta/2
+        let currentLonMin = currentRegion.center.longitude - currentRegion.span.longitudeDelta/2
+        let currentLonMax = currentRegion.center.longitude + currentRegion.span.longitudeDelta/2
+        
+        return regionLat >= currentLatMin && regionLat <= currentLatMax &&
+               regionLon >= currentLonMin && regionLon <= currentLonMax
+    }
+    private let testDataSets: [String: [Place]] = {
+            var dataSets: [String: [Place]] = [:]
+            
+            // 东京站附近的景点
+            let tokyoStationSpots = [
+                Place(name: "东京站", latitude: 35.681236, longitude: 139.767125, sponsored: true),
+                Place(name: "丸之内大楼", latitude: 35.680959, longitude: 139.766424),
+                Place(name: "KITTE", latitude: 35.679887, longitude: 139.764699),
+                Place(name: "皇居", latitude: 35.685175, longitude: 139.752799, sponsored: true),
+                Place(name: "东京国际论坛", latitude: 35.678795, longitude: 139.763328),
+                Place(name: "大手町", latitude: 35.686274, longitude: 139.766207)
+            ]
+            dataSets["tokyo_station"] = tokyoStationSpots
+            
+            // 涉谷区域的景点
+            let shibuyaSpots = [
+                Place(name: "涉谷十字路口", latitude: 35.659494, longitude: 139.700292, sponsored: true),
+                Place(name: "忠犬八公像", latitude: 35.659039, longitude: 139.700256),
+                Place(name: "涉谷109", latitude: 35.659055, longitude: 139.703581),
+                Place(name: "代代木公园", latitude: 35.671736, longitude: 139.695444),
+                Place(name: "明治神宫", latitude: 35.676466, longitude: 139.699501, sponsored: true)
+            ]
+            dataSets["shibuya"] = shibuyaSpots
+            
+            // 浅草区域的景点
+            let asakusaSpots = [
+                Place(name: "浅草寺", latitude: 35.714839, longitude: 139.796649, sponsored: true),
+                Place(name: "雷门", latitude: 35.711438, longitude: 139.796669),
+                Place(name: "仲见世商店街", latitude: 35.712074, longitude: 139.796444),
+                Place(name: "隅田公园", latitude: 35.714674, longitude: 139.801422),
+                Place(name: "东京晴空塔", latitude: 35.710063, longitude: 139.810700, sponsored: true)
+            ]
+            dataSets["asakusa"] = asakusaSpots
+            
+            return dataSets
+        }()
+    // 模拟从服务器获取数据
+//    private func fetchPlacesFromServer(in region: MKCoordinateRegion) -> [Place] {
+//        // 这里应该是实际的API调用，现在用模拟数据
+//        var places: [Place] = []
+//        let latDelta = region.span.latitudeDelta
+//        let lonDelta = region.span.longitudeDelta
+//        
+//        // 在可见区域内创建一些测试数据
+//        for _ in 0..<10 {
+//            let randomLat = region.center.latitude + Double.random(in: -latDelta/2...latDelta/2)
+//            let randomLon = region.center.longitude + Double.random(in: -lonDelta/2...lonDelta/2)
+//            let place = Place(
+//                name: "Place \(Int.random(in: 1...1000))",
+//                latitude: randomLat,
+//                longitude: randomLon
+//            )
+//            places.append(place)
+//        }
+//        
+//        return places
+//    }
+    private func fetchPlacesFromServer(in region: MKCoordinateRegion) -> [Place] {
+            // 根据区域返回相应的测试数据
+            var nearbyPlaces: [Place] = []
+            
+            // 检查请求的区域是否与预设的测试数据区域重叠
+            for (_, places) in testDataSets {
+                for place in places {
+                    // 检查地点是否在请求的区域内
+                    if isCoordinate(place.coordinate, inRegion: region) {
+                        nearbyPlaces.append(place)
+                    }
+                }
+            }
+            
+//            // 如果没有找到预设数据，生成一些随机数据
+//            if nearbyPlaces.isEmpty {
+//                let latDelta = region.span.latitudeDelta
+//                let lonDelta = region.span.longitudeDelta
+//                
+//                // 在可见区域内创建一些随机测试数据
+//                for i in 0..<5 {
+//                    let randomLat = region.center.latitude + Double.random(in: -latDelta/2...latDelta/2)
+//                    let randomLon = region.center.longitude + Double.random(in: -lonDelta/2...lonDelta/2)
+//                    let isSponsored = i % 5 == 0  // 每5个点中有1个是sponsored
+//                    let place = Place(
+//                        name: "测试地点 \(Int.random(in: 1...1000))",
+//                        latitude: randomLat,
+//                        longitude: randomLon,
+//                        sponsored: isSponsored
+//                    )
+//                    nearbyPlaces.append(place)
+//                }
+//            }
+            
+            return nearbyPlaces
+        }
+    private func isCoordinate(_ coordinate: CLLocationCoordinate2D, inRegion region: MKCoordinateRegion) -> Bool {
+           let latDelta = region.span.latitudeDelta / 2.0
+           let lonDelta = region.span.longitudeDelta / 2.0
+           
+           let minLat = region.center.latitude - latDelta
+           let maxLat = region.center.latitude + latDelta
+           let minLon = region.center.longitude - lonDelta
+           let maxLon = region.center.longitude + lonDelta
+           
+           return (coordinate.latitude >= minLat &&
+                   coordinate.latitude <= maxLat &&
+                   coordinate.longitude >= minLon &&
+                   coordinate.longitude <= maxLon)
+       }
+}
+
+// 在 MapDataManager 中添加优化方法
+extension MapDataManager {
+    // 优先加载特定区域的数据
+    func prioritizeRegion(_ region: MKCoordinateRegion) {
+        queue.async { [weak self] in
+            // 立即加载该区域的数据
+            self?.loadPlaces(in: region)
+            
+            // 可以在这里实现预加载逻辑
+            // 例如，加载周围区域的数据
+            self?.preloadSurroundingRegions(around: region)
+        }
+    }
+    
+    // 预加载周围区域的数据
+    private func preloadSurroundingRegions(around region: MKCoordinateRegion) {
+        // 计算周围8个区域
+        let latDelta = region.span.latitudeDelta
+        let lonDelta = region.span.longitudeDelta
+        
+        for latOffset in [-1, 0, 1] {
+            for lonOffset in [-1, 0, 1] {
+                if latOffset == 0 && lonOffset == 0 { continue }
+                
+                let newCenter = CLLocationCoordinate2D(
+                    latitude: region.center.latitude + Double(latOffset) * latDelta,
+                    longitude: region.center.longitude + Double(lonOffset) * lonDelta
+                )
+                
+                let surroundingRegion = MKCoordinateRegion(
+                    center: newCenter,
+                    span: region.span
+                )
+                
+                // 低优先级加载周围区域
+                loadPlaces(in: surroundingRegion)
+            }
+        }
+    }
+}
+
+
+
 
 // 自定义的 MapView 使用 MKMapView
 struct ClusterMapView: UIViewRepresentable {
-    let places: [Place]
+    //let places: [Place]
+    @StateObject private var dataManager = MapDataManager()
     @Binding var showBottomSheet: Bool
     @Binding var selectedPlaceNames: [String]
     
-    func makeUIView(context: Context) -> MKMapView {
-        let mapView = MKMapView()
-        mapView.delegate = context.coordinator
-        mapView.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "InterestingPlace")
-        mapView.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "cluster")
+    class Coordinator: NSObject, MKMapViewDelegate {
+        //        @Binding var showBottomSheet: Bool
+        //        @Binding var selectedPlaceNames: [String]
         
-        // 启用聚合
-        mapView.isZoomEnabled = true
-        mapView.isScrollEnabled = true
-        mapView.showsUserLocation = true
-       
-        mapView.showsScale = true
-        mapView.showsCompass = true
-        mapView.showsTraffic = false
-        mapView.showsBuildings = false
-       /* mapView.showsPointsOfInterest = false */ // 显示兴趣点
-        // 设置地图初始区域
-        let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 35.738361, longitude: 139.848861),
-            span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
-        )
-        mapView.setRegion(region, animated: false)
-        // 添加标注
-        mapView.addAnnotations(places)
+        var parent: ClusterMapView
+        var lastUpdateTime: Date = Date()
+        let updateThrottle: TimeInterval = 0.5 // 限制更新频率
         
-        return mapView
-    }
-    
-    func updateUIView(_ uiView: MKMapView, context: Context) {
-        
-    }
-    
-    func makeCoordinator() -> MapCoordinator {
-        return MapCoordinator(showBottomSheet: $showBottomSheet, selectedPlaceNames: $selectedPlaceNames)
-    }
-    
-    // 自定义 MapCoordinator 处理聚合
-    class MapCoordinator: NSObject, MKMapViewDelegate {
-        @Binding var showBottomSheet: Bool
-        @Binding var selectedPlaceNames: [String]
-        
-        init(showBottomSheet: Binding<Bool>, selectedPlaceNames: Binding<[String]>) {
-            _showBottomSheet = showBottomSheet
-            _selectedPlaceNames = selectedPlaceNames
+        init(parent: ClusterMapView) {
+            self.parent = parent
         }
+        
+        //        init(showBottomSheet: Binding<Bool>, selectedPlaceNames: Binding<[String]>) {
+        //            _showBottomSheet = showBottomSheet
+        //            _selectedPlaceNames = selectedPlaceNames
+        //        }
+        func mapView(_ mapView: MKMapView, regionDidChangeAnimated animated: Bool) {
+            let currentTime = Date()
+            guard currentTime.timeIntervalSince(lastUpdateTime) >= updateThrottle else { return }
+            
+            lastUpdateTime = currentTime
+            
+            let visibleRegion = mapView.region
+            
+            // 直接使用 dataManager
+            self.parent.dataManager.loadPlaces(in: visibleRegion)
+            self.parent.dataManager.cleanupInvisibleRegions(currentRegion: visibleRegion)
+            
+            // 更新地图上的标注
+            let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
+            mapView.removeAnnotations(currentAnnotations)
+            mapView.addAnnotations(self.parent.dataManager.visiblePlaces)
+        }
+        
         
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
             switch annotation {
             case let cluster as MKClusterAnnotation:
                 let annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: "cluster") as? MKMarkerAnnotationView ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: "cluster")
                 annotationView.markerTintColor = UIColor(displayP3Red: 0.082, green: 0.518, blue: 0.263, alpha: 1.0)
+                annotationView.canShowCallout = true
                 
-                // 查找 sponsored 地点并优先显示其名称
+                annotationView.isEnabled = true
+                annotationView.isDraggable = false
+                
+                var foundSponsored = false
                 for clusterAnnotation in cluster.memberAnnotations {
                     if let place = clusterAnnotation as? Place, place.sponsored {
                         cluster.title = place.name
+                        foundSponsored = true
                         break
                     }
+                }
+                if !foundSponsored {
+                    cluster.title = "\(cluster.memberAnnotations.count) 个地点"
                 }
                 annotationView.titleVisibility = .visible
                 return annotationView
@@ -123,7 +406,10 @@ struct ClusterMapView: UIViewRepresentable {
                 annotationView.clusteringIdentifier = "cluster"
                 annotationView.markerTintColor = UIColor(displayP3Red: 0.082, green: 0.518, blue: 0.263, alpha: 1.0)
                 annotationView.titleVisibility = .visible
-                annotationView.detailCalloutAccessoryView = UIImage(named: placeAnnotation.image).map(UIImageView.init)
+                
+                annotationView.isEnabled = true
+                annotationView.isDraggable = false
+                
                 return annotationView
                 
             default:
@@ -132,65 +418,158 @@ struct ClusterMapView: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let cluster = view.annotation as? MKClusterAnnotation {
-                var placeNames: [String] = []
-                for member in cluster.memberAnnotations {
-                    if let place = member as? Place {
-                        placeNames.append(place.name)
+            withAnimation {
+                self.parent.showBottomSheet = true
+                if let cluster = view.annotation as? MKClusterAnnotation {
+                    var sponsoredPlaces: [String] = []
+                    var normalPlaces: [String] = []
+                    
+                    // 将地点分类
+                    for member in cluster.memberAnnotations {
+                        if let place = member as? Place {
+                            if place.sponsored {
+                                sponsoredPlaces.append(place.name)
+                            } else {
+                                normalPlaces.append(place.name)
+                            }
+                        }
+                    }
+                    
+                    DispatchQueue.main.async {
+                        // 合并数组，赞助地点在前
+                        self.parent.selectedPlaceNames = sponsoredPlaces + normalPlaces
+                        self.parent.showBottomSheet = true
+                        
+                        let region = MKCoordinateRegion(
+                            center: cluster.coordinate,
+                            span: MKCoordinateSpan(
+                                latitudeDelta: 0.02,
+                                longitudeDelta: 0.02
+                            )
+                        )
+                        self.parent.dataManager.prioritizeRegion(region)
+                    }
+                } else if let place = view.annotation as? Place {
+                    DispatchQueue.main.async {
+                        self.parent.selectedPlaceNames = [place.name]
+                        self.parent.showBottomSheet = true
+                        
+                        let region = MKCoordinateRegion(
+                            center: place.coordinate,
+                            span: MKCoordinateSpan(
+                                latitudeDelta: 0.01,
+                                longitudeDelta: 0.01
+                            )
+                        )
+                        self.parent.dataManager.prioritizeRegion(region)
                     }
                 }
-                
-                // 更新状态并显示 BottomMenuView
-                selectedPlaceNames = placeNames
-                showBottomSheet = true
             }
-            // 检查是否是普通的 Place 标注
-               else if let place = view.annotation as? Place {
-                   // 更新状态并显示 BottomMenuView，placeNames 只包含一个地方
-                   selectedPlaceNames = [place.name]
-                   showBottomSheet = true
-               }
+            
+            mapView.deselectAnnotation(view.annotation, animated: true)
         }
+    }
+    
+//    func makeCoordinator() -> Coordinator {
+//        Coordinator(showBottomSheet: $showBottomSheet, selectedPlaceNames: $selectedPlaceNames)
+//    }
+    func makeCoordinator() -> Coordinator {
+            Coordinator(parent: self)
+        }
+    func makeUIView(context: Context) -> MKMapView {
+        let mapView = MKMapView()
+        mapView.delegate = context.coordinator
+        mapView.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "InterestingPlace")
+        mapView.register(MKMarkerAnnotationView.self, forAnnotationViewWithReuseIdentifier: "cluster")
+        
+        mapView.isZoomEnabled = true
+        mapView.isScrollEnabled = true
+        mapView.showsUserLocation = true
+        mapView.showsScale = true
+        mapView.showsCompass = true
+        mapView.showsTraffic = false
+        mapView.showsBuildings = false
+        
+        // 隐藏地图上的兴趣点（POI）
+        mapView.pointOfInterestFilter = MKPointOfInterestFilter.excludingAll
+        
+        let region = MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
+                      span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+        )
+        mapView.setRegion(region, animated: false)
+        //mapView.addAnnotations(places)
+        
+        return mapView
+    }
+    
+    func updateUIView(_ uiView: MKMapView, context: Context) {
+        // 保持为空
     }
 }
 
-
 struct NearbyView: View {
-    // 创建聚合的测试数据
-    let places: [Place] = {
-        var places: [Place] = []
-        let baseLatitude = 35.738361  // 京成立石地铁站的纬度
-        let baseLongitude = 139.848861  // 京成立石地铁站的经度
-        
-        // 创建多个地点数据
-        for i in 0..<10 {
-            for j in 0..<10 {
-                let latitude = baseLatitude + Double(i) * 0.0005
-                let longitude = baseLongitude + Double(j) * 0.0005
-                places.append(Place(
-                    name: "Location \(i * 10 + j)",
-                    latitude: latitude,
-                    longitude: longitude
-                ))
-            }
-        }
-        return places
-    }()
+    // 创建聚合和分散的测试数据
+//    let places: [Place] = {
+//        var places: [Place] = []
+//        let baseLatitude = 35.738361  // 京成立石地铁站的纬度
+//        let baseLongitude = 139.848861  // 京成立石地铁站的经度
+//        // 创建多个聚合的地点数据
+//        for i in 0..<10 {
+//            for j in 0..<10 {
+//                let latitude = baseLatitude + Double(i) * 0.0005
+//                let longitude = baseLongitude + Double(j) * 0.0005
+//                places.append(Place(
+//                    name: "Location \(i * 10 + j)",
+//                    latitude: latitude,
+//                    longitude: longitude
+//                ))
+//            }
+//        }
+//        
+//        // 添加一些分散的地点数据
+//        let dispersedLocations = [
+//            (name: "Dispersed Place 1", latitude: 35.748361, longitude: 139.858861),
+//            (name: "Dispersed Place 2", latitude: 35.728361, longitude: 139.838861),
+//            (name: "Dispersed Place 3", latitude: 35.758361, longitude: 139.828861),
+//            (name: "Dispersed Place 4", latitude: 35.718361, longitude: 139.868861),
+//            (name: "Dispersed Place 5", latitude: 35.768361, longitude: 139.818861)
+//        ]
+//        
+//        for location in dispersedLocations {
+//            places.append(Place(
+//                name: location.name,
+//                latitude: location.latitude,
+//                longitude: location.longitude
+//            ))
+//        }
+//        
+//        return places
+//    }()
+    @StateObject private var dataManager = MapDataManager()
+     @State private var showBottomSheet = false
+     @State private var selectedPlaceNames: [String] = []
+     @State private var search: String = ""
+     @State private var showFilterView = false
     
-    @State private var position: MapCameraPosition = .automatic
-    @State private var searchResult: [MKMapItem] = []
-    @State private var visibleRegion: MKCoordinateRegion?
     
-    // 用于显示 BottomMenuView 的状态和选中的 MKClusterAnnotation 数据
-    @State private var showBottomSheet = false
-    @State private var selectedPlaceNames: [String] = []
-    @State private var search: String = ""
-    @State private var showFilterView = false  // 控制弹出视图显示
+//    @State private var position: MapCameraPosition = .automatic
+//    @State private var searchResult: [MKMapItem] = []
+//    @State private var visibleRegion: MKCoordinateRegion?
+//    
+//    // 用于显示 BottomMenuView 的状态和选中的 MKClusterAnnotation 数据
+//    @State private var showBottomSheet = false
+//    @State private var selectedPlaceNames: [String] = []
+//    @State private var search: String = ""
+//    @State private var showFilterView = false  // 控制弹出视图显示
     var body: some View {
         ZStack {
             // 地图放在底部，只忽略顶部和左右的安全区域
-            ClusterMapView(places: places, showBottomSheet: $showBottomSheet, selectedPlaceNames: $selectedPlaceNames)
-                .edgesIgnoringSafeArea([.top, .leading, .trailing])
+            ClusterMapView(
+                           showBottomSheet: $showBottomSheet,
+                           selectedPlaceNames: $selectedPlaceNames
+                       )
+                       .edgesIgnoringSafeArea([.top, .leading, .trailing])
             
             // 按钮内容放在地图之上，顶部显示
             VStack {
@@ -292,7 +671,7 @@ struct NearbyView_Previews: PreviewProvider {
 
 struct BottomMenuView: View {
     var placeNames: [String] // 用于接收 MKClusterAnnotation 的名称列表
-
+    @State private var showSponsored: Bool = true  // 控制是否显示赞助内容的开关
     var body: some View {
         VStack {
             // 显示选中的地点数量
@@ -304,14 +683,15 @@ struct BottomMenuView: View {
             // 使用 ForEach 迭代 placeNames 列表，并将每个名称显示为卡片标题
             ScrollView {
                 ForEach(placeNames, id: \.self) { name in
-                    RecommendedRecipeCardView(
-                        image: UIImage(named: "fresh_recipe_1") ?? UIImage(), // 可根据实际需求调整图片
-                        title: name, // 动态将 placeNames 的值作为卡片的标题
-                        onTap: {},
-                        busynessLevel: Color.red // 可根据需求调整
-                    )
-                    .padding(.vertical, 5)
-                }
+                                    RecommendedRecipeCardView(
+                                        image: UIImage(named: "fresh_recipe_1") ?? UIImage(),
+                                        title: name,
+                                        onTap: {},
+                                        // 如果是前面的赞助地点，使用不同的颜色或样式
+                                        busynessLevel: name == placeNames.first ? Color.yellow : Color.red
+                                    )
+                                    .padding(.vertical, 5)
+                                }
             }
         }
         .padding()
