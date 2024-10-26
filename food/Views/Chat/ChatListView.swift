@@ -1,41 +1,83 @@
-//
-//  ChatListView.swift
-//  food
-//
-//  Created by toyousoft on 2024/10/09.
-//
 import SwiftUI
 
 struct ChatListView: View {
     let chatRooms: [ChatRoom]
-    @Binding var selectedChatRoom: ChatRoom? // Bind the selected chat room for navigation
-    @Binding var isNavigating: Bool // Control when navigation should happen
+    @Binding var selectedChatRoom: ChatRoom?
+    @Binding var isNavigating: Bool
+    
+    // 提取常用值为私有常量，避免重复创建
+    private let buttonCornerRadius: CGFloat = 10
+    private let shadowRadius: CGFloat = 3
+    private let verticalPadding: CGFloat = 5
     
     var body: some View {
         List {
             ForEach(chatRooms) { chatRoom in
-                // Use a Button instead of NavigationLink to customize the behavior
-                Button(action: {
+                ChatRoomCell(
+                    chatRoom: chatRoom,
+                    onSelect: {
+                        withAnimation {
                             selectedChatRoom = chatRoom
-                            isNavigating = true // Trigger navigation after the animation completes
-                        
-                }) {
-                    VStack(spacing: 0) {
-                        // Chat room information part
-                        ChatRoomRow(chatRoom: chatRoom)
-                            .background(Color.white)
-                            .cornerRadius(10)
-                            .shadow(color: .gray.opacity(0.3), radius: 3, x: 0, y: 3)
-                            .padding(.horizontal)
-                            .padding(.vertical, 5)
+                            isNavigating = true
+                        }
                     }
-                }
-                .buttonStyle(PlainButtonStyle()) // Remove arrow and tap effect
-                .listRowSeparator(.hidden) // Hide separators
-                .listRowInsets(EdgeInsets()) // Remove extra padding
+                )
+                .listRowStyle()
             }
         }
         .listStyle(PlainListStyle())
-        .background(Color(.white)) // Set list background color
+        .background(Color.white)
+    }
+}
+
+// MARK: - Supporting Views
+private struct ChatRoomCell: View {
+    let chatRoom: ChatRoom
+    let onSelect: () -> Void
+    
+    var body: some View {
+        Button(action: onSelect) {
+            ChatRoomRow(chatRoom: chatRoom)
+                .modifier(ChatRoomStyle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Modifiers
+private struct ChatRoomStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(Color.white)
+            .cornerRadius(10)
+            .shadow(
+                color: .gray.opacity(0.3),
+                radius: 3,
+                x: 0,
+                y: 3
+            )
+            .padding(.horizontal)
+            .padding(.vertical, 5)
+    }
+}
+
+private extension View {
+    func listRowStyle() -> some View {
+        self
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets())
+    }
+}
+
+// MARK: - Preview
+struct ChatListView_Previews: PreviewProvider {
+    static var previews: some View {
+        ChatListView(
+            chatRooms: [
+                ChatRoom(name: "Test Chat", lastMessage: "Hello", time: "12:00", avatar: "sample1", isGroupChat: false)
+            ],
+            selectedChatRoom: .constant(nil),
+            isNavigating: .constant(false)
+        )
     }
 }

@@ -113,21 +113,6 @@ func TabButton(title: String, image: String) -> some View {
     }
 }
 
-// Profile 页面
-//struct ProfilesView: View {
-//    var body: some View {
-//        VStack {
-//            Text("Profile Page")
-//                .font(.largeTitle)
-//                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-//                .background(Color.white)
-//                .ignoresSafeArea() // 确保忽略安全区域，填充整个屏幕
-//        }
-//        .navigationTitle("Profile")
-//        .navigationBarTitleDisplayMode(.inline)
-//        .ignoresSafeArea() // 确保忽略安全区域，填充整个屏幕
-//    }
-//}
 
 // Security 页面
 struct SecurityView: View {

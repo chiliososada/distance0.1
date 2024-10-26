@@ -1,153 +1,247 @@
 import SwiftUI
 
-struct CreateAccountView: View {
-    @Environment(\.presentationMode) var presentationMode // 用于后退功能
-    @State private var name: String = ""
-    @State var emailOrPhone: String // 通过初始化器传递邮箱或手机号
-    @State private var selectedGender = "男" // 默认性别
-    let genders = ["男", "女", "其他"] // 性别选项
+// MARK: - Constants
+private enum Layout {
+    static let spacing: CGFloat = 30
+    static let titleSize: CGFloat = 28
+    static let inputSpacing: CGFloat = 5
+    static let horizontalPadding: CGFloat = 20
+    static let cornerRadius: CGFloat = 25
+    static let keyboardOffset: CGFloat = 20
+}
+
+// MARK: - View Model
+final class CreateAccountViewModel: ObservableObject {
+    @Published var formData = FormData()
+    @Published var keyboardHeight: CGFloat = 0
+    @Published var navigateToVerification = false
     
-    @State private var password: String = ""
-    @State private var confirmPassword: String = ""
-    @State private var navigateToCreateEmailCode = false // 控制跳转
-    @State private var keyboardHeight: CGFloat = 0
-    @State private var isPasswordVisible: Bool = false // 控制密码是否可见
-    @FocusState private var focusedField: Field? // 用于管理焦点状态
-
-    // 定义表单中的字段
-    enum Field: Hashable {
-        case name
-        case emailOrPhone
-        case password
-        case confirmPassword
+    struct FormData {
+        var name = ""
+        var emailOrPhone = ""
+        var selectedGender = "男"
+        var password = ""
+        var confirmPassword = ""
+        var isPasswordVisible = false
     }
-
+    
+    private var keyboardObservers: [NSObjectProtocol] = []
+    let genders = ["男", "女", "其他"]
+    
     init(emailOrPhone: String) {
-        self._emailOrPhone = State(initialValue: emailOrPhone)
+        formData.emailOrPhone = emailOrPhone
+        setupKeyboardObservers()
     }
+    
+    deinit {
+        removeKeyboardObservers()
+    }
+    
+    private func setupKeyboardObservers() {
+        let showObserver = NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillShowNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            withAnimation {
+                self?.keyboardHeight = keyboardFrame.height - Layout.keyboardOffset
+            }
+        }
+        
+        let hideObserver = NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillHideNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            withAnimation {
+                self?.keyboardHeight = 0
+            }
+        }
+        
+        keyboardObservers = [showObserver, hideObserver]
+    }
+    
+    private func removeKeyboardObservers() {
+        keyboardObservers.forEach {
+            NotificationCenter.default.removeObserver($0)
+        }
+        keyboardObservers.removeAll()
+    }
+}
 
+// MARK: - Main View
+struct CreateAccountView: View {
+    @StateObject private var viewModel: CreateAccountViewModel
+    @Environment(\.presentationMode) var presentationMode
+    @FocusState private var focusedField: Field?
+    
+    enum Field: Hashable {
+        case name, emailOrPhone, password, confirmPassword
+    }
+    
+    init(emailOrPhone: String) {
+        _viewModel = StateObject(wrappedValue: CreateAccountViewModel(emailOrPhone: emailOrPhone))
+    }
+    
     var body: some View {
         ZStack {
             ScrollView {
-                VStack(spacing: 30) {
-                    // 标题
-                    HStack {
-                        Text("创建你的账号")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.black)
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 30)
-
-                    // 名字输入框
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("名字")
-                            .font(.headline)
-                        InputField(placeholder: "名字", text: $name, systemImage: name.isEmpty ? "" : "checkmark.circle.fill", isSecure: false)
-                            .focused($focusedField, equals: .name)
-                            .submitLabel(.next)
-                            .onSubmit { focusedField = .emailOrPhone }
-                    }
-                    
-                    // 邮箱输入框
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("邮箱")
-                            .font(.headline)
-                        InputField(placeholder: "邮箱", text: $emailOrPhone, systemImage: "", isSecure: false)
-                            .focused($focusedField, equals: .emailOrPhone)
-                            .submitLabel(.next)
-                            .onSubmit { focusedField = .password }
-                    }
-                    
-                    // 性别选择器
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("性别")
-                            .font(.headline)
-                        HStack {
-                            Picker("性别", selection: $selectedGender) {
-                                ForEach(genders, id: \.self) { gender in
-                                    Text(gender).tag(gender)
-                                }
-                            }
-                            .pickerStyle(.segmented)
-                            .padding(.vertical, 12)
-                        }
-                        .padding(.horizontal)
-                        .overlay(Rectangle().frame(height: 1).foregroundColor(.gray.opacity(0.5)).padding(.horizontal, 10), alignment: .bottom)
-                    }
-                    
-                    // 密码输入框
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("密码")
-                            .font(.headline)
-                        PasswordInputField(placeholder: "密码", text: $password, isPasswordVisible: $isPasswordVisible)
-                            .focused($focusedField, equals: .password)
-                            .submitLabel(.next)
-                            .onSubmit { focusedField = .confirmPassword }
-                    }
-                    
-                    // 确认密码输入框
-                    VStack(alignment: .leading, spacing: 5) {
-                        Text("确认密码")
-                            .font(.headline)
-                        PasswordInputField(placeholder: "确认密码", text: $confirmPassword, isPasswordVisible: $isPasswordVisible)
-                            .focused($focusedField, equals: .confirmPassword)
-                            .submitLabel(.done)
-                    }
-                    
-                    Spacer()
+                LazyVStack(spacing: Layout.spacing) {
+                    titleSection
+                    formSection
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, Layout.horizontalPadding)
                 .background(Color.white)
-                .padding(.bottom, keyboardHeight)
+                .padding(.bottom, viewModel.keyboardHeight)
             }
             .ignoresSafeArea(.keyboard)
-            .onAppear {
-                NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { notification in
-                    if let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                        withAnimation {
-                            self.keyboardHeight = keyboardFrame.height - 20
-                        }
-                    }
-                }
-                NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { _ in
-                    withAnimation {
-                        self.keyboardHeight = 0
-                    }
-                }
+        }
+        .navigationBarItems(leading: backButton, trailing: nextButton)
+        .navigationBarBackButtonHidden(true)
+        .navigationDestination(
+            isPresented: $viewModel.navigateToVerification,
+            destination: VerificationView.init
+        )
+    }
+    
+    private var titleSection: some View {
+        HStack {
+            Text("创建你的账号")
+                .font(.system(size: Layout.titleSize, weight: .bold))
+                .foregroundColor(.black)
+            Spacer()
+        }
+        .padding(.top, Layout.spacing)
+    }
+    
+    private var formSection: some View {
+        VStack(spacing: Layout.spacing) {
+            FormField(title: "名字") {
+                InputField(
+                    placeholder: "名字",
+                    text: $viewModel.formData.name,
+                    systemImage: viewModel.formData.name.isEmpty ? "" : "checkmark.circle.fill",
+                    isSecure: false
+                )
+                .focused($focusedField, equals: .name)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .emailOrPhone }
+            }
+            
+            FormField(title: "邮箱") {
+                InputField(
+                    placeholder: "邮箱",
+                    text: $viewModel.formData.emailOrPhone,
+                    systemImage: "",
+                    isSecure: false
+                )
+                .focused($focusedField, equals: .emailOrPhone)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .password }
+            }
+            
+            GenderPicker(
+                selectedGender: $viewModel.formData.selectedGender,
+                genders: viewModel.genders
+            )
+            
+            FormField(title: "密码") {
+                PasswordInputField(
+                    placeholder: "密码",
+                    text: $viewModel.formData.password,
+                    isPasswordVisible: $viewModel.formData.isPasswordVisible
+                )
+                .focused($focusedField, equals: .password)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .confirmPassword }
+            }
+            
+            FormField(title: "确认密码") {
+                PasswordInputField(
+                    placeholder: "确认密码",
+                    text: $viewModel.formData.confirmPassword,
+                    isPasswordVisible: $viewModel.formData.isPasswordVisible
+                )
+                .focused($focusedField, equals: .confirmPassword)
+                .submitLabel(.done)
             }
         }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarItems(
-            leading: Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.black)
-            },
-            trailing: Button(action: {
-                navigateToCreateEmailCode = true
-            }) {
-                Text("下一步")
-                    .font(.system(size: 12, weight: .medium))
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-                    .foregroundColor(.white)
-                    .background(Color.black)
-                    .cornerRadius(25)
-            }
-        )
-        .navigationDestination(isPresented: $navigateToCreateEmailCode) {
-            VerificationView()  // 在这里处理跳转到新的页面
+    }
+    
+    private var backButton: some View {
+        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+            Image(systemName: "arrow.left")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.black)
+        }
+    }
+    
+    private var nextButton: some View {
+        Button(action: { viewModel.navigateToVerification = true }) {
+            Text("下一步")
+                .font(.system(size: 12, weight: .medium))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .foregroundColor(.white)
+                .background(Color.black)
+                .cornerRadius(Layout.cornerRadius)
         }
     }
 }
 
+// MARK: - Supporting Views
+private struct FormField: View {
+    let title: String
+    let content: () -> any View
+    
+    init(title: String, @ViewBuilder content: @escaping () -> any View) {
+        self.title = title
+        self.content = content
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Layout.inputSpacing) {
+            Text(title)
+                .font(.headline)
+            AnyView(content())
+        }
+    }
+}
+
+private struct GenderPicker: View {
+    @Binding var selectedGender: String
+    let genders: [String]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: Layout.inputSpacing) {
+            Text("性别")
+                .font(.headline)
+            
+            Picker("性别", selection: $selectedGender) {
+                ForEach(genders, id: \.self) { gender in
+                    Text(gender).tag(gender)
+                }
+            }
+            .pickerStyle(.segmented)
+            .padding(.vertical, 12)
+            .overlay(
+                Rectangle()
+                    .frame(height: 1)
+                    .foregroundColor(.gray.opacity(0.5))
+                    .padding(.horizontal, 10),
+                alignment: .bottom
+            )
+        }
+    }
+}
+
+// MARK: - Preview
 struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {
-        CreateAccountView(emailOrPhone: "example@example.com")
-            .environmentObject(TabBarManager()) // 注入环境对象
+        NavigationView {
+            CreateAccountView(emailOrPhone: "example@example.com")
+                .environmentObject(TabBarManager())
+        }
     }
 }

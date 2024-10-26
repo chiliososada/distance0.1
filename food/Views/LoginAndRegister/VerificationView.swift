@@ -1,106 +1,107 @@
 import SwiftUI
 
+// 验证码管理状态
+final class VerificationState: ObservableObject {
+    @Published var code: [String] = Array(repeating: "", count: 6)
+    
+    var isComplete: Bool {
+        code.joined().count == 6
+    }
+    
+    func shouldAdvanceToNextField(at index: Int) -> Bool {
+        code[index].count == 1 && index < 5
+    }
+}
+
 struct VerificationView: View {
-    @Environment(\.presentationMode) var presentationMode // 用于后退功能
-    @State private var code: [String] = Array(repeating: "", count: 6) // 验证码，每个输入框一个字符
-    @FocusState private var focusedField: Int? // 用于跟踪当前聚焦的输入框
-    @State private var navigateToNextScreen = false // 控制跳转
+    @Environment(\.presentationMode) var presentationMode
+    @StateObject private var verificationState = VerificationState()
+    @FocusState private var focusedField: Int?
     @EnvironmentObject var tabBarManager: TabBarManager
     
+    let emailPlaceholder: String = "chiliososada@gmail.com"
+    
     var body: some View {
-        VStack {
-            // 标题
-            HStack {
-                Text("我们向你发送了一个代码")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.black)
-                
-                Spacer()
-            }
-            .padding(.horizontal)
-            .padding(.top, 30) // 增加顶部空间
+        VStack(spacing: 30) {
+            headerSection
+            codeInputSection
+            Spacer()
+            submitButton
+        }
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: backButton)
+    }
+    
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("我们向你发送了一个代码")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.black)
             
             Text("在下面输入以验证\(emailPlaceholder)")
                 .font(.system(size: 16))
                 .foregroundColor(.gray)
-                .padding(.top, 8)
-                .padding(.horizontal)
-
-            // 验证码输入框
-            HStack(spacing: 10) {
-                ForEach(0..<6, id: \.self) { index in
-                    CodeInputBox(text: $code[index])
-                        .focused($focusedField, equals: index) // 聚焦当前输入框
-                        .onChange(of: code[index]) {
-                            if code[index].count == 1 { // 如果输入了一位字符，自动切换到下一个框
-                                if index < 5 { // 防止超出最后一个输入框
-                                    focusedField = index + 1
-                                }
-                            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal)
+        .padding(.top, 30)
+    }
+    
+    private var codeInputSection: some View {
+        HStack(spacing: 10) {
+            ForEach(0..<6, id: \.self) { index in
+                CodeInputBox(text: $verificationState.code[index])
+                    .focused($focusedField, equals: index)
+                    .onChange(of: verificationState.code[index]) {
+                        if verificationState.shouldAdvanceToNextField(at: index) {
+                            focusedField = index + 1
                         }
-                }
+                    }
             }
-            .padding(.top, 30)
-
-            Spacer()
-
-            // "下一步" 按钮
-            Button(action: {
-                // 验证码已输入完毕时，执行下一步
-                if isCodeComplete {
-                    goToHomeView()
-                }
-            }) {
-                Text("完成")
-                    .font(.system(size: 18, weight: .medium))
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .foregroundColor(.white)
-                    .background(isCodeComplete ? Color.black : Color.gray)
-                    .cornerRadius(25)
-            }
-            .disabled(!isCodeComplete) // 只有当验证码输入完毕时才启用
-            .padding(.horizontal)
-            .padding(.bottom, 10)
         }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarItems(
-            leading: Button(action: {
-                presentationMode.wrappedValue.dismiss() // 后退功能
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.black)
-            }
+    }
+    
+    private var submitButton: some View {
+        Button(action: goToHomeView) {
+            Text("完成")
+                .font(.system(size: 18, weight: .medium))
+                .frame(maxWidth: .infinity)
+                .padding()
+                .foregroundColor(.white)
+                .background(verificationState.isComplete ? Color.black : Color.gray)
+                .cornerRadius(25)
+        }
+        .disabled(!verificationState.isComplete)
+        .padding(.horizontal)
+        .padding(.bottom, 10)
+    }
+    
+    private var backButton: some View {
+        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+            Image(systemName: "arrow.left")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.black)
+        }
+    }
+    
+    private func goToHomeView() {
+        guard verificationState.isComplete,
+              let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let window = windowScene.windows.first else { return }
+        
+        window.rootViewController = UIHostingController(
+            rootView: HomeView().environmentObject(tabBarManager)
         )
-    }
-
-    // 示例邮箱占位符
-    var emailPlaceholder: String {
-        return "chiliososada@gmail.com"
-    }
-
-    // 计算验证码是否输入完整
-    var isCodeComplete: Bool {
-        return code.joined().count == 6
-    }
-
-    // 跳转到 HomeView
-    func goToHomeView() {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
-            if let window = windowScene.windows.first {
-                window.rootViewController = UIHostingController(rootView: HomeView().environmentObject(tabBarManager))
-                window.makeKeyAndVisible()
-            }
-        }
+        window.makeKeyAndVisible()
     }
 }
 
+// MARK: - Previews
 struct VerificationView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             VerificationView()
-                .environmentObject(TabBarManager()) // 注入环境对象
+                .environmentObject(TabBarManager())
         }
     }
 }

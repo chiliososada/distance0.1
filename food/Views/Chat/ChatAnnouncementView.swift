@@ -1,38 +1,139 @@
 import SwiftUI
 
-// 顶部公告视图
-struct AnnouncementView: View {
-    var body: some View {
-        VStack(spacing: 4) { // 间距更小
-            Text("15:00")
-                .font(.system(size: 24, weight: .bold)) // 缩小字体
-                .foregroundColor(.black) // 主要文本改为黑色
-            
-            Text("Exclusive shirt for 15 minutes.")
-                .font(.subheadline) // 缩小次要文本
-                .foregroundColor(.black) // 灰色次要文本
-            
-            Text("www.Nike.com/AJPicard")
-                .font(.footnote) // 链接文本更小
-                .foregroundColor(.black)
-        }
-        .frame(maxWidth: .infinity) // 占满宽度
-        .padding(8) // 减少整体的 padding
-        .background(Color.white) // 半透明灰色背景
-        .cornerRadius(12) // 较小的圆角
-        .overlay( // 添加黑色外边框
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.black, lineWidth: 1) // 黑色边框，线宽1
-                )
-        .padding(.horizontal)
+// MARK: - View Model
+final class AnnouncementViewModel: ObservableObject {
+    @Published var announcement: Announcement
+    
+    struct Announcement {
+        let time: String
+        let title: String
+        let link: String
+        
+        static let sample = Announcement(
+            time: "15:00",
+            title: "Exclusive shirt for 15 minutes.",
+            link: "www.Nike.com/AJPicard"
+        )
+    }
+    
+    init(announcement: Announcement = .sample) {
+        self.announcement = announcement
     }
 }
 
-// 预览
+// MARK: - Constants
+private enum Layout {
+    static let spacing: CGFloat = 4
+    static let padding: CGFloat = 8
+    static let cornerRadius: CGFloat = 12
+    static let borderWidth: CGFloat = 1
+
+    static let colors = ColorScheme()
+    
+    struct ColorScheme {
+        let text = Color.black
+        let background = Color.white
+        let border = Color.black
+    }
+}
+
+// MARK: - Main View
+struct AnnouncementView: View {
+    @StateObject private var viewModel: AnnouncementViewModel
+    
+    init(announcement: AnnouncementViewModel.Announcement = .sample) {
+        _viewModel = StateObject(wrappedValue: AnnouncementViewModel(announcement: announcement))
+    }
+    
+    var body: some View {
+        contentView
+            .frame(maxWidth: .infinity)
+            .modifier(AnnouncementStyle())
+    }
+    
+    private var contentView: some View {
+        VStack(spacing: Layout.spacing) {
+            TimeView(time: viewModel.announcement.time)
+            AnnouncementTitleView(title: viewModel.announcement.title)
+            LinkView(link: viewModel.announcement.link)
+        }
+        .padding(Layout.padding)
+    }
+}
+
+// MARK: - Supporting Views
+private struct TimeView: View {
+    let time: String
+    
+    var body: some View {
+        Text(time)
+            .font(.system(size: 24, weight: .bold)) // 缩小字体
+            .foregroundColor(Layout.colors.text)
+    }
+}
+
+private struct AnnouncementTitleView: View {
+    let title: String
+    
+    var body: some View {
+        Text(title)
+            .font(.subheadline) // 缩小次要文本
+            .foregroundColor(Layout.colors.text)
+    }
+}
+
+private struct LinkView: View {
+    let link: String
+    
+    var body: some View {
+        Text(link)
+            .font(.footnote) // 链接文本更小
+            .foregroundColor(Layout.colors.text)
+    }
+}
+
+// MARK: - Style Modifier
+private struct AnnouncementStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(Layout.colors.background)
+            .cornerRadius(Layout.cornerRadius)
+            .overlay(
+                RoundedRectangle(cornerRadius: Layout.cornerRadius)
+                    .stroke(Layout.colors.border, lineWidth: Layout.borderWidth)
+            )
+            .padding(.horizontal)
+    }
+}
+
+// MARK: - Preview
 struct AnnouncementView_Previews: PreviewProvider {
     static var previews: some View {
-        AnnouncementView()
-            .previewLayout(.sizeThatFits) // 预览为适应内容的大小
-            .padding() // 给预览加一点 padding 以显示效果
+        Group {
+            // Light Mode Preview
+            AnnouncementView()
+                .previewLayout(.sizeThatFits)
+                .padding()
+                .previewDisplayName("Light Mode")
+            
+            // Dark Mode Preview
+            AnnouncementView()
+                .previewLayout(.sizeThatFits)
+                .padding()
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Dark Mode")
+            
+            // Custom Announcement Preview
+            AnnouncementView(
+                announcement: .init(
+                    time: "16:30",
+                    title: "Special Event Coming Soon",
+                    link: "www.example.com/event"
+                )
+            )
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .previewDisplayName("Custom Content")
+        }
     }
 }

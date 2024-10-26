@@ -1,94 +1,201 @@
 import SwiftUI
 
-struct PersonSettingsView: View {
-    @State private var isHiddenPhoneEnabled = false // 控制开关
-    @State private var cacheSize = "1.7M" // 假定缓存大小
-    @State private var appVersion = "1.2.8(171)" // 假定版本号
-    @Environment(\.presentationMode) var presentationMode // 用于后退功能
+// MARK: - 设置状态管理
+final class PersonSettingsState: ObservableObject {
+    @Published var cacheSize: String = "1.7M"
+    let appVersion: String = "1.2.8(171)"
+    
+    private let authManager: AuthManager
+    
+    init(authManager: AuthManager) {
+        self.authManager = authManager
+    }
+    
+    func clearCache() {
+        // 实现清除缓存的逻辑
+        cacheSize = "0M"
+    }
+    
+    func checkUpdate() {
+        // 实现检查更新的逻辑
+    }
+    
+    func logout() {
+        authManager.signOut()
+        navigateToLogin()
+    }
+    
+    func deleteAccount() {
+        // 删除账户的 API
+        authManager.signOut()
+        navigateToLogin()
+    }
+    
+    private func navigateToLogin() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController = UIHostingController(
+                rootView: HomeLoginView()
+                    .environmentObject(authManager)
+                    .environmentObject(TabBarManager())
+            )
+            window.makeKeyAndVisible()
+        }
+    }
+}
 
+// MARK: - 设置项组件
+struct PersonSettingRow<Content: View>: View {
+    let title: String
+    let titleColor: Color
+    let action: (() -> Void)?
+    let trailing: Content
+    
+    init(
+        title: String,
+        titleColor: Color = .primary,
+        action: (() -> Void)? = nil,
+        @ViewBuilder trailing: () -> Content
+    ) {
+        self.title = title
+        self.titleColor = titleColor
+        self.action = action
+        self.trailing = trailing()
+    }
+    
+    var body: some View {
+        if let action = action {
+            Button(action: action) {
+                rowContent
+            }
+        } else {
+            rowContent
+        }
+    }
+    
+    private var rowContent: some View {
+        HStack {
+            Text(title)
+                .foregroundColor(titleColor)
+            Spacer()
+            trailing
+        }
+        .padding(.vertical, 10)
+    }
+}
+
+// MARK: - 主视图
+struct PersonSettingsView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var authManager: AuthManager
+    @StateObject private var settingsState: PersonSettingsState
+    @State private var showLogoutConfirmation = false
+    @State private var showDeleteAccountConfirmation = false
+    
+    
+       init(authManager: AuthManager? = nil) {
+           // 使用传入的 authManager 或创建一个新的
+           let manager = authManager ?? AuthManager()
+           _settingsState = StateObject(wrappedValue: PersonSettingsState(authManager: manager))
+       }
+    
     var body: some View {
         VStack {
             List {
-                // 第二部分：修改密码、清除缓存、检查更新
-                Section {
-                    // 修改密码按钮，使用 NavigationLink 处理跳转
-                    NavigationLink(destination: PasswordChangeView()) {
-                        HStack {
-                            Text("修改密码")
-                                .foregroundColor(.primary)
-                          
-                        }
-                        .padding(.vertical, 10)
-                    }
-                    
-                    // 清除缓存
-                    HStack {
-                        Text("清除缓存")
-                        Spacer()
-                        Text(cacheSize) // 显示缓存大小
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.vertical, 10)
-                    
-                    // 检测更新
-                    HStack {
-                        Text("检测更新")
-                        Spacer()
-                        Text(appVersion) // 显示版本号
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.vertical, 10)
-                }
-                
-                // 第三部分：账户注销和退出
-                Section {
-                    // 注销账户
-                    Button(action: {
-                        // 注销账户的逻辑
-                    }) {
-                        Text("注销账户")
-                            .foregroundColor(.red)
-                    }
-                    .padding(.vertical, 10)
-                    
-                    // 退出
-                    Button(action: {
-                        // 处理“退出”的逻辑
-                    }) {
-                        HStack {
-                            Text("退出")
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 10)
-                    }
-                }
+                generalSettingsSection
+                accountSettingsSection
             }
-            .listStyle(.plain) // 使用简洁的列表样式
-            .padding(.horizontal, 20) // 保证内容与边缘的距离
+            .listStyle(.plain)
         }
         .navigationTitle("个人设置")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
-        .navigationBarItems(
-            leading: Button(action: {
-                presentationMode.wrappedValue.dismiss()
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.black)
+        .navigationBarItems(leading: backButton)
+        .confirmationDialog(
+            "确认退出",
+            isPresented: $showLogoutConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("退出登录", role: .destructive, action: settingsState.logout)
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("确定要退出登录吗？")
+        }
+        .confirmationDialog(
+            "确认注销账户",
+            isPresented: $showDeleteAccountConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("注销账户", role: .destructive, action: settingsState.deleteAccount)
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("注销账户后将无法恢复，确定要继续吗？")
+        }
+       
+    }
+    
+    private var generalSettingsSection: some View {
+        Section {
+            NavigationLink(destination: PasswordChangeView()) {
+                PersonSettingRow(title: "修改密码") {
+                    EmptyView()
+                }
             }
-        )
+            
+            PersonSettingRow(
+                title: "清除缓存",
+                action: settingsState.clearCache
+            ) {
+                Text(settingsState.cacheSize)
+                    .foregroundColor(.gray)
+            }
+            
+            PersonSettingRow(
+                title: "检测更新",
+                action: settingsState.checkUpdate
+            ) {
+                Text(settingsState.appVersion)
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+    
+    private var accountSettingsSection: some View {
+        Section {
+            PersonSettingRow(
+                title: "注销账户",
+                titleColor: .red,
+                action: { showDeleteAccountConfirmation = true }
+            ) {
+                EmptyView()
+            }
+            
+            PersonSettingRow(
+                title: "退出",
+                action: { showLogoutConfirmation = true }
+            ) {
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+            }
+        }
+    }
+    
+    private var backButton: some View {
+        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+            Image(systemName: "arrow.left")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.black)
+        }
     }
 }
 
-
-
+// MARK: - Previews
 struct SettingsView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             PersonSettingsView()
+                .environmentObject(AuthManager())
+                .environmentObject(TabBarManager())
         }
     }
 }

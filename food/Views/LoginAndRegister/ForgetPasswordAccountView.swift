@@ -1,78 +1,121 @@
 import SwiftUI
 
-struct ForgetPasswordAccountView: View {
-    @Environment(\.presentationMode) var presentationMode // 用于后退功能
-    @State private var emailOrPhone: String = "" // 输入框内容
-    @State private var isNextEnabled: Bool = false // 控制下一步按钮是否启用
-    @State private var navigateToFoundEmail = false // 控制跳转
-    @State private var email: String = ""
-   
-    @EnvironmentObject var tabBarManager: TabBarManager
-
-    var body: some View {
-        ZStack {
-            ScrollView {
-                VStack(spacing: 30) {
-                    // 标题
-                    HStack {
-                        Text("查找你的账号，请先输入你的电子邮箱")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.black)
-                        
-                        Spacer()
-                    }
-                    .padding(.horizontal)
-                    .padding(.top, 30) // 增加顶部空间
-                    
-                    // 电子邮箱输入框
-                    InputField(placeholder: "电子邮箱", text: $email, systemImage: email.isEmpty ? "" : "checkmark.circle.fill", isSecure: false)
-                        .onChange(of: email) {
-                            isNextEnabled = !email.isEmpty // 直接访问 @State 的 email 变量
-                        }
-                        .submitLabel(.done)  // 键盘上显示 "Done" 按钮
-                    
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .background(Color.white)
-            }
-        }
-        .ignoresSafeArea(.keyboard) // 避免键盘遮挡内容
-        .background(Color.white)
-        .navigationBarBackButtonHidden(true) // 隐藏默认的返回按钮
-        .navigationBarItems(
-            leading: Button(action: {
-                presentationMode.wrappedValue.dismiss() // 后退功能
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.black)
-            },
-            trailing: Button(action: {
-                if isNextEnabled {
-                    navigateToFoundEmail = true // 设置为 true 来触发导航
-                }
-            }) {
-                Text("下一步")
-                    .font(.system(size: 12, weight: .medium)) // 调整字体大小
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 6)
-                    .foregroundColor(.white)
-                    .background(isNextEnabled ? Color.black : Color.gray) // 根据按钮启用状态改变颜色
-                    .cornerRadius(25) // 调整圆角大小
-            }
-            .disabled(!isNextEnabled) // 禁用按钮，直到输入内容有效
-        )
-        .navigationDestination(isPresented: $navigateToFoundEmail) {
-            FoundEmailView(email: email)
-                .environmentObject(tabBarManager) // 注入环境对象
+// 创建一个 ViewModel 来处理业务逻辑
+class ForgetPasswordViewModel: ObservableObject {
+    @Published var email: String = ""
+    @Published var isEmailValid: Bool = false
+    @Published var showError: Bool = false
+    @Published var errorMessage: String = ""
+    
+    // 邮箱验证逻辑
+    func validateEmail() {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format:"SELF MATCHES %@", emailRegex)
+        isEmailValid = emailPredicate.evaluate(with: email)
+        
+        if !email.isEmpty && !isEmailValid {
+            errorMessage = "请输入有效的电子邮箱地址"
+            showError = true
+        } else {
+            showError = false
         }
     }
 }
 
+struct ForgetPasswordAccountView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @StateObject private var viewModel = ForgetPasswordViewModel()
+    @State private var navigateToFoundEmail = false
+    @EnvironmentObject var tabBarManager: TabBarManager
+    
+    var body: some View {
+        ZStack {
+            Color.white.edgesIgnoringSafeArea(.all)
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    titleSection
+                    emailInputSection
+                    if viewModel.showError {
+                        errorMessage
+                    }
+                    Spacer()
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 30)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: backButton, trailing: nextButton)
+        .navigationDestination(isPresented: $navigateToFoundEmail) {
+            FoundEmailView(email: viewModel.email)
+                .environmentObject(tabBarManager)
+        }
+    }
+    
+    // MARK: - UI Components
+    
+    private var titleSection: some View {
+        Text("查找你的账号，请先输入你的电子邮箱")
+            .font(.title)
+            .fontWeight(.bold)
+            .foregroundColor(.black)
+    }
+    
+    private var emailInputSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            InputField(
+                placeholder: "电子邮箱",
+                text: $viewModel.email,
+                systemImage: viewModel.isEmailValid ? "checkmark.circle.fill" : "",
+                isSecure: false
+            )
+            .onChange(of: viewModel.email) {
+                viewModel.validateEmail()
+            }
+            .submitLabel(.done)
+            .autocapitalization(.none)
+            .keyboardType(.emailAddress)
+        }
+    }
+    
+    private var errorMessage: some View {
+        Text(viewModel.errorMessage)
+            .foregroundColor(.red)
+            .font(.footnote)
+            .transition(.opacity)
+    }
+    
+    private var backButton: some View {
+        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+            Image(systemName: "arrow.left")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.black)
+        }
+    }
+    
+    private var nextButton: some View {
+        Button(action: {
+            if viewModel.isEmailValid {
+                navigateToFoundEmail = true
+            }
+        }) {
+            Text("下一步")
+                .font(.system(size: 14, weight: .medium))
+                .padding(.horizontal, 20)
+                .padding(.vertical, 8)
+                .foregroundColor(.white)
+                .background(viewModel.isEmailValid ? Color.black : Color.gray.opacity(0.5))
+                .cornerRadius(25)
+        }
+        .disabled(!viewModel.isEmailValid)
+    }
+}
+
+// MARK: - Preview
 struct ForgetPasswordAccountView_Previews: PreviewProvider {
     static var previews: some View {
         ForgetPasswordAccountView()
-            .environmentObject(TabBarManager()) // 注入环境对象
+            .environmentObject(TabBarManager())
     }
 }

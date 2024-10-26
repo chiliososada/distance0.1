@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 687DBF202CA4401100371A2F /* RecipeDetailView.swift */; };
 		6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6893160D2CC6A7CA00FCD327 /* MapItemPicker */; };
 		68E2F8FA2CAA7922001C2496 /* PostInputLocation_deleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68E2F8F92CAA78F7001C2496 /* PostInputLocation_deleted.swift */; };
 		68EBD5952CA644BB000CA80B /* NearbyViews_deleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68EBD5942CA64491000CA80B /* NearbyViews_deleted.swift */; };
@@ -23,6 +24,7 @@
 		8821896925BEC93500820A7E /* Hellix-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8821896425BEC93500820A7E /* Hellix-SemiBold.ttf */; };
 		8821897325BF073800820A7E /* FreshRecipesView_deleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821897225BF073800820A7E /* FreshRecipesView_deleted.swift */; };
 		8821897825BF257E00820A7E /* SectionTitleView_deleted.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821897725BF257E00820A7E /* SectionTitleView_deleted.swift */; };
+		8821897D25BF2D7600820A7E /* RecommendedRecipeCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821897C25BF2D7600820A7E /* RecommendedRecipeCardView.swift */; };
 		8821898225BF2DE800820A7E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8821898125BF2DE800820A7E /* HomeView.swift */; };
 		884FDFB625C403E500B05042 /* gif.gif in Resources */ = {isa = PBXBuildFile; fileRef = 884FDFB525C403E500B05042 /* gif.gif */; };
 /* End PBXBuildFile section */
@@ -45,6 +47,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		687DBF202CA4401100371A2F /* RecipeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecipeDetailView.swift; sourceTree = "<group>"; };
 		68E2F8F92CAA78F7001C2496 /* PostInputLocation_deleted.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PostInputLocation_deleted.swift; sourceTree = "<group>"; };
 		68EBD5942CA64491000CA80B /* NearbyViews_deleted.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NearbyViews_deleted.swift; sourceTree = "<group>"; };
 		8821892525BEC29900820A7E /* food.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = food.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -66,6 +69,7 @@
 		8821896425BEC93500820A7E /* Hellix-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Hellix-SemiBold.ttf"; sourceTree = "<group>"; };
 		8821897225BF073800820A7E /* FreshRecipesView_deleted.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreshRecipesView_deleted.swift; sourceTree = "<group>"; };
 		8821897725BF257E00820A7E /* SectionTitleView_deleted.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionTitleView_deleted.swift; sourceTree = "<group>"; };
+		8821897C25BF2D7600820A7E /* RecommendedRecipeCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecommendedRecipeCardView.swift; sourceTree = "<group>"; };
 		8821898125BF2DE800820A7E /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		884FDFB525C403E500B05042 /* gif.gif */ = {isa = PBXFileReference; lastKnownFileType = image.gif; path = gif.gif; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -186,6 +190,8 @@
 				68EBD5942CA64491000CA80B /* NearbyViews_deleted.swift */,
 				8821897225BF073800820A7E /* FreshRecipesView_deleted.swift */,
 				8821897725BF257E00820A7E /* SectionTitleView_deleted.swift */,
+				687DBF202CA4401100371A2F /* RecipeDetailView.swift */,
+				8821897C25BF2D7600820A7E /* RecommendedRecipeCardView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -352,6 +358,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				687DBF212CA4401700371A2F /* RecipeDetailView.swift in Sources */,
+				8821897D25BF2D7600820A7E /* RecommendedRecipeCardView.swift in Sources */,
 				8821892B25BEC29900820A7E /* ContentView.swift in Sources */,
 				68EBD5952CA644BB000CA80B /* NearbyViews_deleted.swift in Sources */,
 				8821897325BF073800820A7E /* FreshRecipesView_deleted.swift in Sources */,

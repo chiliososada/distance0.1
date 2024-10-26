@@ -25,11 +25,7 @@ class Place: NSObject, MKAnnotation, Identifiable {
 }
 
 class MapDataManager: ObservableObject {
-//    @Published private(set) var visiblePlaces: [Place] = []
-//    private var allPlaces: [Place] = [] // 存储所有可能的地点数据
-//    private var loadedRegions: Set<String> = [] // 追踪已加载的区域
-//    private let queue = DispatchQueue(label: "com.app.mapdatamanager", qos: .userInitiated)
-//    private let cache = NSCache<NSString, NSArray>()
+
         @Published private(set) var visiblePlaces: [Place] = []
         @Published private(set) var isLoading = false
         @Published private(set) var error: Error?
@@ -216,27 +212,7 @@ class MapDataManager: ObservableObject {
             
             return dataSets
         }()
-    // 模拟从服务器获取数据
-//    private func fetchPlacesFromServer(in region: MKCoordinateRegion) -> [Place] {
-//        // 这里应该是实际的API调用，现在用模拟数据
-//        var places: [Place] = []
-//        let latDelta = region.span.latitudeDelta
-//        let lonDelta = region.span.longitudeDelta
-//        
-//        // 在可见区域内创建一些测试数据
-//        for _ in 0..<10 {
-//            let randomLat = region.center.latitude + Double.random(in: -latDelta/2...latDelta/2)
-//            let randomLon = region.center.longitude + Double.random(in: -lonDelta/2...lonDelta/2)
-//            let place = Place(
-//                name: "Place \(Int.random(in: 1...1000))",
-//                latitude: randomLat,
-//                longitude: randomLon
-//            )
-//            places.append(place)
-//        }
-//        
-//        return places
-//    }
+
     private func fetchPlacesFromServer(in region: MKCoordinateRegion) -> [Place] {
             // 根据区域返回相应的测试数据
             var nearbyPlaces: [Place] = []
@@ -250,26 +226,7 @@ class MapDataManager: ObservableObject {
                     }
                 }
             }
-            
-//            // 如果没有找到预设数据，生成一些随机数据
-//            if nearbyPlaces.isEmpty {
-//                let latDelta = region.span.latitudeDelta
-//                let lonDelta = region.span.longitudeDelta
-//                
-//                // 在可见区域内创建一些随机测试数据
-//                for i in 0..<5 {
-//                    let randomLat = region.center.latitude + Double.random(in: -latDelta/2...latDelta/2)
-//                    let randomLon = region.center.longitude + Double.random(in: -lonDelta/2...lonDelta/2)
-//                    let isSponsored = i % 5 == 0  // 每5个点中有1个是sponsored
-//                    let place = Place(
-//                        name: "测试地点 \(Int.random(in: 1...1000))",
-//                        latitude: randomLat,
-//                        longitude: randomLon,
-//                        sponsored: isSponsored
-//                    )
-//                    nearbyPlaces.append(place)
-//                }
-//            }
+
             
             return nearbyPlaces
         }
@@ -509,59 +466,13 @@ struct ClusterMapView: UIViewRepresentable {
 }
 
 struct NearbyView: View {
-    // 创建聚合和分散的测试数据
-//    let places: [Place] = {
-//        var places: [Place] = []
-//        let baseLatitude = 35.738361  // 京成立石地铁站的纬度
-//        let baseLongitude = 139.848861  // 京成立石地铁站的经度
-//        // 创建多个聚合的地点数据
-//        for i in 0..<10 {
-//            for j in 0..<10 {
-//                let latitude = baseLatitude + Double(i) * 0.0005
-//                let longitude = baseLongitude + Double(j) * 0.0005
-//                places.append(Place(
-//                    name: "Location \(i * 10 + j)",
-//                    latitude: latitude,
-//                    longitude: longitude
-//                ))
-//            }
-//        }
-//        
-//        // 添加一些分散的地点数据
-//        let dispersedLocations = [
-//            (name: "Dispersed Place 1", latitude: 35.748361, longitude: 139.858861),
-//            (name: "Dispersed Place 2", latitude: 35.728361, longitude: 139.838861),
-//            (name: "Dispersed Place 3", latitude: 35.758361, longitude: 139.828861),
-//            (name: "Dispersed Place 4", latitude: 35.718361, longitude: 139.868861),
-//            (name: "Dispersed Place 5", latitude: 35.768361, longitude: 139.818861)
-//        ]
-//        
-//        for location in dispersedLocations {
-//            places.append(Place(
-//                name: location.name,
-//                latitude: location.latitude,
-//                longitude: location.longitude
-//            ))
-//        }
-//        
-//        return places
-//    }()
+
     @StateObject private var dataManager = MapDataManager()
      @State private var showBottomSheet = false
      @State private var selectedPlaceNames: [String] = []
      @State private var search: String = ""
      @State private var showFilterView = false
     
-    
-//    @State private var position: MapCameraPosition = .automatic
-//    @State private var searchResult: [MKMapItem] = []
-//    @State private var visibleRegion: MKCoordinateRegion?
-//    
-//    // 用于显示 BottomMenuView 的状态和选中的 MKClusterAnnotation 数据
-//    @State private var showBottomSheet = false
-//    @State private var selectedPlaceNames: [String] = []
-//    @State private var search: String = ""
-//    @State private var showFilterView = false  // 控制弹出视图显示
     var body: some View {
         ZStack {
             // 地图放在底部，只忽略顶部和左右的安全区域
@@ -670,30 +581,42 @@ struct NearbyView_Previews: PreviewProvider {
 
 
 struct BottomMenuView: View {
-    var placeNames: [String] // 用于接收 MKClusterAnnotation 的名称列表
-    @State private var showSponsored: Bool = true  // 控制是否显示赞助内容的开关
+    let placeNames: [String]
+    @State private var showSponsored: Bool = true
+    
     var body: some View {
         VStack {
             // 显示选中的地点数量
-                       Text("Selected Places (\(placeNames.count))")
-                           .font(.headline)
-                           .padding()
-
-
-            // 使用 ForEach 迭代 placeNames 列表，并将每个名称显示为卡片标题
+            Text("Selected Places (\(placeNames.count))")
+                .font(.headline)
+                .padding()
+            
+            // 使用 ScrollView 显示地点列表
             ScrollView {
-                ForEach(placeNames, id: \.self) { name in
-                                    RecommendedRecipeCardView(
-                                        image: UIImage(named: "fresh_recipe_1") ?? UIImage(),
-                                        title: name,
-                                        onTap: {},
-                                        // 如果是前面的赞助地点，使用不同的颜色或样式
-                                        busynessLevel: name == placeNames.first ? Color.yellow : Color.red
-                                    )
-                                    .padding(.vertical, 5)
-                                }
+                LazyVStack(spacing: 16) {
+                    // 将 placeNames 转换为可识别的数据结构
+                    ForEach(Array(placeNames.enumerated()), id: \.element) { index, name in
+                        RecipeCard(
+                            recipe: RecommendedRecipe(
+                                imageName: "fresh_recipe_1",
+                                title: name,
+                                imageNames: ["fresh_recipe_1", "fresh_recipe_1"],
+                                authorName: "Place Owner",
+                                location: "Location",
+                                tags: ["Tag1", "Tag2"],
+                                participantsCount: 0,
+                                postedTime: "Just now",
+                                distance: 100
+                            )
+                           
+                        )
+                        .padding(.horizontal)
+                        .padding(.vertical, 5)
+                    }
+                }
             }
         }
         .padding()
     }
 }
+

@@ -1,211 +1,302 @@
 import SwiftUI
 import MapKit
 
-struct ProfileView: View {
-    @State private var selectedTab = 0 // 0 表示“我发布的”，1 表示“我收藏的”
-    @State private var cameraPosition = MapCameraPosition.region(MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 35.7433, longitude: 139.8476), // 葛饰区的坐标
-        span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01) // 建议适中的缩放级别
-       ))
-    @State private var offset: CGFloat = 0.0 // 用于检测滚动偏移量
+// MARK: - ViewModel
+final class ProfileViewModel: ObservableObject {
+    @Published var selectedTab = 0
+    @Published var offset: CGFloat = 0
+    @Published var cameraPosition = MapCameraPosition.region(
+        MKCoordinateRegion(
+            center: CLLocationCoordinate2D(latitude: 35.7433, longitude: 139.8476),
+            span: MKCoordinateSpan(latitudeDelta: 0.01, longitudeDelta: 0.01)
+        )
+    )
+    
+    let userStats = UserStats(participantsCount: "1K+", viewedTopicsCount: "1M+")
+    let userProfile = UserProfile(
+        name: "liu ziyuan",
+        description: "我是一个专注于前端开发的程序员",
+        avatar: "sample1"
+    )
+    func handleEdit(_ item: ReviewItem) {
+           // 处理编辑逻辑
+           print("Editing item: \(item.id)")
+       }
+       
+       func handleDelete(_ item: ReviewItem) {
+           // 处理删除逻辑
+           print("Deleting item: \(item.id)")
+       }
+    var publishedContent: [ReviewItem] = [
+        ReviewItem(
+            name: "John Doe",
+            date: "2024-10-03",
+            location: "東京都 葛飾区 立石",
+            review: "This is a sample review text. It discusses the product or service in detail and gives insights about its pros and cons.",
+            participants: 99,
+            tags: ["活动", "社交", "健身"],
+            timeElapsed: "3 days",
+            distance: "300m",
+            title: "有一起去吃中华料理的吗？"
+        ),
+        // Add more items as needed...
+    ]
+    
+    var savedContent: [ReviewItem] = [
+        ReviewItem(
+            name: "John Doe",
+            date: "2024-10-03",
+            location: "東京都 葛飾区 立石",
+            review: "This is a sample review text. It discusses the product or service in detail and gives insights about its pros and cons.",
+            participants: 99,
+            tags: ["活动", "社交", "健身"],
+            timeElapsed: "1 Day",
+            distance: "300m",
+            title: "有一起去吃中华料理的吗？"
+        )
+    ]
+}
 
+// MARK: - Models
+struct UserStats {
+    let participantsCount: String
+    let viewedTopicsCount: String
+}
+
+struct UserProfile {
+    let name: String
+    let description: String
+    let avatar: String
+}
+
+struct ReviewItem: Identifiable {
+    let id = UUID()
+    let name: String
+    let date: String
+    let location: String
+    let review: String
+    let participants: Int
+    let tags: [String]
+    let timeElapsed: String
+    let distance: String
+    let title: String
+}
+
+// MARK: - Main View
+struct ProfileView: View {
+    @StateObject private var viewModel = ProfileViewModel()
+    
     var body: some View {
         ZStack {
-            // 使用地图作为背景，同时有一定的透明度
-            Map(position: $cameraPosition)
-                         .edgesIgnoringSafeArea(.all)
-                         .opacity(0.3) // 控制地图的透明度，让内容更突出
-            // 背景颜色渐变
-            LinearGradient(gradient: Gradient(colors: [Color.gray.opacity(0.2), Color.white]), startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            backgroundLayers
             
             ScrollView {
-                VStack(spacing: 10) {
-                    // 地图和地理信息
-                    Map(position: $cameraPosition)
-                        .frame(height: 200)
-                        .cornerRadius(20)
-                        .shadow(radius: 5)
-                        .overlay(
-                            VStack {
-                                HStack(spacing: 20) {
-                                    VStack {
-                                        Text("参加过我话题的人")
-                                            .font(.caption)
-                                            .foregroundColor(.black)
-                                        Text("1K+")
-                                            .font(.title)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.black)
-                                    }
-                                    .padding()
-                                    .background(Color.white.opacity(0.6)) // 调整背景的透明度
-                                    .cornerRadius(15)
-                                    .shadow(radius: 3)
-                                    
-                                    VStack {
-                                        Text("我浏览过的话题数")
-                                            .font(.caption)
-                                            .foregroundColor(.black)
-                                        Text("1M+")
-                                            .font(.title)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.black)
-                                    }
-                                    .padding()
-                                    .background(Color.white.opacity(0.6)) // 调整背景的透明度
-                                    .cornerRadius(15)
-                                    .shadow(radius: 3)
-                                }}
-                            .padding()
-                        )
-                        .padding(.top, offset < 0 ? -offset : 0) // 地图随着滚动固定
-                        .padding(.horizontal)
-
-                    // 头像和个人信息
-                    VStack(spacing: 8) {
-                        Image("sample1") // 替换为实际头像图片
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: 100, height: 100)
-                            .clipShape(Circle())
-                            .shadow(radius: 4) // 增加头像的阴影效果
-                            .overlay(
-                                Circle().stroke(Color.gray, lineWidth: 2)
-                            )
-                        
-                        Text("liu ziyuan")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.black)
-                        
-                        Text("我是一个专注于前端开发的程序员")
-                            .font(.caption)
-                            .foregroundColor(.black)
-                            .padding(.horizontal)
-                    }
-                    .padding(.top, 10)
-
-                    // 选项卡选择部分 (我发布的, 我收藏的)
-                    HStack {
-                        // “我发布的”按钮
-                        Button(action: {
-                            selectedTab = 0 // 切换到 "我发布的"
-                        }) {
-                            Text("我发布的")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(selectedTab == 0 ? .white : .black)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 20)
-                                .background(selectedTab == 0 ? Color.black : Color.white)
-                                .cornerRadius(20)
-                                .clipShape(Capsule())
-                                .shadow(radius: selectedTab == 0 ? 5 : 0)
-                        }
-                        
-                        // “我收藏的”按钮
-                        Button(action: {
-                            selectedTab = 1 // 切换到 "我收藏的"
-                        }) {
-                            Text("我收藏的")
-                                .font(.subheadline)
-                                .fontWeight(.semibold)
-                                .foregroundColor(selectedTab == 1 ? .white : .black)
-                                .padding(.vertical, 8)
-                                .padding(.horizontal, 20)
-                                .background(selectedTab == 1 ? Color.black : Color.white)
-                                .cornerRadius(20)
-                                .clipShape(Capsule())
-                                .shadow(radius: selectedTab == 1 ? 5 : 0)
-                        }
-                        
-                        
-                    }
-                    .padding(.vertical, 10)
-
-                    // 列表显示
-                    if selectedTab == 0 {
-                        // 显示“我发布的”内容
-                        VStack(spacing: 12) {
-                            MyReviewRow(
-                                name: "John Doe",
-                                date: "2024-10-03",
-                                location: "東京都 葛飾区 立石",
-                                review: "This is a sample review text. It discusses the product or service in detail and gives insights about its pros and cons.",
-                                participants: 99,
-                                tags: ["活动", "社交", "健身"],
-                                timeElapsed: "3 days",
-                                distance: "300m",
-                                title: "有一起去吃中华料理的吗？", // 示例标题
-                                showAvatar: true // 设置是否显示头像
-                            )
-                            MyReviewRow(
-                                name: "John Doe",
-                                date: "2024-10-03",
-                                location: "東京都 葛飾区 立石",
-                                review: "This is a sample review text. It discusses the product or service in detail and gives insights about its pros and cons.",
-                                participants: 99,
-                                tags: ["活动", "社交", "健身"],
-                                timeElapsed: "1 day",
-                                distance: "300m",
-                                title: "用户评价", // 示例标题
-                                showAvatar: true // 设置是否显示头像
-                            )
-                            MyReviewRow(
-                                name: "John Doe",
-                                date: "2024-10-03",
-                                location: "東京都 葛飾区 立石",
-                                review: "This is a sample review text. It discusses the product or service in detail and gives insights about its pros and cons.",
-                                participants: 99,
-                                tags: ["活动", "社交", "健身"],
-                                timeElapsed: "1 day",
-                                distance: "300m",
-                                title: "用户评价", // 示例标题
-                                showAvatar: true // 设置是否显示头像
-                            )
-                            MyReviewRow(
-                                name: "John Doe",
-                                date: "2024-10-03",
-                                location: "東京都 葛飾区 立石",
-                                review: "This is a sample review text. It discusses the product or service in detail and gives insights about its pros and cons.",
-                                participants: 99,
-                                tags: ["活动", "社交", "健身"],
-                                timeElapsed: "10 mins ago",
-                                distance: "300m",
-                                title: "用户评价", // 示例标题
-                                showAvatar: true // 设置是否显示头像
-                            )
-                        }
-                        .padding(.top, 8)
-                    } else if selectedTab == 1 {
-                        // 显示“我收藏的”内容
-                        VStack(spacing: 12) {
-                            MyReviewRow(
-                                name: "John Doe",
-                                date: "2024-10-03",
-                                location: "東京都 葛飾区 立石",
-                                review: "This is a sample review text. It discusses the product or service in detail and gives insights about its pros and cons.",
-                                participants: 99,
-                                tags: ["活动", "社交", "健身"],
-                                timeElapsed: "1 Day",
-                                distance: "300m",
-                                title: "有一起去吃中华料理的吗？", // 示例标题
-                                showAvatar: true // 设置是否显示头像
-                            )
-                        }
-                        .padding(.top, 10)
-                    }
+                LazyVStack(spacing: 10) {
+                    MapOverviewSection(
+                        cameraPosition: $viewModel.cameraPosition,
+                        offset: viewModel.offset,
+                        stats: viewModel.userStats
+                    )
+                    
+                    UserProfileSection(profile: viewModel.userProfile)
+                    
+                    TabSelectionSection(selectedTab: $viewModel.selectedTab)
+                    
+                    ContentListSection(
+                                           selectedTab: viewModel.selectedTab,
+                                           publishedContent: viewModel.publishedContent,
+                                           savedContent: viewModel.savedContent,
+                                           onEdit: viewModel.handleEdit,    // 添加编辑处理
+                                           onDelete: viewModel.handleDelete // 添加删除处理
+                                       )
                 }
             }
+            .background(GeometryReader { proxy in
+                Color.clear.preference(
+                    key: ScrollOffsetPreferenceKey.self,
+                    value: proxy.frame(in: .named("scroll")).minY
+                )
+            })
+            .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
+                viewModel.offset = offset
+            }
+            .coordinateSpace(name: "scroll")
+        }
+    }
+    
+    private var backgroundLayers: some View {
+        ZStack {
+            Map(position: $viewModel.cameraPosition)
+                .edgesIgnoringSafeArea(.all)
+                .opacity(0.3)
+            
+            LinearGradient(
+                gradient: Gradient(colors: [Color.gray.opacity(0.2), Color.white]),
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
         }
     }
 }
 
+// MARK: - Supporting Views
+struct MapOverviewSection: View {
+    @Binding var cameraPosition: MapCameraPosition
+    let offset: CGFloat
+    let stats: UserStats
+    
+    var body: some View {
+        Map(position: $cameraPosition)
+            .frame(height: 200)
+            .cornerRadius(20)
+            .shadow(radius: 5)
+            .overlay(StatisticsOverlay(stats: stats))
+            .padding(.top, offset < 0 ? -offset : 0)
+            .padding(.horizontal)
+    }
+}
 
-// 评论行视图
+struct StatisticsOverlay: View {
+    let stats: UserStats
+    
+    var body: some View {
+        VStack {
+            HStack(spacing: 20) {
+                StatBox(title: "参加过我话题的人", value: stats.participantsCount)
+                StatBox(title: "我浏览过的话题数", value: stats.viewedTopicsCount)
+            }
+        }
+        .padding()
+    }
+}
 
+struct StatBox: View {
+    let title: String
+    let value: String
+    
+    var body: some View {
+        VStack {
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.black)
+            Text(value)
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(.black)
+        }
+        .padding()
+        .background(Color.white.opacity(0.6))
+        .cornerRadius(15)
+        .shadow(radius: 3)
+    }
+}
 
+struct UserProfileSection: View {
+    let profile: UserProfile
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(profile.avatar)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 100, height: 100)
+                .clipShape(Circle())
+                .shadow(radius: 4)
+                .overlay(Circle().stroke(Color.gray, lineWidth: 2))
+            
+            Text(profile.name)
+                .font(.title2)
+                .fontWeight(.bold)
+            
+            Text(profile.description)
+                .font(.caption)
+                .foregroundColor(.black)
+                .padding(.horizontal)
+        }
+        .padding(.top, 10)
+    }
+}
+
+struct TabSelectionSection: View {
+    @Binding var selectedTab: Int
+    
+    var body: some View {
+        HStack {
+            TabButtonRow(title: "我发布的", isSelected: selectedTab == 0) {
+                selectedTab = 0
+            }
+            
+            TabButtonRow(title: "我收藏的", isSelected: selectedTab == 1) {
+                selectedTab = 1
+            }
+        }
+        .padding(.vertical, 10)
+    }
+}
+
+struct TabButtonRow: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(isSelected ? .white : .black)
+                .padding(.vertical, 8)
+                .padding(.horizontal, 20)
+                .background(isSelected ? Color.black : Color.white)
+                .cornerRadius(20)
+                .clipShape(Capsule())
+                .shadow(radius: isSelected ? 5 : 0)
+        }
+    }
+}
+
+struct ContentListSection: View {
+    let selectedTab: Int
+    let publishedContent: [ReviewItem]
+    let savedContent: [ReviewItem]
+    var onEdit: ((ReviewItem) -> Void)? = nil  // 添加默认值
+    var onDelete: ((ReviewItem) -> Void)? = nil  // 添加默认值
+    
+    var body: some View {
+        LazyVStack(spacing: 12) {
+            ForEach(selectedTab == 0 ? publishedContent : savedContent) { item in
+                MyReviewRow(
+                    data: ReviewRowData(
+                        name: item.name,
+                        date: item.date,
+                        location: item.location,
+                        review: item.review,
+                        participants: item.participants,
+                        tags: item.tags,
+                        timeElapsed: item.timeElapsed,
+                        distance: item.distance,
+                        title: item.title,
+                        showAvatar: true
+                    ),
+                    onEdit: { onEdit?(item) },
+                    onDelete: { onDelete?(item) }
+                )
+            }
+        }
+        .padding(.top, 8)
+    }
+}
+
+// MARK: - Preference Key
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+// MARK: - Preview
 struct ProfileView_Previews: PreviewProvider {
     static var previews: some View {
         ProfileView()

@@ -1,257 +1,233 @@
 import SwiftUI
 
-// Member model
-struct Member: Identifiable {
+// MARK: - Models
+struct Member: Identifiable, Hashable {
     let id = UUID()
     let name: String
     let imageName: String
 }
 
-// 主页面视图，包括成员列表和聊天室设置
-struct ChatSettingsView: View {
+// MARK: - ViewModel
+final class ChatSettingsViewModel: ObservableObject {
+    @Published var isTopChat = false
+    @Published var members: [Member]
     
-    @State private var members: [Member] = [
-        Member(name: "Isabellaa s da s d", imageName: "sample1"),
-        Member(name: "Martin", imageName: "sample2"),
-        Member(name: "Shirley", imageName: "sample1"),
-        Member(name: "David", imageName: "sample1"),
-        Member(name: "Matilde", imageName: "sample1"),
-        Member(name: "Eli", imageName: "sample1")
-    ]
-    
-    @State private var isTopChat = false // 聊天室置顶状态
-    @State private var showAnnouncement = false
-    
-    @State private var showQRCode = false
-    @State private var showGroupName = false
-    @State private var showNickname = false
-    @State private var showClearChat = false
-    @State private var showDeleteChat = false
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                // 固定显示群主头像
-                
-                
-                // 设置项列表
-                VStack(alignment: .leading, spacing: 20) {
-                    HStack(alignment: .center) { // 保证群主和成员在同一高度上
-                        VStack {
-                            Image("sample1") // 群主头像
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 40, height: 40) // 进一步缩小群主头像大小
-                                .clipShape(Circle())
-                                .overlay(
-                                    Circle()
-                                        .stroke(Color.blue, lineWidth: 2) // 蓝色边框标记为群主
-                                        .shadow(radius: 3)
-                                )
-                            
-                            Text("Owner") // 群主名字
-                                .font(.caption2) // 调整字体
-                                .fontWeight(.medium)
-                                .foregroundColor(.blue)
-                        }
-                        .frame(width: 40, height: 40) // 调整群主头像区域的宽度
-                        .padding(.leading, 5) // 适当减少左侧边距
-                        
-                        // 可滚动的成员列表
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) { // 缩小头像间隔
-                                ForEach(members) { member in
-                                    VStack {
-                                        // 圆形头像
-                                        Image(member.imageName)
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                            .frame(width: 40, height: 40) // 进一步缩小成员头像大小
-                                            .clipShape(Circle())
-                                            .overlay(
-                                                Circle()
-                                                    .stroke(Color.white, lineWidth: 1.5) // 白色边框
-                                                    .shadow(radius: 3) // 轻微阴影
-                                            )
-                                        
-                                        // 成员名字
-                                        Text(member.name)
-                                            .font(.caption2) // 使用较小字体
-                                            .fontWeight(.medium)
-                                            .foregroundColor(.primary)
-                                    }
-                                    .frame(width: 50) // 每个成员设置固定宽度
-                                }
-                            }
-                            .padding(.horizontal, 5) // 添加内边距
-                        }
-                        .frame(height: 70) // 调整滚动视图的高度
-                    }
-                    .padding(.vertical, 5)
-                    .background(Color.white)
-                    .cornerRadius(15)
-                    .shadow(color: .gray.opacity(0.2), radius: 10, x: 0, y: 5) // 添加阴影
-                    // 聊天室置顶
-                    HStack {
-                        Image(systemName: "pin.fill")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 20))
-                        Toggle("置顶聊天", isOn: $isTopChat)
-                            .foregroundColor(.black)  // 设置字体颜色为黑色
-                            .toggleStyle(SwitchToggleStyle(tint: .blue))
-                    }
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-                    
-                    
-                  
-                    
-                    // 修改公告
-                    NavigationLink(destination: EditAnnouncementView()) {
-                        HStack {
-                            Image(systemName: "megaphone.fill")
-                                .foregroundColor(.gray)
-                                .font(.system(size: 20))
-                            Text("修改公告")
-                                .foregroundColor(.black)  // 设置字体颜色为黑色
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .foregroundColor(.gray)
-                        }
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(10)
-                        .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-                    }
-                    
-                    // 分享群聊
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 20))
-                        Text("分享群聊")
-                            .foregroundColor(.black)  // 设置字体颜色为黑色
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-                    .onTapGesture {
-                        // 分享群聊的逻辑
-                    }
-                    // 聊天室二维码
-                    HStack {
-                        Image(systemName: "qrcode")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 20))
-                        Text("聊天室二维码")
-                            .foregroundColor(.black)  // 设置字体颜色为黑色
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-                    .onTapGesture {
-                        // 聊天室二维码的逻辑
-                    }
-                    
-//                    // 群聊名称
-//                    HStack {
-//                        Image(systemName: "person.2.fill")
-//                            .foregroundColor(.gray)
-//                            .font(.system(size: 20))
-//                        Text("群聊名称")
-//                            .foregroundColor(.black)  // 设置字体颜色为黑色
-//                        Spacer()
-//                        Image(systemName: "chevron.right")
-//                            .foregroundColor(.gray)
-//                    }
-//                    .padding()
-//                    .background(Color.white)
-//                    .cornerRadius(10)
-//                    .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-//                    .onTapGesture {
-//                        // 修改群聊名称的逻辑
-//                    }
-//                    
-//                    // 我在本群的昵称
-//                    HStack {
-//                        Image(systemName: "person.fill")
-//                            .foregroundColor(.gray)
-//                            .font(.system(size: 20))
-//                        Text("我在本群的昵称")
-//                            .foregroundColor(.black)  // 设置字体颜色为黑色
-//                        Spacer()
-//                        Image(systemName: "chevron.right")
-//                            .foregroundColor(.gray)
-//                    }
-//                    .padding()
-//                    .background(Color.white)
-//                    .cornerRadius(10)
-//                    .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-//                    .onTapGesture {
-//                        // 修改本群昵称的逻辑
-//                    }
-                    
-                    // 清空聊天记录
-                    HStack {
-                        Image(systemName: "trash.fill")
-                            .foregroundColor(.gray)
-                            .font(.system(size: 20))
-                        Text("清空聊天记录")
-                            .foregroundColor(.black)  // 设置字体颜色为黑色
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-                    .onTapGesture {
-                        // 清空聊天记录的逻辑
-                    }
-                    
-                    // 删除该聊天室
-                    HStack {
-                        Image(systemName: "trash.circle.fill")
-                            .foregroundColor(.red)
-                            .font(.system(size: 20))
-                        Text("删除该聊天室")
-                            .foregroundColor(.red)
-                        Spacer()
-                        Image(systemName: "chevron.right")
-                            .foregroundColor(.gray)
-                    }
-                    .padding()
-                    .background(Color.white)
-                    .cornerRadius(10)
-                    .shadow(color: .gray.opacity(0.2), radius: 5, x: 0, y: 5)
-                    .onTapGesture {
-                        // 删除聊天室的逻辑
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 10)
-            }}
-        .padding(.top, 10)
-        .padding(.bottom, 10)
+    init() {
+        self.members = [
+            Member(name: "Isabellaa s da s d", imageName: "sample1"),
+            Member(name: "Martin", imageName: "sample2"),
+            Member(name: "Shirley", imageName: "sample1"),
+            Member(name: "David", imageName: "sample1"),
+            Member(name: "Matilde", imageName: "sample1"),
+            Member(name: "Eli", imageName: "sample1")
+        ]
     }
 }
 
-// Preview
+// MARK: - Constants
+private enum Layout {
+    static let avatarSize: CGFloat = 40
+    static let memberSpacing: CGFloat = 8
+    static let cornerRadius: CGFloat = 10
+    static let shadowRadius: CGFloat = 5
+    static let iconSize: CGFloat = 20
+    static let memberScrollHeight: CGFloat = 70
+    
+    static let shadowColor = Color.gray.opacity(0.2)
+}
+
+// MARK: - Main View
+struct ChatSettingsView: View {
+    @StateObject private var viewModel = ChatSettingsViewModel()
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 20) {
+                    MembersSection(members: viewModel.members)
+                    SettingsSection(isTopChat: $viewModel.isTopChat)
+                    DangerSection()
+                }
+                .padding(.horizontal)
+                .padding(.vertical, 10)
+            }
+        }
+    }
+}
+
+// MARK: - Supporting Views
+struct MembersSection: View {
+    let members: [Member]
+    
+    var body: some View {
+        HStack(alignment: .center) {
+            OwnerAvatar()
+            MembersList(members: members)
+        }
+        .padding(.vertical, 5)
+        .background(Color.white)
+        .cornerRadius(15)
+        .shadow(color: Layout.shadowColor, radius: 10, x: 0, y: 5)
+    }
+}
+
+struct OwnerAvatar: View {
+    var body: some View {
+        VStack {
+            Image("sample1")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: Layout.avatarSize, height: Layout.avatarSize)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.blue, lineWidth: 2))
+                .shadow(radius: 3)
+            
+            Text("Owner")
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.blue)
+        }
+        .frame(width: Layout.avatarSize)
+        .padding(.leading, 5)
+    }
+}
+
+struct MembersList: View {
+    let members: [Member]
+    
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: Layout.memberSpacing) {
+                ForEach(members) { member in
+                    MemberView(member: member)
+                }
+            }
+            .padding(.horizontal, 5)
+        }
+        .frame(height: Layout.memberScrollHeight)
+    }
+}
+
+struct MemberView: View {
+    let member: Member
+    
+    var body: some View {
+        VStack {
+            Image(member.imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fill)
+                .frame(width: Layout.avatarSize, height: Layout.avatarSize)
+                .clipShape(Circle())
+                .overlay(Circle().stroke(Color.white, lineWidth: 1.5))
+                .shadow(radius: 3)
+            
+            Text(member.name)
+                .font(.caption2)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .lineLimit(1)
+        }
+        .frame(width: 50)
+    }
+}
+
+struct SettingsSection: View {
+    @Binding var isTopChat: Bool
+    
+    var body: some View {
+        LazyVStack(spacing: 15) {
+            SettingRow(icon: "pin.fill", title: "置顶聊天") {
+                Toggle("", isOn: $isTopChat)
+                    .toggleStyle(SwitchToggleStyle(tint: .blue))
+            }
+            
+            NavigationLink(destination: EditAnnouncementView()) {
+                SettingRow(icon: "megaphone.fill", title: "修改公告") {
+                    ChevronRight()
+                }
+            }
+            
+            SettingRow(icon: "square.and.arrow.up", title: "分享群聊") {
+                ChevronRight()
+            }
+            .onTapGesture { /* 分享逻辑 */ }
+            
+            SettingRow(icon: "qrcode", title: "聊天室二维码") {
+                ChevronRight()
+            }
+            .onTapGesture { /* 二维码逻辑 */ }
+        }
+    }
+}
+
+struct DangerSection: View {
+    var body: some View {
+        LazyVStack(spacing: 15) {
+            SettingRow(icon: "trash.fill", title: "清空聊天记录", color: .gray) {
+                ChevronRight()
+            }
+            .onTapGesture { /* 清空逻辑 */ }
+            
+            SettingRow(icon: "trash.circle.fill", title: "删除该聊天室", color: .red) {
+                ChevronRight()
+            }
+            .onTapGesture { /* 删除逻辑 */ }
+        }
+    }
+}
+
+struct SettingRow<Content: View>: View {
+    let icon: String
+    let title: String
+    let color: Color
+    let content: () -> Content
+    
+    init(
+        icon: String,
+        title: String,
+        color: Color = .gray,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.icon = icon
+        self.title = title
+        self.color = color
+        self.content = content
+    }
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .font(.system(size: Layout.iconSize))
+            Text(title)
+                .foregroundColor(color == .gray ? .black : color)
+            Spacer()
+            content()
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(Layout.cornerRadius)
+        .shadow(color: Layout.shadowColor, radius: Layout.shadowRadius, x: 0, y: 5)
+    }
+}
+
+struct ChevronRight: View {
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .foregroundColor(.gray)
+    }
+}
+
+// MARK: - Preview
 struct ChatSettingsView_Previews: PreviewProvider {
     static var previews: some View {
-        ChatSettingsView()
-            .previewLayout(.sizeThatFits)
-            .padding()
+        Group {
+            ChatSettingsView()
+                .previewDisplayName("Light Mode")
+            
+            ChatSettingsView()
+                .preferredColorScheme(.dark)
+                .previewDisplayName("Dark Mode")
+        }
     }
 }

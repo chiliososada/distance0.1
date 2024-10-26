@@ -1,100 +1,214 @@
-
-//  ForgetCodeInputView.swift
-//  food
-//
-//  Created by toyousoft on 2024/10/17.
-//
-
 import SwiftUI
+import Combine
 
-struct ForgetCodeInputView: View {
-    @Environment(\.presentationMode) var presentationMode // 用于后退功能
-    @State private var code: [String] = Array(repeating: "", count: 6) // 验证码，每个输入框一个字符
-    @FocusState private var focusedField: Int? // 用于跟踪当前聚焦的输入框
-    @State private var navigateToNextScreen = false // 控制跳转
-    var email: String // 从上一个页面传递过来的邮箱
-
-    var body: some View {
-      
-            VStack{
-                // 标题
-                HStack {
-                    Text("我们已发送代码到你的邮箱")
-                        .font(.system(size: 28, weight: .bold)) // 调整字体大小
-                        .foregroundColor(.black)
-                    
-                    Spacer()
-                }
-                .padding(.horizontal)
-                .padding(.top, 30) // 增加顶部空间
-                
-                Text("请输入发送到 \(email) 的代码")
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
-                    .padding(.top, 8)
-                    .padding(.horizontal)
-
-                // 验证码输入框
-                HStack(spacing: 10) {
-                    ForEach(0..<6, id: \.self) { index in
-                        CodeInputBox(text: $code[index])
-                            .focused($focusedField, equals: index) // 聚焦当前输入框
-                            .onChange(of: code[index]) {
-                                if code[index].count == 1 { // 如果输入了一位字符，自动切换到下一个框
-                                    focusedField = index + 1
-                                }
-                            }
-                    }
-                }
-                .padding(.top, 30)
-
-                Spacer()
-
-                // "下一步" 按钮和跳转逻辑
-                Button(action: {
-                    // 验证码已输入完毕时，执行下一步
-                    if code.joined().count == 6 {
-                        navigateToNextScreen = true
-                    }
-                }) {
-                    Text("下一步")
-                        .font(.system(size: 18, weight: .medium))
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .foregroundColor(.white)
-                        .background(code.joined().count == 6 ? Color.black : Color.gray)
-                        .cornerRadius(25)
-                }
-                .disabled(code.joined().count != 6) // 只有当验证码输入完毕时才启用
-                .padding(.horizontal)
-                .padding(.bottom, 10)
-                .navigationDestination(isPresented: $navigateToNextScreen) {
-                    GetNewPasswordView() // 跳转目标视图
-                }
+// MARK: - ViewModel
+class ForgetCodeViewModel: ObservableObject {
+    @Published var code: [String] = Array(repeating: "", count: 6)
+    @Published var isLoading: Bool = false
+    @Published var showResendButton: Bool = false
+    @Published var countdown: Int = 60
+    @Published var errorMessage: String = ""
+    @Published var showError: Bool = false
+    
+    private var timer: Timer?
+    
+    init() {
+        startCountdown()
+    }
+    
+    func startCountdown() {
+        countdown = 60
+        showResendButton = false
+        timer?.invalidate()
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            guard let self = self else { return }
+            if self.countdown > 0 {
+                self.countdown -= 1
+            } else {
+                self.showResendButton = true
+                self.timer?.invalidate()
             }
-            
-            .navigationBarItems(
-                leading: Button(action: {
-                    presentationMode.wrappedValue.dismiss() // 后退功能
-                }) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundColor(.black)
-                }
-            )
-        .navigationBarBackButtonHidden(true) // 隐藏默认返回按钮
+        }
+    }
+    
+    func resendCode() {
+        // 在这里实现重新发送验证码的逻辑
+        startCountdown()
+    }
+    
+    func validateCode() -> Bool {
+        let fullCode = code.joined()
+        guard fullCode.count == 6 else { return false }
+        // 这里可以添加其他验证逻辑
+        return true
+    }
+    
+    deinit {
+        timer?.invalidate()
     }
 }
 
-
-// 预览
-struct CodeInputView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            ForgetCodeInputView(email: "example@example.com")
-                .environmentObject(TabBarManager()) // 注入环境对象
+// MARK: - Main View
+struct ForgetCodeInputView: View {
+    @Environment(\.presentationMode) var presentationMode
+    @StateObject private var viewModel = ForgetCodeViewModel()
+    @FocusState private var focusedField: Int?
+    @State private var navigateToNextScreen = false
+    let email: String
+    
+    var body: some View {
+        ZStack {
+            Color.white.edgesIgnoringSafeArea(.all)
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    headerSection
+                    codeInputSection
+                    resendSection
+                    
+                    if viewModel.showError {
+                        errorMessage
+                    }
+                    
+                    Spacer(minLength: 40)
+                    nextButton
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 30)
+            }
+        }
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: backButton)
+        .navigationDestination(isPresented: $navigateToNextScreen) {
+            GetNewPasswordView()
+        }
+        .overlay {
+            if viewModel.isLoading {
+                loadingView
+            }
+        }
+    }
+    
+    // MARK: - UI Components
+    private var headerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("我们已发送代码到你的邮箱")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.black)
+            
+            Text("请输入发送到 \(email) 的代码")
+                .font(.system(size: 16))
+                .foregroundColor(.gray)
+        }
+    }
+    
+    private var codeInputSection: some View {
+        HStack(spacing: 12) {
+            ForEach(0..<6, id: \.self) { index in
+                CodeInputBox(text: $viewModel.code[index])
+                    .frame(height: 50)
+                    .focused($focusedField, equals: index)
+                    .onChange(of: viewModel.code[index]) { newValue in
+                        handleCodeInput(index: index, newValue: newValue)
+                    }
+            }
+        }
+    }
+    
+    private var resendSection: some View {
+        HStack {
+            Spacer()
+            if viewModel.showResendButton {
+                Button("重新发送验证码") {
+                    viewModel.resendCode()
+                }
+                .foregroundColor(.blue)
+            } else {
+                Text("\(viewModel.countdown)秒后可重新发送")
+                    .foregroundColor(.gray)
+            }
+            Spacer()
+        }
+    }
+    
+    private var errorMessage: some View {
+        Text(viewModel.errorMessage)
+            .foregroundColor(.red)
+            .font(.footnote)
+            .transition(.opacity)
+    }
+    
+    private var nextButton: some View {
+        Button(action: handleNextButtonTap) {
+            Text("下一步")
+                .font(.system(size: 18, weight: .medium))
+                .frame(maxWidth: .infinity)
+                .padding()
+                .foregroundColor(.white)
+                .background(viewModel.validateCode() ? Color.black : Color.gray.opacity(0.5))
+                .cornerRadius(25)
+        }
+        .disabled(!viewModel.validateCode())
+    }
+    
+    private var backButton: some View {
+        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+            Image(systemName: "arrow.left")
+                .font(.system(size: 20, weight: .medium))
+                .foregroundColor(.black)
+        }
+    }
+    
+    private var loadingView: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(1.5)
+        }
+        .edgesIgnoringSafeArea(.all)
+    }
+    
+    // MARK: - Helper Methods
+    private func handleCodeInput(index: Int, newValue: String) {
+        // 处理输入
+        if newValue.count > 1 {
+            viewModel.code[index] = String(newValue.suffix(1))
+        }
+        
+        // 自动前进到下一个输入框
+        if !newValue.isEmpty && index < 5 {
+            focusedField = index + 1
+        }
+        
+        // 处理删除键
+        if newValue.isEmpty && index > 0 {
+            focusedField = index - 1
+        }
+        
+        viewModel.showError = false
+    }
+    
+    private func handleNextButtonTap() {
+        guard viewModel.validateCode() else { return }
+        
+        viewModel.isLoading = true
+        // 模拟网络请求
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            viewModel.isLoading = false
+            navigateToNextScreen = true
         }
     }
 }
- 
 
+
+
+// MARK: - Preview
+struct ForgetCodeInputView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            ForgetCodeInputView(email: "example@example.com")
+        }
+    }
+}
