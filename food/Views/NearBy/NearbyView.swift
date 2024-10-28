@@ -151,12 +151,43 @@ final class MapDataManager: ObservableObject {
     // MARK: - Initialization
     init() {
         setupNotifications()
+        setupPeriodicCleanup()
     }
     
     deinit {
         NotificationCenter.default.removeObserver(self)
     }
-    
+    private func setupPeriodicCleanup() {
+          Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+              Task { [weak self] in
+                  await self?.performPeriodicCleanup()
+              }
+          }
+      }
+      
+      private func performPeriodicCleanup() async {
+          // 清理过期数据
+          await cleanupExpiredData()
+          // 检查并限制可见标注数量
+          await limitVisibleAnnotations()
+      }
+      
+      private func cleanupExpiredData() async {
+          // 只保留最近访问的区域数据
+          let allRegions = await cacheManager.loadedRegions
+          if allRegions.count > Constants.cacheLimit / 2 {
+              let regionsToRemove = allRegions.prefix(allRegions.count - Constants.cacheLimit / 2)
+              for region in regionsToRemove {
+                  await cacheManager.removeRegion(region)
+              }
+          }
+      }
+      
+      private func limitVisibleAnnotations() async {
+          if visiblePlaces.count > LoadingConstants.visibleAnnotationsLimit {
+              visiblePlaces = Array(visiblePlaces.prefix(LoadingConstants.visibleAnnotationsLimit))
+          }
+      }
     // MARK: - Public Methods
     @MainActor
     func loadPlaces(in region: MKCoordinateRegion) async {
@@ -192,12 +223,15 @@ final class MapDataManager: ObservableObject {
         // 批量更新 visiblePlaces
         await updateVisiblePlacesInBatches(Array(sortedPlaces))
     }
+    
+    @MainActor
     private func updateVisiblePlacesInBatches(_ places: [Place]) async {
         let batchSize = LoadingConstants.maxAnnotationsPerBatch
         for startIndex in stride(from: 0, to: places.count, by: batchSize) {
             let endIndex = min(startIndex + batchSize, places.count)
             let batch = Array(places[startIndex..<endIndex])
             
+            // 在主线程更新UI
             if startIndex == 0 {
                 visiblePlaces = batch
             } else {
@@ -209,6 +243,8 @@ final class MapDataManager: ObservableObject {
             }
         }
     }
+    
+    @MainActor
     func cleanupInvisibleRegions(currentRegion: MKCoordinateRegion) async {
         let loadedRegions = await cacheManager.loadedRegions
         
