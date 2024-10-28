@@ -2,63 +2,53 @@ import SwiftUI
 
 struct SideMenu: View {
     @Binding var showMenu: Bool
-
+    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    
     var body: some View {
-        
-      
-            VStack(alignment: .leading, spacing: 0) {
-                // 头像和用户名部分
-                VStack(alignment: .center, spacing: 14) {
-                    Image("sample1")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 65, height: 65)
-                        .clipShape(Circle())
-                        .frame(maxWidth: .infinity)
-
-                    VStack(spacing: 8) {
-                        Text("Liu ziyuan")
-                            .font(.title2.bold())
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity, alignment: .center)
-
-                        Text("加入日: 2024年10月7日")
-                            .font(.callout)
-                            .foregroundColor(.gray)
-                            .frame(maxWidth: .infinity, alignment: .center)
-                    }
-                }
-                .padding(.top, 40)
-
-                // 菜单项
-                ScrollView(.vertical, showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 10) {
-                        // Profile按钮
-                        MenuItem(title: "Profile", icon: "person.circle", destination: ProfileEditorView(), showMenu: $showMenu)
-
-                        // Security按钮
-                        MenuItem(title: "Setting", icon: "shield", destination: PersonSettingsView(), showMenu: $showMenu)
-
-                        Divider()
-
-                        // About App 区域的按钮
-                        MenuItem(title: "Privacy Policy", icon: "lock.shield", destination: PrivacyPolicyView(), showMenu: $showMenu)
-                        
-                        MenuItem(title: "About App", icon: "info.circle", destination: AboutAppView(), showMenu: $showMenu)
-                        
-                    }
-                    .padding(.horizontal)
-                    .padding(.top)
+        VStack(alignment: .leading, spacing: 0) {
+            // 头像和用户名部分
+            VStack(alignment: .center, spacing: 14) {
+                Image("sample1")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 65, height: 65)
+                    .clipShape(Circle())
+                    .frame(maxWidth: .infinity)
+                
+                VStack(spacing: 8) {
+                    Text("Liu ziyuan")
+                        .font(.title2.bold())
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                    
+                    Text("加入日: 2024年10月7日")
+                        .font(.callout)
+                        .foregroundColor(.gray)
+                        .frame(maxWidth: .infinity, alignment: .center)
                 }
             }
-            .padding(.top)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(width: getRect().width * 0.7)
-            .frame(maxHeight: .infinity)
-            .background(Color.white.opacity(0.04).ignoresSafeArea(.container, edges: .vertical))
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, horizontalSizeClass == .regular ? 20 : 40)
+            
+            // 菜单项
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 10) {
+                    MenuItem(title: "Profile", icon: "person.circle", destination: ProfileEditorView(), showMenu: $showMenu)
+                    MenuItem(title: "Setting", icon: "shield", destination: PersonSettingsView(), showMenu: $showMenu)
+                    
+                    Divider()
+                    
+                    MenuItem(title: "Privacy Policy", icon: "lock.shield", destination: PrivacyPolicyView(), showMenu: $showMenu)
+                    MenuItem(title: "About App", icon: "info.circle", destination: AboutAppView(), showMenu: $showMenu)
+                }
+                .padding(.horizontal)
+                .padding(.top)
+            }
         }
+        .padding(.top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color.white)
     }
+}
 
 
 

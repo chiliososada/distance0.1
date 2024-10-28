@@ -132,32 +132,91 @@ struct HomeView: View {
     @GestureState private var gestureOffset: CGFloat = 0
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
+//    var body: some View {
+//        NavigationView {
+//            ZStack {
+//                HStack(spacing: 0) {
+//                    SideMenu(showMenu: $viewModel.showMenu)
+//                    VStack(spacing: 0) {
+//                        tabViewContent
+//                            .navigationBarHidden(true)
+//                    }
+//                    .frame(width: getRect().width)
+//                    .overlay(menuOverlay)
+//                }
+//                .frame(width: getRect().width + viewModel.sideBarWidth)
+//                .offset(x: -viewModel.sideBarWidth / 2)
+//                .offset(x: viewModel.offset > 0 ? viewModel.offset : 0)
+//                .gesture(menuDragGesture)
+//            }
+//            .navigationViewStyle(StackNavigationViewStyle())
+//            .animation(.easeOut, value: viewModel.offset == 0)
+//            .onChange(of: viewModel.showMenu) { 
+//                updateMenuState()
+//            }
+//            .ignoresSafeArea(edges: .bottom)
+//        }
+//    }
     var body: some View {
-        NavigationView {
-            ZStack {
-                HStack(spacing: 0) {
-                    SideMenu(showMenu: $viewModel.showMenu)
-                    VStack(spacing: 0) {
-                        tabViewContent
-                            .navigationBarHidden(true)
+            Group {
+                if horizontalSizeClass == .compact {
+                    // iPhone 布局保持不变
+                    NavigationView {
+                        ZStack {
+                            HStack(spacing: 0) {
+                                SideMenu(showMenu: $viewModel.showMenu)
+                                VStack(spacing: 0) {
+                                    tabViewContent
+                                        .navigationBarHidden(true)
+                                }
+                                .frame(width: getRect().width)
+                                .overlay(menuOverlay)
+                            }
+                            .frame(width: getRect().width + viewModel.sideBarWidth)
+                            .offset(x: -viewModel.sideBarWidth / 2)
+                            .offset(x: viewModel.offset > 0 ? viewModel.offset : 0)
+                            .gesture(menuDragGesture)
+                        }
+                        .navigationViewStyle(StackNavigationViewStyle())
+                        .animation(.easeOut, value: viewModel.offset == 0)
+                        .onChange(of: viewModel.showMenu) {
+                            updateMenuState()
+                        }
+                        .ignoresSafeArea(edges: .bottom)
                     }
-                    .frame(width: getRect().width)
-                    .overlay(menuOverlay)
+                } else {
+                    // iPad 布局优化
+                    NavigationSplitView {
+                        SideMenu(showMenu: $viewModel.showMenu)
+                            .frame(minWidth: 320, idealWidth: viewModel.sideBarWidth, maxWidth: 400)
+                            .background(Color.white)
+                    } detail: {
+                        VStack(spacing: 0) {
+                            tabViewContent
+                                .navigationBarHidden(viewModel.isNavigationBarHidden)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.white)
+                        .ignoresSafeArea(edges: .bottom)
+                    }
+                    .navigationSplitViewStyle(.balanced)
                 }
-                .frame(width: getRect().width + viewModel.sideBarWidth)
-                .offset(x: -viewModel.sideBarWidth / 2)
-                .offset(x: viewModel.offset > 0 ? viewModel.offset : 0)
-                .gesture(menuDragGesture)
             }
-            .navigationViewStyle(StackNavigationViewStyle())
-            .animation(.easeOut, value: viewModel.offset == 0)
-            .onChange(of: viewModel.showMenu) { 
-                updateMenuState()
-            }
-            .ignoresSafeArea(edges: .bottom)
         }
-    }
-    
+//    private var tabViewContent: some View {
+//            TabStateScrollView(
+//                axis: .vertical,
+//                showsIndicator: false,
+//                tabState: $viewModel.tabState,
+//                isNavigationBarHidden: $viewModel.isNavigationBarHidden
+//            ) {
+//                HomeTabContentView()
+//                    .navigationBarItems(
+//                        leading: leadingNavBarItem,
+//                        trailing: trailingNavBarItem
+//                    )
+//            }
+//        }
     private var menuOverlay: some View {
         Rectangle()
             .fill(Color.primary.opacity(Double(viewModel.offset / viewModel.sideBarWidth / 5)))
@@ -195,16 +254,20 @@ struct HomeView: View {
     }
     
     // MARK: - Tab Content
-    var tabViewContent: some View {
+    private var tabViewContent: some View {
         VStack {
             TabView(selection: $viewModel.selectedTab) {
                 homeTab
-                
+                    .tabItem { Image(systemName: "house.fill") }
+                    .tag(0)
+                    
                 NearbyView()
                     .tabItem { Image(systemName: "location.fill") }
                     .tag(1)
                 
                 plusTab
+                    .tabItem { Image(systemName: "plus.circle.fill") }
+                    .tag(2)
                 
                 ChatRoomListView()
                     .tabItem { Image(systemName: "message.fill") }
@@ -234,6 +297,7 @@ struct HomeView: View {
                         leading: leadingNavBarItem,
                         trailing: trailingNavBarItem
                     )
+                    
             }
             .toolbar(
                 (viewModel.tabState == .hidden || tabBarManager.isViewTabBarHidden) ? .hidden : .visible,
