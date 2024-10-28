@@ -315,7 +315,7 @@ struct ImageGalleryView: View {
                     // 主图（竖图）占满左侧
                     Image(images[mainImageIndex].imageName)
                         .resizable()
-                        .aspectRatio(contentMode: .fill) // 改用 .fill 来确保填充满高度
+                        .aspectRatio(contentMode: .fit) // 改用 .fill 来确保填充满高度
                         .frame(width: cardWidth * 0.5 - spacing/2)
                         .frame(height: maxHeight)
                         .clipped() // 添加 clipped 来处理超出部分
@@ -347,7 +347,7 @@ struct ImageGalleryView: View {
                     // 主图（横图）- 修改这部分以确保占满整行
                     Image(images[mainImageIndex].imageName)
                         .resizable()
-                        .aspectRatio(contentMode: .fill) // 改用 .fill 来确保填充满宽度
+                        .aspectRatio(contentMode: .fit) // 改用 .fill 来确保填充满宽度
                         .frame(width: cardWidth)
                         .frame(height: maxHeight * 0.6)
                         .clipped() // 添加 clipped 来处理超出部分
