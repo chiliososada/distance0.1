@@ -397,12 +397,7 @@ struct ImageGalleryView: View {
                 .frame(height: cardWidth + spacing)
             }
         }
-    }
-
-   
-
-    // 在 ImageItem 中添加便捷属性
-  
+    }  
     // 四图及以上布局
     private func fourAndMoreImagesView(_ images: [ImageItem]) -> some View {
         let spacing: CGFloat = 5
