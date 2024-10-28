@@ -55,7 +55,6 @@ final class MapDataManager: ObservableObject {
           static let maxAnnotationsPerBatch = 100
           static let batchLoadDelay: TimeInterval = 0.1
           static let visibleAnnotationsLimit = 200
-          static let distanceThreshold = 1000.0  // 米
       }
     // MARK: - Constants
     private enum Constants {
@@ -604,7 +603,7 @@ struct ClusterMapView: UIViewRepresentable {
 
 struct NearbyView: View {
 
-    @StateObject private var dataManager = MapDataManager()
+     @StateObject private var dataManager = MapDataManager()
      @State private var showBottomSheet = false
      @State private var selectedPlaceNames: [String] = []
      @State private var search: String = ""
