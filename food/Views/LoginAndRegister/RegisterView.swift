@@ -7,7 +7,7 @@ private enum Layout {
     static let iconSize: CGFloat = 20
     static let cornerRadius: CGFloat = 25
     static let titleSize: CGFloat = 28
-    static let buttonTextSize: CGFloat = 16
+    static let buttonTextSize: CGFloat = 20
     static let dividerOpacity: CGFloat = 0.5
     static let strokeWidth: CGFloat = 1
     
@@ -223,6 +223,8 @@ private extension View {
                     Image(systemName: "arrow.left")
                         .font(.system(size: Layout.buttonTextSize, weight: .medium))
                         .foregroundColor(.black)
+                    
+                  
                 }
             )
     }

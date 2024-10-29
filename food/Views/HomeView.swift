@@ -131,32 +131,6 @@ struct HomeView: View {
     @EnvironmentObject var tabBarManager: TabBarManager
     @GestureState private var gestureOffset: CGFloat = 0
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
-//    var body: some View {
-//        NavigationView {
-//            ZStack {
-//                HStack(spacing: 0) {
-//                    SideMenu(showMenu: $viewModel.showMenu)
-//                    VStack(spacing: 0) {
-//                        tabViewContent
-//                            .navigationBarHidden(true)
-//                    }
-//                    .frame(width: getRect().width)
-//                    .overlay(menuOverlay)
-//                }
-//                .frame(width: getRect().width + viewModel.sideBarWidth)
-//                .offset(x: -viewModel.sideBarWidth / 2)
-//                .offset(x: viewModel.offset > 0 ? viewModel.offset : 0)
-//                .gesture(menuDragGesture)
-//            }
-//            .navigationViewStyle(StackNavigationViewStyle())
-//            .animation(.easeOut, value: viewModel.offset == 0)
-//            .onChange(of: viewModel.showMenu) { 
-//                updateMenuState()
-//            }
-//            .ignoresSafeArea(edges: .bottom)
-//        }
-//    }
     var body: some View {
             Group {
                 if horizontalSizeClass == .compact {
@@ -203,20 +177,7 @@ struct HomeView: View {
                 }
             }
         }
-//    private var tabViewContent: some View {
-//            TabStateScrollView(
-//                axis: .vertical,
-//                showsIndicator: false,
-//                tabState: $viewModel.tabState,
-//                isNavigationBarHidden: $viewModel.isNavigationBarHidden
-//            ) {
-//                HomeTabContentView()
-//                    .navigationBarItems(
-//                        leading: leadingNavBarItem,
-//                        trailing: trailingNavBarItem
-//                    )
-//            }
-//        }
+
     private var menuOverlay: some View {
         Rectangle()
             .fill(Color.primary.opacity(Double(viewModel.offset / viewModel.sideBarWidth / 5)))

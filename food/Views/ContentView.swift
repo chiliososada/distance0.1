@@ -8,7 +8,7 @@ final class AuthManager: ObservableObject {
     struct UserProfile: Codable {
         let userId: String
         let userName: String
-        // 其他用户信息...
+      
     }
     
     init() {

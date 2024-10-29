@@ -7,18 +7,19 @@ private enum Layout {
     static let inputSpacing: CGFloat = 5
     static let horizontalPadding: CGFloat = 20
     static let cornerRadius: CGFloat = 25
-    static let keyboardOffset: CGFloat = 20
+   
 }
 
 // MARK: - View Model
 final class CreateAccountViewModel: ObservableObject {
     @Published var formData = FormData()
-    @Published var keyboardHeight: CGFloat = 0
     @Published var navigateToVerification = false
+    @Published var keyboardHeight: CGFloat = 0
     
     struct FormData {
         var name = ""
         var emailOrPhone = ""
+        var birthday = Date()  // 添加生日字段
         var selectedGender = "男"
         var password = ""
         var confirmPassword = ""
@@ -29,45 +30,28 @@ final class CreateAccountViewModel: ObservableObject {
     let genders = ["男", "女", "其他"]
     
     init(emailOrPhone: String) {
-        formData.emailOrPhone = emailOrPhone
-        setupKeyboardObservers()
-    }
-    
-    deinit {
-        removeKeyboardObservers()
-    }
-    
+            formData.emailOrPhone = emailOrPhone
+            setupKeyboardObservers()
+        }
     private func setupKeyboardObservers() {
-        let showObserver = NotificationCenter.default.addObserver(
-            forName: UIResponder.keyboardWillShowNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-            withAnimation {
-                self?.keyboardHeight = keyboardFrame.height - Layout.keyboardOffset
-            }
-        }
-        
-        let hideObserver = NotificationCenter.default.addObserver(
-            forName: UIResponder.keyboardWillHideNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            withAnimation {
-                self?.keyboardHeight = 0
-            }
-        }
-        
-        keyboardObservers = [showObserver, hideObserver]
-    }
-    
-    private func removeKeyboardObservers() {
-        keyboardObservers.forEach {
-            NotificationCenter.default.removeObserver($0)
-        }
-        keyboardObservers.removeAll()
-    }
+           NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillShowNotification, object: nil, queue: .main) { [weak self] notification in
+               guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+               withAnimation(.easeOut(duration: 0.16)) {
+                   self?.keyboardHeight = keyboardFrame.height
+               }
+           }
+           
+           NotificationCenter.default.addObserver(forName: UIResponder.keyboardWillHideNotification, object: nil, queue: .main) { [weak self] _ in
+               withAnimation(.easeOut(duration: 0.16)) {
+                   self?.keyboardHeight = 0
+               }
+           }
+       }
+       
+       deinit {
+           NotificationCenter.default.removeObserver(self)
+       }
+
 }
 
 // MARK: - Main View
@@ -75,6 +59,7 @@ struct CreateAccountView: View {
     @StateObject private var viewModel: CreateAccountViewModel
     @Environment(\.presentationMode) var presentationMode
     @FocusState private var focusedField: Field?
+    @Namespace private var bottomID
     
     enum Field: Hashable {
         case name, emailOrPhone, password, confirmPassword
@@ -85,25 +70,32 @@ struct CreateAccountView: View {
     }
     
     var body: some View {
-        ZStack {
-            ScrollView {
-                LazyVStack(spacing: Layout.spacing) {
-                    titleSection
-                    formSection
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: Layout.spacing) {
+                        titleSection
+                        formSection
+                        // 添加一个底部标识视图
+                        Color.clear.frame(height: 1).id(bottomID)
+                    }
+                    .padding(.horizontal, Layout.horizontalPadding)
+                    .padding(.bottom, viewModel.keyboardHeight > 0 ? viewModel.keyboardHeight - 50 : 0)
                 }
-                .padding(.horizontal, Layout.horizontalPadding)
-                .background(Color.white)
-                .padding(.bottom, viewModel.keyboardHeight)
+                .onChange(of: focusedField) { oldValue, newValue in
+                    if newValue == .password || newValue == .confirmPassword {
+                        withAnimation(.easeOut(duration: 0.16)) {
+                            proxy.scrollTo(bottomID)
+                        }
+                    }
+                }
             }
-            .ignoresSafeArea(.keyboard)
+            .navigationBarItems(leading: backButton, trailing: nextButton)
+            .navigationBarBackButtonHidden(true)
+            .navigationDestination(
+                isPresented: $viewModel.navigateToVerification,
+                destination: VerificationView.init
+            )
         }
-        .navigationBarItems(leading: backButton, trailing: nextButton)
-        .navigationBarBackButtonHidden(true)
-        .navigationDestination(
-            isPresented: $viewModel.navigateToVerification,
-            destination: VerificationView.init
-        )
-    }
     
     private var titleSection: some View {
         HStack {
@@ -145,6 +137,10 @@ struct CreateAccountView: View {
                 selectedGender: $viewModel.formData.selectedGender,
                 genders: viewModel.genders
             )
+            
+            FormField(title: "出生年月日") {
+                BirthdayField(date: $viewModel.formData.birthday)
+            }
             
             FormField(title: "密码") {
                 PasswordInputField(
@@ -235,7 +231,34 @@ private struct GenderPicker: View {
         }
     }
 }
-
+private struct BirthdayField: View {
+    @Binding var date: Date
+    
+    private let dateRange: ClosedRange<Date> = {
+        let calendar = Calendar.current
+        let minDate = calendar.date(byAdding: .year, value: -100, to: Date())!
+        return minDate...Date()
+    }()
+    
+    var body: some View {
+        HStack {
+            DatePicker("", selection: $date, in: dateRange, displayedComponents: .date)
+                .datePickerStyle(.compact)
+                .labelsHidden()
+                .environment(\.locale, Locale(identifier: "zh_CN"))
+                .frame(maxWidth: .infinity, alignment: .leading)
+            
+            Spacer()
+        }
+        .padding(.vertical, 8)
+        .overlay(
+            Rectangle()
+                .frame(height: 1)
+                .foregroundColor(.gray.opacity(0.3)),
+            alignment: .bottom
+        )
+    }
+}
 // MARK: - Preview
 struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {
