@@ -9,7 +9,9 @@ import SwiftUI
 
 @main
 struct foodApp: App {
-    @StateObject var tabBarManager = TabBarManager() // 创建全局的 TabBarManager
+    // 使用 StateObject 确保 TabBarManager 的生命周期
+    @StateObject private var tabBarManager = TabBarManager()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()

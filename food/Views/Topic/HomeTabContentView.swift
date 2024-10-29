@@ -571,30 +571,30 @@ struct CardFooter: View {
         }
     }
 }
-// MARK: - Image Carousel Content
 struct ImageCarouselContent: View {
     let images: [String]
     @Binding var currentIndex: Int
-    
+
     var body: some View {
         TabView(selection: $currentIndex) {
             ForEach(0..<images.count, id: \.self) { index in
                 Image(images[index])
                     .resizable()
-                    .scaledToFill()
-                    .frame(width: UIScreen.main.bounds.width)
-                    .clipped()
-                    .clipShape(
-                        RoundedCorner(
-                            radius: 30,
-                            corners: [.bottomLeft, .bottomRight]
-                        )
-                    )
+                    .scaledToFit() // 保持图片比例
+                    .frame(width: UIScreen.main.bounds.width) // 适配屏幕宽度
+                    .clipped() // 防止溢出
+//                    .clipShape(
+//                                        RoundedCorner(
+//                                            radius: 30,
+//                                            corners: [.bottomLeft, .bottomRight]
+//                                        )
+//                                    )
+                    //.shadow(radius: 8) // 添加阴影，增强美观
                     .tag(index)
             }
         }
-        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-        .frame(height: 450)
+        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never)) // 显示分页指示器
+        .frame(height: 450) // 调整高度适应大部分图片比例
     }
 }
 // MARK: - RecipeDetailView Optimizations
