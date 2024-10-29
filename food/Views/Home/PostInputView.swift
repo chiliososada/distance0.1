@@ -36,7 +36,17 @@ final class PostInputViewModel: ObservableObject {
         @Published var selectedImages: [UIImage] = []
         @Published var userLocationText = ""
         @Published var isShowingImagePicker = false
-        @Published var showingPicker = false
+        @Published var showingPicker =  false {
+            didSet {
+                // 当显示 picker 时，暂时移除键盘观察者
+                if showingPicker {
+                    removeKeyboardObservers()
+                } else {
+                    // 当 picker 关闭时，重新添加键盘观察者
+                    setupKeyboardObservers()
+                }
+            }
+        }
         @Published var isLocationPickerActive = false
         
         // 添加表情相关的属性
@@ -47,6 +57,10 @@ final class PostInputViewModel: ObservableObject {
         let locationManager = LocationManager.shared
         private var keyboardObservers: [NSObjectProtocol] = []
         
+
+    
+    
+    
     // 添加焦点追踪
        @Published var focusedField: FocusField?
      
@@ -87,6 +101,17 @@ final class PostInputViewModel: ObservableObject {
         }
        
          func showLocationPicker() {
+             
+             // 移除键盘观察者
+                     removeKeyboardObservers()
+                     
+                     // 确保键盘收起并重置状态
+                     isKeyboardVisible = false
+                     keyboardHeight = 0
+             
+             
+             
+             
            isLocationPickerActive = true
            // 确保键盘收起
            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
@@ -142,12 +167,18 @@ final class PostInputViewModel: ObservableObject {
                 }
             }
         }
-    private func setupKeyboardObservers() {
+     func setupKeyboardObservers() {
+        
+        // 移除现有观察者
+              removeKeyboardObservers()
+        
+        
         let showObserver = NotificationCenter.default.addObserver(
             forName: UIResponder.keyboardWillShowNotification,
             object: nil,
             queue: .main
         ) { [weak self] notification in
+            
             guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
             withAnimation(.easeOut(duration: 0.25)) {
                 self?.isKeyboardVisible = true
@@ -242,6 +273,10 @@ struct PostInputView: View {
                 if let name = item?.placemark.name {
                     viewModel.userLocationText = name
                 }
+                // 当 picker 关闭时重新设置键盘观察者
+                               DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                   viewModel.setupKeyboardObservers()
+                               }
             }
             
             .navigationBarItems(
