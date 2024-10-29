@@ -253,9 +253,9 @@ struct PostInputView: View {
                         .transition(.move(edge: .bottom))
                 }
             }
-            .onChange(of: focusedField) { newValue in
-                      viewModel.focusedField = newValue
-                  }
+            .onChange(of: focusedField) {
+                viewModel.focusedField = focusedField
+            }
             .sheet(isPresented: $viewModel.isShowingImagePicker) {
                 MultiImagePicker(images: $viewModel.selectedImages)
             }
@@ -295,9 +295,9 @@ struct PostInputView: View {
               TextField("标题", text: $viewModel.title)
                   .font(.system(size: 18, weight: .medium))
                   .focused($focusedField, equals: .title)
-                                  .onChange(of: focusedField) { newValue in
-                                      viewModel.focusedField = newValue
-                                  }
+                  .onChange(of: focusedField) {
+                      viewModel.focusedField = focusedField
+                  }
               if !viewModel.title.isEmpty {
                   Button(action: { viewModel.title = "" }) {
                       Image(systemName: "xmark.circle.fill")
