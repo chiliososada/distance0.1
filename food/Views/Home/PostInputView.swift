@@ -16,10 +16,21 @@ private enum Layout {
     static let toolbarHeight: CGFloat = 44
     static let maxCharacterCount = 777
     static let maxTitleLength = 20
+   
 }
 
 // MARK: - View Model
 final class PostInputViewModel: ObservableObject {
+    // 添加标签相关状态
+      @Published var isShowingHashtagSelector = false
+      @Published var suggestedTags = [
+          "#Meme",
+          "#ClassicIndependenceDayMovies",
+          "#foodie",
+          "#photography",
+          "#InternationalCatDay"
+      ]
+      
     // 现有的属性
         @Published var title = "" {
             didSet {
@@ -59,7 +70,7 @@ final class PostInputViewModel: ObservableObject {
         
 
     
-    
+    private var tagDeleteObserver: NSObjectProtocol?
     
     // 添加焦点追踪
        @Published var focusedField: FocusField?
@@ -70,8 +81,44 @@ final class PostInputViewModel: ObservableObject {
         }
         
          var shouldShowToolbar: Bool {
-           return focusedField == .content
+             return focusedField == .content || isShowingHashtagSelector
        }
+    
+    
+    // 简化插入标签的方法
+      func insertHashtag(_ tag: String) {
+          guard tag.hasPrefix("#") else { return }
+          // 只添加到已选标签列表（如果还没有这个标签）
+          if !selectedTags.contains(tag) {
+              selectedTags.append(tag)
+          }
+          // 关闭选择器
+          isShowingHashtagSelector = false
+      }
+        
+    // 简化删除标签的方法
+        func removeTag(_ tag: String) {
+            selectedTags.removeAll { $0 == tag }
+        }
+    // 仍然保留标签选择器的触发检查，但只用于工具栏按钮
+        func showHashtagSelector() {
+            isShowingHashtagSelector = true
+        }
+    // 检查是否应该显示标签选择器
+    func checkForHashtagTrigger(in text: String) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            if let lastChar = text.last, lastChar == "#" {
+                isShowingHashtagSelector = true
+            } else {
+                // 如果删除了 # 或输入了空格，关闭选择器
+                isShowingHashtagSelector = false
+            }
+        }
+    }
+    
+    
+    
+    
     // 更新表情插入逻辑
         func insertEmoji(_ emoji: String) {
             guard let selectedRange = contentSelectedRange else {
@@ -108,10 +155,6 @@ final class PostInputViewModel: ObservableObject {
                      // 确保键盘收起并重置状态
                      isKeyboardVisible = false
                      keyboardHeight = 0
-             
-             
-             
-             
            isLocationPickerActive = true
            // 确保键盘收起
            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
@@ -132,10 +175,15 @@ final class PostInputViewModel: ObservableObject {
            setupKeyboardObservers()
            // 初始化时获取位置
            updateLocationText()
+        
+      
        }
     
     deinit {
         removeKeyboardObservers()
+        if let observer = tagDeleteObserver {
+                    NotificationCenter.default.removeObserver(observer)
+                }
     }
     func updateLocationText() {
             guard let location = locationManager.userLocation else { return }
@@ -170,32 +218,36 @@ final class PostInputViewModel: ObservableObject {
      func setupKeyboardObservers() {
         
         // 移除现有观察者
-              removeKeyboardObservers()
+         removeKeyboardObservers()
         
         
-        let showObserver = NotificationCenter.default.addObserver(
-            forName: UIResponder.keyboardWillShowNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            
-            guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-            withAnimation(.easeOut(duration: 0.25)) {
-                self?.isKeyboardVisible = true
-                self?.keyboardHeight = keyboardFrame.height
-            }
-        }
-        
-        let hideObserver = NotificationCenter.default.addObserver(
-            forName: UIResponder.keyboardWillHideNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            withAnimation(.easeOut(duration: 0.25)) {
-                self?.isKeyboardVisible = false
-                self?.keyboardHeight = 0
-            }
-        }
+         let hideObserver = NotificationCenter.default.addObserver(
+             forName: UIResponder.keyboardWillHideNotification,
+             object: nil,
+             queue: .main
+         ) { [weak self] _ in
+             DispatchQueue.main.async {
+                 withAnimation(.easeOut(duration: 0.25)) {
+                     self?.isKeyboardVisible = false
+                     self?.keyboardHeight = 0
+                 }
+             }
+         }
+
+         // 同样修改显示键盘的观察者
+         let showObserver = NotificationCenter.default.addObserver(
+             forName: UIResponder.keyboardWillShowNotification,
+             object: nil,
+             queue: .main
+         ) { [weak self] notification in
+             guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+             DispatchQueue.main.async {
+                 withAnimation(.easeOut(duration: 0.25)) {
+                     self?.isKeyboardVisible = true
+                     self?.keyboardHeight = keyboardFrame.height
+                 }
+             }
+         }
         
         keyboardObservers = [showObserver, hideObserver]
     }
@@ -222,6 +274,7 @@ struct PostInputView: View {
            static let spacing: CGFloat = 16
            static let toolbarHeight: CGFloat = 44
            static let maxCharacterCount = 777
+        static let hashtagSelectorHeight: CGFloat = 200
        }
    
     var body: some View {
@@ -240,22 +293,39 @@ struct PostInputView: View {
                             .padding(.horizontal)
                         
                         locationSection
-                        
+                        tagsSection
                         contentInputSection
                         
-                        tagsSection
+                        
                     }
                     .padding(.bottom, viewModel.keyboardHeight > 0 ? viewModel.keyboardHeight - 50 : 0)
                 }
-                
+                if viewModel.isShowingHashtagSelector {
+                    HashtagSelectorView(
+                        hashtags: viewModel.suggestedTags,
+                        onSelect: viewModel.insertHashtag
+                    )
+                    .transition(.move(edge: .bottom))
+                }
                 if viewModel.shouldShowToolbar{
                     toolbarSection
                         .transition(.move(edge: .bottom))
                 }
+            }  .navigationBarItems(
+                leading: dismissButton,
+                trailing: publishButton
+            )
+            
+        }
+        .onChange(of: focusedField) {
+            viewModel.focusedField = focusedField
+        }
+        .onChange(of: viewModel.isShowingHashtagSelector) {
+            if viewModel.isShowingHashtagSelector {
+                // 确保内容输入框保持焦点
+                focusedField = .content
             }
-            .onChange(of: focusedField) {
-                viewModel.focusedField = focusedField
-            }
+        }
             .sheet(isPresented: $viewModel.isShowingImagePicker) {
                 MultiImagePicker(images: $viewModel.selectedImages)
             }
@@ -279,11 +349,8 @@ struct PostInputView: View {
                                }
             }
             
-            .navigationBarItems(
-                leading: dismissButton,
-                trailing: publishButton
-            )
-        }
+          
+        
     }
     private func dismissKeyboard() {
           focusedField = nil
@@ -390,19 +457,17 @@ struct PostInputView: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .frame(minHeight: 300)
         .padding(.horizontal)
-    }
-    
-    private var tagsSection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            if !viewModel.selectedTags.isEmpty {
-                HStack(spacing: 8) {
-                    ForEach(viewModel.selectedTags, id: \.self) { tag in
-                        tagView(tag)
-                    }
-                }
-                .padding(.horizontal)
-            }
+        .onChange(of: viewModel.content) {
+            viewModel.checkForHashtagTrigger(in: viewModel.content)
         }
+    }
+    private var tagsSection: some View {
+        FlowLayout(spacing: 8) {
+               ForEach(viewModel.selectedTags, id: \.self) { tag in
+                   tagView(tag)
+               }
+           }
+           .padding(.horizontal)
     }
     
     private var toolbarSection: some View {
@@ -420,9 +485,11 @@ struct PostInputView: View {
                                    .foregroundColor(.black)
                            }
                 
-                Button(action: { /* 话题选择 */ }) {
+                Button(action: {
+                    viewModel.isShowingHashtagSelector.toggle() // 使用 toggle() 来切换状态
+                }) {
                     Image(systemName: "number")
-                        .foregroundColor(.black)
+                        .foregroundColor(viewModel.isShowingHashtagSelector ? .blue : .black) // 可选：添加选中状态的颜色
                 }
             
                
@@ -445,14 +512,20 @@ struct PostInputView: View {
     
     private func tagView(_ tag: String) -> some View {
         HStack(spacing: 4) {
-            Image(systemName: "pencil")
             Text(tag)
+                .foregroundColor(.blue)
+            Button(action: {
+                viewModel.removeTag(tag)
+            }) {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 14))
+            }
         }
         .font(.system(size: 14))
-        .foregroundColor(.gray)
         .padding(.horizontal, 12)
         .padding(.vertical, 6)
-        .background(Color.gray.opacity(0.1))
+        .background(Color.blue.opacity(0.1))
         .cornerRadius(16)
     }
 }

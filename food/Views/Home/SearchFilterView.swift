@@ -4,7 +4,7 @@ import SwiftUI
 final class SearchFilterViewModel: ObservableObject {
     @Published var selectedDistance: Double = 50
     @Published var selectedTimeIndex = 0
-    @Published var selectedParticipants = 10
+   
     @Published var selectedLanguages: Set<String> = []  // 使用 Set 优化查找性能
     @Published var selectedCategories: Set<String> = []
     
@@ -23,7 +23,7 @@ final class SearchFilterViewModel: ObservableObject {
     func resetFilters() {
         selectedDistance = 50
         selectedTimeIndex = 0
-        selectedParticipants = 10
+        
         selectedLanguages.removeAll()
         selectedCategories.removeAll()
     }
@@ -74,12 +74,7 @@ struct SearchFilterView: View {
                     }
                     
                     // Participants Filter
-                    FilterSection(
-                        title: "最少参与人数",
-                        value: "\(viewModel.selectedParticipants) 人"
-                    ) {
-                        ParticipantsStepper(value: $viewModel.selectedParticipants)
-                    }
+                  
                 }
                 .padding(.horizontal)
             }
@@ -239,15 +234,7 @@ struct SelectionButton: View {
     }
 }
 
-struct ParticipantsStepper: View {
-    @Binding var value: Int
-    
-    var body: some View {
-        Stepper(value: $value, in: 1...1000, step: 1) {
-            Text("")
-        }
-    }
-}
+
 
 struct ApplyButton: View {
     @Binding var showFilterView: Bool

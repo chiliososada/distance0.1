@@ -85,7 +85,7 @@ struct CustomTextView: UIViewRepresentable {
     }
     
     func makeUIView(context: Context) -> UITextView {
-        let textView = PlaceholderTextView()
+        let textView = PlaceholderTextView() // 修改这里
         textView.delegate = context.coordinator
         textView.font = .systemFont(ofSize: 16)
         textView.isScrollEnabled = true
@@ -98,17 +98,14 @@ struct CustomTextView: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UITextView, context: Context) {
-        if uiView.text != text {
-            uiView.text = text
-        }
-        
-        if let range = selectedRange, uiView.selectedRange != range {
-            uiView.selectedRange = range
-        }
-        
-        // 确保 placeholder 在适当时显示
-        (uiView as? PlaceholderTextView)?.setNeedsDisplay()
-    }
+           if uiView.text != text {
+               uiView.text = text
+           }
+           if let range = selectedRange, uiView.selectedRange != range {
+               uiView.selectedRange = range
+           }
+           (uiView as? PlaceholderTextView)?.setNeedsDisplay()
+       }
     
     func makeCoordinator() -> Coordinator {
         Coordinator(self)
