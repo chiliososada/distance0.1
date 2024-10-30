@@ -54,43 +54,6 @@ final class HomeViewModel: ObservableObject {
         }
     }
     
-    // MARK: - Gesture Handlers
-    func handleGestureChange(translation: CGFloat) {
-          guard isHomeTab else { return }
-          let sideBarWidth = UIScreen.main.bounds.width - 90
-          offset = (translation != 0) ?
-              min(translation + lastStoredOffset, sideBarWidth) :
-              offset
-    }
-    
-    func handleGestureEnd(translation: CGFloat) {
-        guard isHomeTab else { return }
-        let sideBarWidth = UIScreen.main.bounds.width - 90
-        
-        withAnimation {
-            if translation > 0 {
-                if translation > (sideBarWidth / 2) {
-                    offset = sideBarWidth
-                    showMenu = true
-                } else {
-                    if offset == sideBarWidth { return }
-                    offset = 0
-                    showMenu = false
-                }
-            } else {
-                if -translation > (sideBarWidth / 2) {
-                    offset = 0
-                    showMenu = false
-                } else {
-                    if offset == 0 || !showMenu { return }
-                    offset = sideBarWidth
-                    showMenu = true
-                }
-            }
-        }
-        lastStoredOffset = offset
-    }
-    
     // MARK: - Location Methods
     func updateLocationText() {
         guard let location = locationManager.userLocation else { return }
@@ -129,7 +92,6 @@ final class HomeViewModel: ObservableObject {
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject var tabBarManager: TabBarManager
-    @GestureState private var gestureOffset: CGFloat = 0
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     var body: some View {
             Group {
@@ -149,7 +111,6 @@ struct HomeView: View {
                             .frame(width: getRect().width + viewModel.sideBarWidth)
                             .offset(x: -viewModel.sideBarWidth / 2)
                             .offset(x: viewModel.offset > 0 ? viewModel.offset : 0)
-                            .gesture(menuDragGesture)
                         }
                         .navigationViewStyle(StackNavigationViewStyle())
                         .animation(.easeOut, value: viewModel.offset == 0)
@@ -183,21 +144,6 @@ struct HomeView: View {
             .fill(Color.primary.opacity(Double(viewModel.offset / viewModel.sideBarWidth / 5)))
             .ignoresSafeArea(.container, edges: .vertical)
             .onTapGesture { viewModel.closeMenu() }
-    }
-    
-    private var menuDragGesture: some Gesture {
-        DragGesture()
-            .updating($gestureOffset) { value, state, _ in
-                if viewModel.isHomeTab {
-                    state = value.translation.width
-                }
-            }
-            .onChanged { _ in
-                viewModel.handleGestureChange(translation: gestureOffset)
-            }
-            .onEnded { value in
-                viewModel.handleGestureEnd(translation: value.translation.width)
-            }
     }
     
     private func updateMenuState() {

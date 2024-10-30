@@ -81,7 +81,9 @@ final class ProfileViewModel: ObservableObject {
             tags: ["活动", "社交", "健身"],
             timeElapsed: "3 days",
             distance: "300m",
-            title: "有一起去吃中华料理的吗？"
+            title: "有一起去吃中华料理的吗？",
+            showAvatar: true,
+            avatarImage: "sample1"
         )
     ]
     
@@ -95,7 +97,9 @@ final class ProfileViewModel: ObservableObject {
             tags: ["活动", "社交", "健身"],
             timeElapsed: "1 Day",
             distance: "300m",
-            title: "有一起去吃中华料理的吗？"
+            title: "有一起去吃中华料理的吗？",
+            showAvatar: true,
+            avatarImage: "sample1"
         )
     ]
 }
@@ -112,8 +116,9 @@ struct UserProfile {
     let avatar: String
 }
 
+// MARK: - 数据模型
 struct ReviewItem: Identifiable {
-    let id = UUID()
+    let id = UUID()  // 唯一标识符
     let name: String
     let date: String
     let location: String
@@ -123,6 +128,8 @@ struct ReviewItem: Identifiable {
     let timeElapsed: String
     let distance: String
     let title: String
+    let showAvatar: Bool
+    let avatarImage: String
 }
 
 // MARK: - Main View
@@ -260,7 +267,7 @@ struct UserProfileSection: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 100, height: 100)
                 .clipShape(Circle())
-                .shadow(radius: 4)
+//                .shadow(radius: 4)
                 .overlay(Circle().stroke(Color.gray, lineWidth: 2))
             
             Text(profile.name)
@@ -309,7 +316,6 @@ struct TabButtonRow: View {
                 .background(isSelected ? Color.black : Color.white)
                 .cornerRadius(20)
                 .clipShape(Capsule())
-                .shadow(radius: isSelected ? 5 : 0)
         }
     }
 }
@@ -325,7 +331,7 @@ struct ContentListSection: View {
         LazyVStack(spacing: 12) {
             ForEach(selectedTab == 0 ? publishedContent : savedContent) { item in
                 MyReviewRow(
-                    data: ReviewRowData(
+                    data: ReviewItem(
                         name: item.name,
                         date: item.date,
                         location: item.location,
@@ -335,7 +341,8 @@ struct ContentListSection: View {
                         timeElapsed: item.timeElapsed,
                         distance: item.distance,
                         title: item.title,
-                        showAvatar: true
+                        showAvatar: item.showAvatar,
+                        avatarImage: item.avatarImage
                     ),
                     onEdit: { onEdit?(item) },
                     onDelete: { onDelete?(item) }

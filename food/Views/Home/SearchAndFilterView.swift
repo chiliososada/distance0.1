@@ -120,10 +120,6 @@ struct SearchAndFilterView_Previews: PreviewProvider {
                 .previewDisplayName("Light Mode")
             
             PreviewWrapper()
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Dark Mode")
-            
-            PreviewWrapper()
                 .previewLayout(.fixed(width: 375, height: 60))
                 .previewDisplayName("iPhone SE")
         }

@@ -94,8 +94,8 @@ struct HeaderView: View {
     var body: some View {
         HStack {
             Button(action: { showFilterView = false }) {
-                Image(systemName: "chevron.left")
-                    .font(.headline)
+                Image(systemName: "xmark")
+                    .font(.title2)
                     .foregroundColor(.black)
             }
             Spacer()
@@ -104,11 +104,12 @@ struct HeaderView: View {
             Spacer()
             Button(action: onReset) {
                 Text("重置")
-                    .font(.subheadline)
-                    .foregroundColor(.red)
+                    .font(.title3)
+                    .foregroundColor(.blue)
             }
         }
         .padding([.horizontal, .top], 16)
+        .padding([.horizontal, .bottom], 16)
         .background(Color.white)
         Divider()
     }

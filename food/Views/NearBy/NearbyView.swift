@@ -742,7 +742,14 @@ struct BottomMenuView: View {
                                 tags: ["Tag1", "Tag2"],
                                 participantsCount: 0,
                                 postedTime: "Just now",
-                                distance: 100
+                                distance: 100,
+                                isLiked: false,
+                                // 新增属性的值
+                                avatarImage: "sample2",
+                                remainingDays: "3 days",
+                                publishDate: "2024-10-01",
+                                joinedCount: "75＋",
+                                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
                             )
                            
                         )

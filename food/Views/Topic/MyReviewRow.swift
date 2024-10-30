@@ -1,23 +1,9 @@
 import SwiftUI
-
-// MARK: - 数据模型
-struct ReviewRowData {
-    let name: String
-    let date: String
-    let location: String
-    let review: String
-    let participants: Int
-    let tags: [String]
-    let timeElapsed: String
-    let distance: String
-    let title: String
-    let showAvatar: Bool
-}
-
 // MARK: - 子组件
 struct ReviewAvatar: View {
+    let avatarImage: String  // 添加头像图片名称参数
     var body: some View {
-        Image("sample2")
+        Image(avatarImage)
             .resizable()
             .frame(width: 50, height: 50)
             .clipShape(Circle())
@@ -44,13 +30,14 @@ struct ReviewHeader: View {
     let date: String
     let timeElapsed: String
     let showAvatar: Bool
+    let avatarImage: String
     let onEdit: () -> Void
     let onDelete: () -> Void
     
     var body: some View {
         HStack(alignment: .top) {
             if showAvatar {
-                ReviewAvatar()
+                ReviewAvatar(avatarImage: avatarImage)
             }
             
             VStack(alignment: .leading, spacing: 4) {
@@ -127,11 +114,11 @@ struct ReviewFooter: View {
 
 // MARK: - 主视图
 struct MyReviewRow: View {
-    private let data: ReviewRowData
+    private let data: ReviewItem
     private let onEdit: () -> Void
     private let onDelete: () -> Void
     
-    init(data: ReviewRowData, onEdit: @escaping () -> Void = {}, onDelete: @escaping () -> Void = {}) {
+    init(data: ReviewItem, onEdit: @escaping () -> Void = {}, onDelete: @escaping () -> Void = {}) {
         self.data = data
         self.onEdit = onEdit
         self.onDelete = onDelete
@@ -144,6 +131,7 @@ struct MyReviewRow: View {
                 date: data.date,
                 timeElapsed: data.timeElapsed,
                 showAvatar: data.showAvatar,
+                avatarImage: data.avatarImage,
                 onEdit: onEdit,
                 onDelete: onDelete
             )
@@ -193,7 +181,7 @@ struct MyReviewRow: View {
 struct MyReviewRow_Previews: PreviewProvider {
     static var previews: some View {
         MyReviewRow(
-            data: ReviewRowData(
+            data: ReviewItem(
                 name: "John Doe",
                 date: "2024-10-03",
                 location: "東京都 葛飾区 立石",
@@ -203,7 +191,8 @@ struct MyReviewRow_Previews: PreviewProvider {
                 timeElapsed: "3 days",
                 distance: "300m",
                 title: "有一起打球的吗？",
-                showAvatar: true
+                showAvatar: true,
+                avatarImage: "sample1"  
             ),
             onEdit: { print("Edit tapped") },
             onDelete: { print("Delete tapped") }

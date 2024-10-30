@@ -4,18 +4,24 @@ import SwiftUI
 // MARK: - Models
 struct RecommendedRecipe: Identifiable, Hashable {
     let id = UUID()
-    let imageName: String
-    let title: String
-    let imageNames: [String]
-    let authorName: String
-    let location: String
-    let tags: [String]
-    let participantsCount: Int
-    let postedTime: String
-    let distance: Int
-    let isLiked: Bool = false
+    let imageName: String          // 保持原有的
+    let title: String             // 保持原有的
+    let imageNames: [String]      // 保持原有的
+    let authorName: String        // 保持原有的
+    let location: String          // 保持原有的
+    let tags: [String]           // 保持原有的
+    let participantsCount: Int    // 保持原有的
+    let postedTime: String        // 保持原有的
+    let distance: Int            // 保持原有的
+    let isLiked: Bool            // 保持原有的
+    
+    // 新增属性
+    let avatarImage: String      // 头像图片名称
+    let remainingDays: String    // 剩余时间
+    let publishDate: String      // 发布日期
+    let joinedCount: String      // 参加人数
+    let content: String          // 内容描述
 }
-
 // MARK: - HomeTabContentViewModel
 final class HomeTabContentViewModel: ObservableObject {
     @Published var recommendedRecipes: [RecommendedRecipe] = []
@@ -36,7 +42,15 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
+                
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -47,7 +61,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             
             RecommendedRecipe(
@@ -59,7 +80,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -70,7 +98,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "电影", "社交"],
                 participantsCount: 56,
                 postedTime: "20 mins",
-                distance: 500
+                distance: 500,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -81,7 +116,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -92,7 +134,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -103,7 +152,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -114,7 +170,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -125,7 +188,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "运动", "篮球"],
                 participantsCount: 99,
                 postedTime: "10 mins",
-                distance: 300
+                distance: 300,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -136,7 +206,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["娱乐", "电影", "社交"],
                 participantsCount: 56,
                 postedTime: "20 mins",
-                distance: 500
+                distance: 500,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -147,7 +224,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["音乐", "节日", "拼车"],
                 participantsCount: 150,
                 postedTime: "30 mins",
-                distance: 700
+                distance: 700,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             ),
             RecommendedRecipe(
                 imageName: "sample1",
@@ -158,7 +242,14 @@ final class HomeTabContentViewModel: ObservableObject {
                 tags: ["运动", "骑行", "健身"],
                 participantsCount: 25,
                 postedTime: "1 hour",
-                distance: 1000
+                distance: 1000,
+                isLiked: false,
+                // 新增属性的值
+                avatarImage: "sample2",
+                remainingDays: "3 days",
+                publishDate: "2024-10-01",
+                joinedCount: "75＋",
+                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
             )
         ]
     }
@@ -171,17 +262,18 @@ struct HomeTabContentView: View {
     
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 16) {
+            LazyVStack(spacing: 16, pinnedViews: []) {
                 ForEach(viewModel.recommendedRecipes) { recipe in
                     NavigationLink(destination: RecipeDetailView(recipe: recipe)) {
                         RecipeCard(recipe: recipe)
+                            .id(recipe.id)
                     }
-                    .buttonStyle(PlainButtonStyle())
+                  
                 }
             }
             .padding()
         }
-        .background(Color(UIColor.systemBackground))
+        .scrollDismissesKeyboard(.immediately) // 添加这个来优化键盘处理
     }
 }
 
@@ -225,7 +317,10 @@ struct RecipeCard: View {
         .padding()
         .background(Color.white)
         .cornerRadius(16)
-        .shadow(color: .gray.opacity(0.2), radius: 8, x: 0, y: 2)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
         .frame(maxWidth: horizontalSizeClass == .compact ? 350 : .infinity)
     }
 }
@@ -453,7 +548,7 @@ struct AuthorHeader: View {
                 // 头像
                 Image(recipe.imageName)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .scaledToFill()
                     .frame(width: 40, height: 40)
                     .clipShape(Circle())
                 
@@ -571,97 +666,7 @@ struct CardFooter: View {
         }
     }
 }
-struct ImageCarouselContent: View {
-    let images: [String]
-    @Binding var currentIndex: Int
 
-    var body: some View {
-        TabView(selection: $currentIndex) {
-            ForEach(0..<images.count, id: \.self) { index in
-                Image(images[index])
-                    .resizable()
-                    .scaledToFit() // 保持图片比例
-                    .frame(width: UIScreen.main.bounds.width) // 适配屏幕宽度
-                    .clipped() // 防止溢出
-//                    .clipShape(
-//                                        RoundedCorner(
-//                                            radius: 30,
-//                                            corners: [.bottomLeft, .bottomRight]
-//                                        )
-//                                    )
-                    //.shadow(radius: 8) // 添加阴影，增强美观
-                    .tag(index)
-            }
-        }
-        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never)) // 显示分页指示器
-        .frame(height: 450) // 调整高度适应大部分图片比例
-    }
-}
-// MARK: - RecipeDetailView Optimizations
-struct RecipeDetailView: View {
-    let recipe: RecommendedRecipe
-    @State private var currentImageIndex = 0
-    @State private var isPressed = false
-    @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var tabBarManager: TabBarManager
-    
-    private let timer = Timer.publish(every: 0.5, on: .main, in: .common).autoconnect()
-    
-    var body: some View {
-        ZStack(alignment: .top) {
-            // Content
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Image Carousel without navigation buttons
-                    ImageCarouselContent(
-                        images: recipe.imageNames,
-                        currentIndex: $currentImageIndex
-                    )
-                    
-                    DetailContent(recipe: recipe, currentImageIndex: $currentImageIndex)
-                }
-            }
-            
-            // Custom Navigation Bar
-            CustomNavigationBar(
-                leadingButton: {
-                    Button(action: { presentationMode.wrappedValue.dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title3)
-                            .foregroundColor(.black)
-                            .padding(9)
-                            .background(Color.white)
-                            .cornerRadius(8)
-                            .shadow(radius: 3)
-                    }
-                },
-                trailingButton: {
-                    Button(action: {}) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.title3)
-                            .foregroundColor(.black)
-                            .padding(9)
-                            .background(Color.white)
-                            .cornerRadius(8)
-                            .shadow(radius: 3)
-                    }
-                }
-            )
-            
-            // Floating Join Button
-            FloatingJoinButton(isPressed: $isPressed)
-                .onReceive(timer) { _ in
-                    withAnimation(.easeInOut(duration: 1)) {
-                        isPressed.toggle()
-                    }
-                }
-        }
-        .edgesIgnoringSafeArea(.top)
-        .navigationBarHidden(true)
-        .onAppear { tabBarManager.isViewTabBarHidden = true }
-        .onDisappear { tabBarManager.isViewTabBarHidden = false }
-    }
-}
 
 
 // MARK: - Custom Navigation Bar
@@ -688,157 +693,11 @@ struct CustomNavigationBar: View {
     }
 }
 
-// MARK: - DetailContent
-struct DetailContent: View {
-    let recipe: RecommendedRecipe
-    @Binding var currentImageIndex: Int
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Page Indicator
-            HStack {
-                Spacer()
-                ForEach(0..<recipe.imageNames.count, id: \.self) { index in
-                    Circle()
-                        .fill(index == currentImageIndex ? Color.black : Color.gray)
-                        .frame(width: 8, height: 8)
-                        .opacity(index == currentImageIndex ? 1 : 0.3)
-                }
-                Spacer()
-            }
-            .padding(.vertical, 8)
-            
-            // Author Info
-            HStack {
-                VStack(alignment: .leading) {
-                    HStack {
-                        Image("sample2")
-                            .resizable()
-                            .frame(width: 30, height: 30)
-                            .clipShape(Circle())
-                        Text(recipe.authorName)
-                            .foregroundColor(.blue)
-                            .font(.subheadline)
-                        Spacer()
-                        HStack {
-                            Image(systemName: "clock.arrow.circlepath")
-                            Text("3 days")
-                                .lineLimit(1)
-                        }
-                    }
-                    
-                    // Title
-                    Text(recipe.title)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    // Tags
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(recipe.tags, id: \.self) { tag in
-                                Text(tag)
-                                    .font(.caption)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 4)
-                                    .background(Color.gray.opacity(0.2))
-                                    .cornerRadius(6)
-                                    .foregroundColor(.black)
-                            }
-                        }
-                    }
-                    
-                    // Location
-                    HStack {
-                        Image(systemName: "mappin.and.ellipse")
-                            .foregroundColor(.gray)
-                        Text(recipe.location)
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                        
-                        Spacer()
-                        
-                        Button(action: {}) {
-                            Image(systemName: "star.fill")
-                                .font(.title3)
-                                .foregroundColor(.yellow)
-                                .padding(6)
-                                .background(Color.white)
-                                .cornerRadius(6)
-                                .shadow(radius: 4)
-                        }
-                    }
-                }
-                Spacer()
-            }
-            .padding(.horizontal)
-            
-            Divider()
-                .padding(.horizontal)
-            
-            // Details Section
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Details")
-                    .font(.headline)
-                    .padding(.horizontal)
-                
-                HStack(spacing: 10) {
-                    DetailItem(icon: "calendar", text: "2024-10-01")
-                    DetailItem(icon: "person.2.fill", text: "75＋")
-                }
-                .padding(.horizontal)
-                
-                Text("Content")
-                    .font(.headline)
-                    .padding(.horizontal)
-                
-                Text("今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。")
-                    .font(.body)
-                    .padding(.horizontal)
-            }
-        }
-    }
-}
 
-struct DetailItem: View {
-    let icon: String
-    let text: String
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-            Text(text)
-                .lineLimit(1)
-        }
-        .padding(8)
-        .background(Color.blue.opacity(0.2))
-        .cornerRadius(10)
-        .frame(minWidth: 80)
-    }
-}
 
-// MARK: - FloatingJoinButton
-struct FloatingJoinButton: View {
-    @Binding var isPressed: Bool
-    
-    var body: some View {
-        GeometryReader { geometry in
-            VStack {
-                Spacer()
-                Button(action: {}) {
-                    Text("Join")
-                        .font(.headline)
-                        .foregroundColor(.white)
-                        .frame(width: 60, height: 60)
-                        .background(Circle().fill(Color.black))
-                        .shadow(radius: 10)
-                        .opacity(0.8)
-                }
-                .scaleEffect(isPressed ? 1.2 : 1.0)
-                .position(x: geometry.size.width / 2, y: geometry.size.height - 50)
-            }
-        }
-    }
-}
+
+
+
 
 // MARK: - Preview Helpers
 extension RecommendedRecipe {
@@ -852,29 +711,50 @@ extension RecommendedRecipe {
             tags: ["娱乐", "运动", "篮球"],
             participantsCount: 99,
             postedTime: "10 mins",
-            distance: 300
+            distance: 300,
+            isLiked: false,
+            // 新增属性的值
+            avatarImage: "sample2",
+            remainingDays: "3 days",
+            publishDate: "2024-10-01",
+            joinedCount: "75＋",
+            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
         ),
         RecommendedRecipe(
             imageName: "sample1",
-            title: "寻找一起去银座逛街的小伙伴",
-            imageNames: ["sample1"],
-            authorName: "张小明",
-            location: "東京都 中央区 銀座",
-            tags: ["购物", "娱乐", "社交"],
-            participantsCount: 45,
-            postedTime: "5 mins",
-            distance: 500
+            title: "有一起打球的的吗",
+            imageNames: ["sample1", "reco_2", "reco_3"],
+            authorName: "劉子源",
+            location: "東京都 葛飾区 立石",
+            tags: ["娱乐", "运动", "篮球"],
+            participantsCount: 99,
+            postedTime: "10 mins",
+            distance: 300,
+            isLiked: false,
+            // 新增属性的值
+            avatarImage: "sample2",
+            remainingDays: "3 days",
+            publishDate: "2024-10-01",
+            joinedCount: "75＋",
+            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
         ),
         RecommendedRecipe(
             imageName: "sample1",
-            title: "秋叶原动漫展寻找同行者",
-            imageNames: ["sample1", "reco_2", "reco_3", "reco_3", "reco_3"],
-            authorName: "王思思",
-            location: "東京都 千代田区 秋葉原",
-            tags: ["动漫", "展会", "娱乐"],
-            participantsCount: 120,
-            postedTime: "30 mins",
-            distance: 800
+            title: "有一起打球的的吗",
+            imageNames: ["sample1", "reco_2", "reco_3"],
+            authorName: "劉子源",
+            location: "東京都 葛飾区 立石",
+            tags: ["娱乐", "运动", "篮球"],
+            participantsCount: 99,
+            postedTime: "10 mins",
+            distance: 300,
+            isLiked: false,
+            // 新增属性的值
+            avatarImage: "sample2",
+            remainingDays: "3 days",
+            publishDate: "2024-10-01",
+            joinedCount: "75＋",
+            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
         )
     ]
 }
@@ -912,7 +792,7 @@ struct HomeTabContentView_WithPreviewData: View {
 // MARK: - Previews
 struct HomeTabContentView_Previews: PreviewProvider {
     static var previews: some View {
-        Group {
+   
             // 亮色模式预览
             NavigationView {
                 HomeTabContentView_WithPreviewData()
@@ -921,60 +801,7 @@ struct HomeTabContentView_Previews: PreviewProvider {
             }
             .previewDisplayName("Light Mode")
             
-            // 深色模式预览
-            NavigationView {
-                HomeTabContentView_WithPreviewData()
-                    .environmentObject(TabBarManager())
-                    .environment(\.colorScheme, .dark)
-            }
-            .previewDisplayName("Dark Mode")
-            
-            // iPhone SE 预览
-            NavigationView {
-                HomeTabContentView_WithPreviewData()
-                    .environmentObject(TabBarManager())
-            }
-            .previewDevice("iPhone SE (3rd generation)")
-            .previewDisplayName("iPhone SE")
-            
-            // iPad 预览
-            NavigationView {
-                HomeTabContentView_WithPreviewData()
-                    .environmentObject(TabBarManager())
-            }
-            .previewDevice("iPad Pro (11-inch) (4th generation)")
-            .previewDisplayName("iPad Pro 11")
-        }
+           
+        
     }
 }
-
-// MARK: - Preview Only Components
-#if DEBUG
-struct PreviewCard: View {
-    let recipe: RecommendedRecipe
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(recipe.title)
-                .font(.headline)
-            Text(recipe.location)
-                .font(.subheadline)
-                .foregroundColor(.gray)
-            HStack {
-                ForEach(recipe.tags, id: \.self) { tag in
-                    Text(tag)
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(12)
-                }
-            }
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(radius: 5)
-    }
-}
-#endif
