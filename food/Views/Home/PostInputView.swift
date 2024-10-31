@@ -120,32 +120,36 @@ final class PostInputViewModel: ObservableObject {
     
     
     // 更新表情插入逻辑
-        func insertEmoji(_ emoji: String) {
-            guard let selectedRange = contentSelectedRange else {
-                // 如果没有选中范围，追加到末尾
-                content.append(emoji)
-                contentSelectedRange = NSRange(location: content.count, length: 0)
-                return
-            }
-            
-            // 将 NSRange 转换为 String.Index
-            let utf16Start = content.utf16.index(content.utf16.startIndex, offsetBy: selectedRange.location)
-            let utf16End = content.utf16.index(utf16Start, offsetBy: selectedRange.length)
-            
-            // 获取对应的 String.Index
-            guard let start = String.Index(utf16Start, within: content),
-                  let end = String.Index(utf16End, within: content) else {
-                return
-            }
-            
-            // 在正确的位置插入表情
-            let range = start..<end
-            content.replaceSubrange(range, with: emoji)
-            
-            // 更新光标位置
-            let newLocation = selectedRange.location + emoji.utf16.count
-            contentSelectedRange = NSRange(location: newLocation, length: 0)
+    func insertEmoji(_ emoji: String) {
+        if content.isEmpty {
+            // 第一次插入（内容为空）的情况
+            content = emoji
+            contentSelectedRange = NSRange(location: emoji.utf16.count, length: 0)
+            return
         }
+        
+        guard let selectedRange = contentSelectedRange else {
+            // 没有选中范围，但内容不为空的情况
+            content.append(emoji)
+            contentSelectedRange = NSRange(location: content.utf16.count, length: 0)
+            return
+        }
+        
+        // 有选中范围的情况
+        let utf16Start = content.utf16.index(content.utf16.startIndex, offsetBy: selectedRange.location)
+        let utf16End = content.utf16.index(utf16Start, offsetBy: selectedRange.length)
+        
+        guard let start = String.Index(utf16Start, within: content),
+              let end = String.Index(utf16End, within: content) else {
+            return
+        }
+        
+        let range = start..<end
+        content.replaceSubrange(range, with: emoji)
+        
+        let newLocation = selectedRange.location + emoji.utf16.count
+        contentSelectedRange = NSRange(location: newLocation, length: 0)
+    }
        
          func showLocationPicker() {
              

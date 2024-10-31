@@ -40,7 +40,7 @@ struct HashtagSelectorView: View {
                             Button(action: {
                                 submitTag()
                             }) {
-                                Text("完成")
+                                Text("添加")
                                     .foregroundColor(.blue)
                                     .font(.system(size: 16))
                             }

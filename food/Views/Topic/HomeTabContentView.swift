@@ -337,15 +337,117 @@ struct ImageGalleryView: View {
     let images: [ImageItem]
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
+    private let spacing: CGFloat = 5
+    private let cornerRadius: CGFloat = 8
+    private let maxHeightRatio: CGFloat = 0.75 // 最大高度比例
+    
     private var cardWidth: CGFloat {
         horizontalSizeClass == .compact ? 350.0 : UIScreen.main.bounds.width - 32
+    }
+    
+    // 基础图片修饰符 - 改用 .fit 来确保完整显示
+    private func baseImageModifier(_ image: Image) -> some View {
+        image
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+    }
+    
+    // 计算图片适合的尺寸
+    private func calculateImageSize(_ image: ImageItem, maxWidth: CGFloat) -> CGSize {
+        let aspectRatio = max(image.aspectRatio, 0.1)
+        let naturalHeight = maxWidth / aspectRatio
+        let maxHeight = cardWidth * maxHeightRatio
+        let height = min(naturalHeight, maxHeight)
+        return CGSize(width: maxWidth, height: height)
+    }
+    
+    private func singleImageView(_ image: ImageItem) -> some View {
+        let screenWidth = UIScreen.main.bounds.width
+        let aspectRatio = image.aspectRatio
+        let height = screenWidth / aspectRatio // 根据宽度和图片比例计算实际需要的高度
+        
+        return baseImageModifier(Image(image.imageName))
+            .frame(width: screenWidth, height: height) // 使用计算出的高度
+    }
+    // 双图布局
+    private func twoImagesView(_ images: [ImageItem]) -> some View {
+        let itemWidth = (cardWidth - spacing) / 2
+        return HStack(spacing: spacing) {
+            ForEach(0..<2, id: \.self) { index in
+                let image = images[index]
+                let size = calculateImageSize(image, maxWidth: itemWidth)
+                baseImageModifier(Image(image.imageName))
+                    .frame(width: size.width, height: size.height)
+            }
+        }
+    }
+    
+    // 三图布局
+    private func threeImagesView(_ images: [ImageItem]) -> some View {
+        let itemWidth = (cardWidth - spacing) / 2
+        return VStack(spacing: spacing) {
+            // 第一行一张图
+            let firstImageSize = calculateImageSize(images[0], maxWidth: cardWidth)
+            baseImageModifier(Image(images[0].imageName))
+                .frame(width: firstImageSize.width, height: firstImageSize.height)
+            
+            // 第二行两张图
+            HStack(spacing: spacing) {
+                ForEach(1...2, id: \.self) { index in
+                    let size = calculateImageSize(images[index], maxWidth: itemWidth)
+                    baseImageModifier(Image(images[index].imageName))
+                        .frame(width: size.width, height: size.height)
+                }
+            }
+        }
+    }
+    
+    // 四图及以上布局
+    private func fourAndMoreImagesView(_ images: [ImageItem]) -> some View {
+        let spacing: CGFloat = 5
+        let itemWidth = (cardWidth - spacing) / 2
+        
+        return VStack(spacing: spacing) {
+            // 第一行两张图
+            HStack(spacing: spacing) {
+                ForEach(0..<2, id: \.self) { index in
+                    let size = calculateImageSize(images[index], maxWidth: itemWidth)
+                    baseImageModifier(Image(images[index].imageName))
+                        .frame(width: size.width, height: size.height)
+                }
+            }
+            
+            // 第二行两张图，最后一张可能显示剩余数量
+            HStack(spacing: spacing) {
+                let size3 = calculateImageSize(images[2], maxWidth: itemWidth)
+                baseImageModifier(Image(images[2].imageName))
+                    .frame(width: size3.width, height: size3.height)
+                
+                ZStack {
+                    let size4 = calculateImageSize(images[3], maxWidth: itemWidth)
+                    baseImageModifier(Image(images[3].imageName))
+                        .frame(width: size4.width, height: size4.height)
+                    
+                    if images.count > 4 {
+                        Rectangle()
+                            .fill(Color.black.opacity(0.4))
+                            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        
+                        Text("+\(images.count - 4)")
+                            .font(.title2.weight(.semibold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+        }
     }
     
     var body: some View {
         Group {
             switch images.count {
             case 1:
-                singleImageView(images[0])
+                singleImageView(images[0])   
             case 2:
                 twoImagesView(images)
             case 3:
@@ -355,185 +457,6 @@ struct ImageGalleryView: View {
             }
         }
         .frame(width: cardWidth)
-        .clipped()
-    }
-    
-    // 单图布局
-    private func singleImageView(_ image: ImageItem) -> some View {
-
-        return Image(image.imageName)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(width: cardWidth, height: cardWidth/image.aspectRatio)
-          
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-    
-    // 双图布局
-    private func twoImagesView(_ images: [ImageItem]) -> some View {
-        let spacing: CGFloat = 5
-        let itemWidth = (cardWidth - spacing) / 2
-        
-        return HStack(spacing: spacing) {
-            ForEach(0..<2, id: \.self) { index in
-                Image(images[index].imageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: itemWidth, height: itemWidth)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            }
-        }
-    }
-    
-    private func threeImagesView(_ images: [ImageItem]) -> some View {
-        let spacing: CGFloat = 5
-        let maxHeight = cardWidth 
-        
-        // 检查是否有竖图，并且宽高比是 3:4
-        let hasPortraitImage = images.contains { image in
-            image.isPortrait && abs(image.aspectRatio - 3.0/4.0) < 0.1
-        }
-        
-        // 检查是否有横图，并且宽高比是 4:3
-        let hasLandscapeImage = images.contains { image in
-            image.isLandscape && abs(image.aspectRatio - 4.0/3.0) < 0.1
-        }
-        
-        return Group {
-            if hasPortraitImage {
-                // 竖图布局：主图占满整列
-                HStack(spacing: spacing) {
-                    let mainImageIndex = images.firstIndex { image in
-                        image.isPortrait && abs(image.aspectRatio - 3.0/4.0) < 0.1
-                    } ?? 0
-                    
-                    // 主图（竖图）占满左侧
-                    Image(images[mainImageIndex].imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit) // 改用 .fill 来确保填充满高度
-                        .frame(width: cardWidth * 0.5 - spacing/2)
-                        .frame(height: maxHeight)
-                        .clipped() // 添加 clipped 来处理超出部分
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    
-                    // 右侧其他图片
-                    let otherIndices = Array(images.indices.filter { $0 != mainImageIndex }.prefix(2))
-                    if !otherIndices.isEmpty {
-                        VStack(spacing: spacing) {
-                            ForEach(otherIndices, id: \.self) { index in
-                                Image(images[index].imageName)
-                                    .resizable()
-                                    .aspectRatio(1, contentMode: .fill)
-                                    .frame(width: cardWidth * 0.5 - spacing/2)
-                                    .frame(height: (maxHeight - spacing) / 2)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
-                        }
-                    }
-                }
-                .frame(height: maxHeight)
-            } else if hasLandscapeImage {
-                // 横图布局：主图占满整行宽度
-                VStack(spacing: spacing) {
-                    let mainImageIndex = images.firstIndex { image in
-                        image.isLandscape && abs(image.aspectRatio - 4.0/3.0) < 0.1
-                    } ?? 0
-                    
-                    // 主图（横图）- 修改这部分以确保占满整行
-                    Image(images[mainImageIndex].imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit) // 改用 .fill 来确保填充满宽度
-                        .frame(width: cardWidth)
-                        .frame(height: maxHeight * 0.6)
-                        .clipped() // 添加 clipped 来处理超出部分
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    
-                    // 下方其他图片
-                    let otherIndices = Array(images.indices.filter { $0 != mainImageIndex }.prefix(2))
-                    if !otherIndices.isEmpty {
-                        HStack(spacing: spacing) {
-                            ForEach(otherIndices, id: \.self) { index in
-                                Image(images[index].imageName)
-                                    .resizable()
-                                    .aspectRatio(1, contentMode: .fill)
-                                    .frame(width: (cardWidth - spacing) / 2)
-                                    .frame(height: maxHeight * 0.4 - spacing)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
-                        }
-                    }
-                }
-                .frame(height: maxHeight)
-            }else {
-                // 默认布局：上面两张1:1，下面左侧1:1
-                VStack(spacing: spacing) {
-                    HStack(spacing: spacing) {
-                        ForEach(0..<2) { index in
-                            Image(images[index].imageName)
-                                .resizable()
-                                .aspectRatio(1, contentMode: .fill)
-                                .frame(width: (cardWidth - spacing) / 2)
-                                .frame(height: (cardWidth - spacing) / 2)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                    }
-                    
-                    HStack(spacing: spacing) {
-                        Image(images[2].imageName)
-                            .resizable()
-                            .aspectRatio(1, contentMode: .fill)
-                            .frame(width: (cardWidth - spacing) / 2)
-                            .frame(height: (cardWidth - spacing) / 2)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        
-                        Spacer()
-                    }
-                }
-                .frame(height: cardWidth + spacing)
-            }
-        }
-    }  
-    // 四图及以上布局
-    private func fourAndMoreImagesView(_ images: [ImageItem]) -> some View {
-        let spacing: CGFloat = 5
-        let itemSize = (cardWidth - spacing) / 2
-        
-        return VStack(spacing: spacing) {
-            HStack(spacing: spacing) {
-                ForEach(0..<2) { index in
-                    Image(images[index].imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: itemSize, height: itemSize)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            
-            HStack(spacing: spacing) {
-                Image(images[2].imageName)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: itemSize, height: itemSize)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                
-                ZStack {
-                    Image(images[3].imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: itemSize, height: itemSize)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    
-                    if images.count > 4 {
-                        Color.black.opacity(0.4)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        Text("+\(images.count - 4)")
-                            .font(.title2)
-                            .bold()
-                            .foregroundColor(.white)
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -581,36 +504,6 @@ struct AuthorHeader: View {
     }
 }
 
-struct ImageGallery: View {
-    let images: [String]
-    
-    var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            LazyHStack(spacing: 8) {
-                ForEach(images.prefix(4), id: \.self) { imageName in
-                    Image(imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 80, height: 80)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                
-                if images.count > 4 {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.black.opacity(0.2))
-                            .frame(width: 80, height: 80)
-                        
-                        Text("+\(images.count - 4)")
-                            .font(.title3)
-                            .foregroundColor(.white)
-                    }
-                }
-            }
-        }
-        .frame(height: 80)
-    }
-}
 
 struct TagsRow: View {
     let tags: [String]
@@ -669,29 +562,7 @@ struct CardFooter: View {
 
 
 
-// MARK: - Custom Navigation Bar
-struct CustomNavigationBar: View {
-    let leadingButton: () -> AnyView
-    let trailingButton: () -> AnyView
-    
-    init<Leading: View, Trailing: View>(
-        leadingButton: @escaping () -> Leading,
-        trailingButton: @escaping () -> Trailing
-    ) {
-        self.leadingButton = { AnyView(leadingButton()) }
-        self.trailingButton = { AnyView(trailingButton()) }
-    }
-    
-    var body: some View {
-        HStack {
-            leadingButton()
-            Spacer()
-            trailingButton()
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 45)
-    }
-}
+
 
 
 
@@ -741,7 +612,25 @@ extension RecommendedRecipe {
         RecommendedRecipe(
             imageName: "sample1",
             title: "有一起打球的的吗",
-            imageNames: ["sample1", "reco_2", "reco_3"],
+            imageNames: ["sample1", "reco_2", "reco_3", "sample1", "sample1"],
+            authorName: "劉子源",
+            location: "東京都 葛飾区 立石",
+            tags: ["娱乐", "运动", "篮球"],
+            participantsCount: 99,
+            postedTime: "10 mins",
+            distance: 300,
+            isLiked: false,
+            // 新增属性的值
+            avatarImage: "sample2",
+            remainingDays: "3 days",
+            publishDate: "2024-10-01",
+            joinedCount: "75＋",
+            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
+        ),
+        RecommendedRecipe(
+            imageName: "sample1",
+            title: "有一起打球的的吗",
+            imageNames: ["sample2"],
             authorName: "劉子源",
             location: "東京都 葛飾区 立石",
             tags: ["娱乐", "运动", "篮球"],
