@@ -10,7 +10,9 @@ final class ProfileEditState: ObservableObject {
     @Published var selectedImage: UIImage?
     @Published var showImagePicker = false
     @Published var showImagePickerOptions = false
-    
+    @Published var isShowingDatePicker = false
+
+    @Published var birthDate = Date() // 添加出生日期
     let genders = ["男", "女", "其他"]
     
     var hasChanges: Bool {
@@ -18,7 +20,8 @@ final class ProfileEditState: ObservableObject {
         nickname != "东京 it 小白" ||
         bio != "美妙的生活由此开始~" ||
         selectedGender != "男" ||
-        selectedImage != nil
+        selectedImage != nil ||
+        birthDate != Date()
     }
 }
 
@@ -125,6 +128,8 @@ struct ProfileField: View {
     }
 }
 
+
+
 struct ProfileEditorView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var profileState = ProfileEditState()
@@ -146,6 +151,9 @@ struct ProfileEditorView: View {
         .sheet(isPresented: $profileState.showImagePicker) {
             ImagePicker(selectedImage: $profileState.selectedImage)
         }
+        .sheet(isPresented: $profileState.isShowingDatePicker) {
+                    datePickerSheet
+                }
     }
     
     private var avatarSection: some View {
@@ -172,7 +180,59 @@ struct ProfileEditorView: View {
             Button("取消", role: .cancel) {}
         }
     }
-    
+    // 添加出生日期选择器组件
+    private var birthDateSelector: some View {
+        VStack(alignment: .leading) {
+            Text("出生年月")
+                .font(.headline)
+            
+            Button(action: {
+                profileState.isShowingDatePicker = true
+            }) {
+                HStack {
+                    Text(profileState.birthDate, style: .date)
+                        .foregroundColor(.black)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.gray)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color.white)
+                )
+            }
+            .buttonStyle(PlainButtonStyle()) // 去掉默认的按钮样式
+        }
+    }
+    private var datePickerSheet: some View {
+        VStack {
+            HStack {
+                Button("取消") {
+                    profileState.isShowingDatePicker = false
+                }
+                Spacer()
+                Text("选择你的生日")
+                    .font(.headline)
+                Spacer()
+                Button("保存") {
+                    profileState.isShowingDatePicker = false
+                }
+            }
+            .padding()
+
+            DatePicker(
+                "",
+                selection: $profileState.birthDate,
+                displayedComponents: [.date]
+            )
+            .datePickerStyle(.wheel)
+            .labelsHidden()
+            .padding()
+        }
+    }
     private var infoSection: some View {
         VStack(alignment: .leading, spacing: 30) {
             ProfileField(
@@ -182,7 +242,7 @@ struct ProfileEditorView: View {
             )
             
             genderSelector
-            
+            birthDateSelector
             ProfileField(
                 title: "个性签名",
                 text: $profileState.bio,
