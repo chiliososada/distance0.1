@@ -1,11 +1,6 @@
 import SwiftUI
 
-// MARK: - Models
-struct Member: Identifiable, Hashable {
-    let id = UUID()
-    let name: String
-    let imageName: String
-}
+
 
 // MARK: - ViewModel
 final class ChatSettingsViewModel: ObservableObject {

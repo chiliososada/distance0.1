@@ -3,18 +3,20 @@ import MapKit
 
 // MARK: - ViewModel
 final class ProfileViewModel: ObservableObject {
-      @Published var selectedTab = 0
-      @Published var offset: CGFloat = 0
-      @Published var mapImage: UIImage?
-      @Published var mapPreviewImage: UIImage?
-      @Published var isLoadingMap = true
+    @Published var selectedTab = 0
+    @Published var offset: CGFloat = 0
+    @Published var mapImage: UIImage?
+    @Published var mapPreviewImage: UIImage?
+    @Published var isLoadingMap = true
     
     private let coordinate = CLLocationCoordinate2D(latitude: 35.7433, longitude: 139.8476) // 您的当前位置坐标
     let userStats = UserStats(participantsCount: "1K+", viewedTopicsCount: "1M+")
-        let userProfile = UserProfile(
-            name: "liu ziyuan",
-            description: "我是一个专注于前端开发的程序员",
-            avatar: "sample1"
+    let userProfile = UserProfile(
+            userId: "user123",
+            userName: "liu ziyuan",
+            location: "東京都 葛飾区 立石",
+            bio: "我是一个专注于前端开发的程序员",
+            avatarUrl: "sample1"
         )
         
         init() {
@@ -104,33 +106,10 @@ final class ProfileViewModel: ObservableObject {
     ]
 }
 
-// MARK: - Models
-struct UserStats {
-    let participantsCount: String
-    let viewedTopicsCount: String
-}
 
-struct UserProfile {
-    let name: String
-    let description: String
-    let avatar: String
-}
 
-// MARK: - 数据模型
-struct ReviewItem: Identifiable {
-    let id = UUID()  // 唯一标识符
-    let name: String
-    let date: String
-    let location: String
-    let review: String
-    let participants: Int
-    let tags: [String]
-    let timeElapsed: String
-    let distance: String
-    let title: String
-    let showAvatar: Bool
-    let avatarImage: String
-}
+
+
 
 // MARK: - Main View
 struct ProfileView: View {
@@ -262,19 +241,18 @@ struct UserProfileSection: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            Image(profile.avatar)
+            Image(profile.avatarUrl ?? "sample1") // 使用 avatarUrl，提供默认值
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 100, height: 100)
                 .clipShape(Circle())
-//                .shadow(radius: 4)
                 .overlay(Circle().stroke(Color.gray, lineWidth: 2))
             
-            Text(profile.name)
+            Text(profile.userName)
                 .font(.title2)
                 .fontWeight(.bold)
             
-            Text(profile.description)
+            Text(profile.bio ?? "")
                 .font(.caption)
                 .foregroundColor(.black)
                 .padding(.horizontal)

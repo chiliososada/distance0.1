@@ -1,18 +1,5 @@
 import SwiftUI
 
-// MARK: - Models
-struct ChatRoom: Identifiable, Hashable {
-    let id = UUID()
-    let name: String
-    let lastMessage: String
-    let time: String
-    let avatar: String
-    let isGroupChat: Bool
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(id)
-    }
-}
 
 // MARK: - ViewModel
 final class ChatRoomsViewModel: ObservableObject {

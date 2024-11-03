@@ -156,7 +156,7 @@ struct LoginPasswordView: View {
     
     private func goToHomeView() {
         // 创建用户配置
-        let userProfile = AuthManager.UserProfile(
+        let userProfile = UserProfile(
             userId: "用户ID",
             userName: "用户名"
         )

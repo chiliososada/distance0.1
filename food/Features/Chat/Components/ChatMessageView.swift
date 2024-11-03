@@ -1,16 +1,6 @@
 import SwiftUI
 
-// MARK: - Models
-struct Message: Identifiable, Equatable {
-    let id: Int
-    let userName: String
-    let text: String
-    let avatar: String
-    
-    static func == (lhs: Message, rhs: Message) -> Bool {
-        lhs.id == rhs.id
-    }
-}
+
 
 // MARK: - Constants
 private enum Layout {

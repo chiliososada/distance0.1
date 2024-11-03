@@ -1,29 +1,7 @@
 import SwiftUI
 import PhotosUI
 
-// 配置状态管理
-final class ProfileEditState: ObservableObject {
-    @Published var nickname: String = "东京 it 小白"
-    @Published var bio: String = "美妙的生活由此开始~"
-    @Published var idNumber: String = "178385"
-    @Published var selectedGender: String = "男"
-    @Published var selectedImage: UIImage?
-    @Published var showImagePicker = false
-    @Published var showImagePickerOptions = false
-    @Published var isShowingDatePicker = false
 
-    @Published var birthDate = Date() // 添加出生日期
-    let genders = ["男", "女", "其他"]
-    
-    var hasChanges: Bool {
-        // 检查是否有更改，用于控制保存按钮状态
-        nickname != "东京 it 小白" ||
-        bio != "美妙的生活由此开始~" ||
-        selectedGender != "男" ||
-        selectedImage != nil ||
-        birthDate != Date()
-    }
-}
 
 // 优化后的图片选择器
 struct ImagePicker: UIViewControllerRepresentable {
@@ -142,12 +120,11 @@ struct ProfileEditorView: View {
                     infoSection
                 }
             }
-            saveButton
         }
         .navigationTitle("个人信息")
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: backButton)
+        .navigationBarItems(leading: backButton, trailing: saveButton)
         .sheet(isPresented: $profileState.showImagePicker) {
             ImagePicker(selectedImage: $profileState.selectedImage)
         }
@@ -230,6 +207,7 @@ struct ProfileEditorView: View {
             )
             .datePickerStyle(.wheel)
             .labelsHidden()
+            .environment(\.locale, Locale(identifier: "zh_CN")) // 强制为中文显示
             .padding()
         }
     }
@@ -277,16 +255,14 @@ struct ProfileEditorView: View {
     private var saveButton: some View {
         Button(action: handleSave) {
             Text("保存")
-                .font(.system(size: 18, weight: .medium))
-                .frame(maxWidth: .infinity)
-                .padding()
+                .font(.system(size: 12, weight: .medium))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
                 .foregroundColor(.white)
                 .background(profileState.hasChanges ? Color.black : Color.gray)
                 .cornerRadius(25)
         }
         .disabled(!profileState.hasChanges)
-        .padding(.horizontal)
-        .padding(.bottom, 10)
     }
     
     private var backButton: some View {

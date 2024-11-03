@@ -1,27 +1,7 @@
 
 import SwiftUI
 
-// MARK: - Models
-struct RecommendedRecipe: Identifiable, Hashable {
-    let id = UUID()
-    let imageName: String          // 保持原有的
-    let title: String             // 保持原有的
-    let imageNames: [String]      // 保持原有的
-    let authorName: String        // 保持原有的
-    let location: String          // 保持原有的
-    let tags: [String]           // 保持原有的
-    let participantsCount: Int    // 保持原有的
-    let postedTime: String        // 保持原有的
-    let distance: Int            // 保持原有的
-    let isLiked: Bool            // 保持原有的
-    
-    // 新增属性
-    let avatarImage: String      // 头像图片名称
-    let remainingDays: String    // 剩余时间
-    let publishDate: String      // 发布日期
-    let joinedCount: String      // 参加人数
-    let content: String          // 内容描述
-}
+
 // MARK: - HomeTabContentViewModel
 final class HomeTabContentViewModel: ObservableObject {
     @Published var recommendedRecipes: [RecommendedRecipe] = []
@@ -277,53 +257,7 @@ struct HomeTabContentView: View {
     }
 }
 
-// MARK: - RecipeCard
-struct RecipeCard: View {
-    let recipe: RecommendedRecipe
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-   
-    private var imageItems: [ImageItem] {
-          recipe.imageNames.map { imageName in
-              // 获取图片实际尺寸并计算比例
-              if let uiImage = UIImage(named: imageName) {
-                  let aspectRatio = uiImage.size.width / uiImage.size.height
-                  return ImageItem(imageName: imageName, aspectRatio: aspectRatio)
-              } else {
-                  // 如果无法加载图片，默认使用 1:1 比例
-                  return ImageItem(imageName: imageName, aspectRatio: 1.0)
-              }
-          }
-      }
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Author Header
-            AuthorHeader(recipe: recipe)
-            
-            // Title
-            Text(recipe.title)
-                .font(.headline)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
-            
-            // Image Gallery - 使用原来的 ImageGalleryView
-            ImageGalleryView(images: imageItems)
-            
-            // Tags
-            TagsRow(tags: recipe.tags)
-            
-            // Footer
-            CardFooter(recipe: recipe)
-        }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
-        .frame(maxWidth: horizontalSizeClass == .compact ? 350 : .infinity)
-    }
-}
+
 struct ImageItem {
     let imageName: String
     let aspectRatio: CGFloat // 宽高比 (width/height)
@@ -560,93 +494,6 @@ struct CardFooter: View {
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-// MARK: - Preview Helpers
-extension RecommendedRecipe {
-    static var sampleData: [RecommendedRecipe] = [
-        RecommendedRecipe(
-            imageName: "sample1",
-            title: "有一起打球的的吗",
-            imageNames: ["sample1", "reco_2", "reco_3"],
-            authorName: "劉子源",
-            location: "東京都 葛飾区 立石",
-            tags: ["娱乐", "运动", "篮球"],
-            participantsCount: 99,
-            postedTime: "10 mins",
-            distance: 300,
-            isLiked: false,
-            // 新增属性的值
-            avatarImage: "sample2",
-            remainingDays: "3 days",
-            publishDate: "2024-10-01",
-            joinedCount: "75＋",
-            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-        ),
-        RecommendedRecipe(
-            imageName: "sample1",
-            title: "有一起打球的的吗",
-            imageNames: ["sample1", "reco_2", "reco_3"],
-            authorName: "劉子源",
-            location: "東京都 葛飾区 立石",
-            tags: ["娱乐", "运动", "篮球"],
-            participantsCount: 99,
-            postedTime: "10 mins",
-            distance: 300,
-            isLiked: false,
-            // 新增属性的值
-            avatarImage: "sample2",
-            remainingDays: "3 days",
-            publishDate: "2024-10-01",
-            joinedCount: "75＋",
-            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-        ),
-        RecommendedRecipe(
-            imageName: "sample1",
-            title: "有一起打球的的吗",
-            imageNames: ["sample1", "reco_2", "reco_3", "sample1", "sample1"],
-            authorName: "劉子源",
-            location: "東京都 葛飾区 立石",
-            tags: ["娱乐", "运动", "篮球"],
-            participantsCount: 99,
-            postedTime: "10 mins",
-            distance: 300,
-            isLiked: false,
-            // 新增属性的值
-            avatarImage: "sample2",
-            remainingDays: "3 days",
-            publishDate: "2024-10-01",
-            joinedCount: "75＋",
-            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-        ),
-        RecommendedRecipe(
-            imageName: "sample1",
-            title: "有一起打球的的吗",
-            imageNames: ["sample2"],
-            authorName: "劉子源",
-            location: "東京都 葛飾区 立石",
-            tags: ["娱乐", "运动", "篮球"],
-            participantsCount: 99,
-            postedTime: "10 mins",
-            distance: 300,
-            isLiked: false,
-            // 新增属性的值
-            avatarImage: "sample2",
-            remainingDays: "3 days",
-            publishDate: "2024-10-01",
-            joinedCount: "75＋",
-            content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-        )
-    ]
-}
 
 // MARK: - Modified ViewModel for Preview
 extension HomeTabContentViewModel {
