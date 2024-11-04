@@ -1,24 +1,9 @@
 import SwiftUI
 
-struct PasswordValidator {
-    static func isValid(_ password: String, confirmation: String) -> Bool {
-        password == confirmation && password.count >= 8
-    }
-}
-
-final class PasswordInputState: ObservableObject {
-    @Published var password: String = ""
-    @Published var confirmPassword: String = ""
-    @Published var isPasswordVisible: Bool = false
-    
-    var isValid: Bool {
-        PasswordValidator.isValid(password, confirmation: confirmPassword)
-    }
-}
 
 struct GetNewPasswordView: View {
     @Environment(\.presentationMode) var presentationMode
-    @StateObject private var inputState = PasswordInputState()
+    @StateObject private var inputState = PasswordInputStateViewModel()
     
     @State private var keyboardHeight: CGFloat = 0
     @FocusState private var focusedField: Field?
