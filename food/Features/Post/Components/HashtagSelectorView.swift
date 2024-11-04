@@ -6,7 +6,6 @@ struct HashtagSelectorView: View {
     let onSelect: (String) -> Void
     @State private var inputTag: String = ""
     @State private var filteredTags: [String] = []  // 添加过滤后的标签数组
-    @FocusState private var isInputFocused: Bool  // 添加焦点状态
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
@@ -19,16 +18,12 @@ struct HashtagSelectorView: View {
                                 .background(Color(.systemGray6))
                                 .cornerRadius(8)
                                 .submitLabel(.done)
-                                .focused($isInputFocused)  // 添加这一行
+                            
                                 .onAppear {
                                     if inputTag.isEmpty {
                                         inputTag = "#"
                                         filteredTags = hashtags  // 初始显示所有标签
                                     }
-                                    // 设置焦点
-                                  DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                      isInputFocused = true
-                                  }
                                 }
                                 .onChange(of: inputTag) {
                                     filterTags(with: inputTag)  // 当输入改变时进行过滤
