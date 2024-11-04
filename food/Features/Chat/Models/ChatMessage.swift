@@ -6,28 +6,30 @@
 //
 
 
+
+
 import Foundation
 
-// MARK: - Message Model
-struct Message: Identifiable, Equatable {
+// MARK: - Chat Message Model
+struct ChatMessage: Identifiable, Equatable {
     let id: Int
     let userName: String
     let text: String
     let avatar: String
     
-    static func == (lhs: Message, rhs: Message) -> Bool {
+    static func == (lhs: ChatMessage, rhs: ChatMessage) -> Bool {
         lhs.id == rhs.id
     }
     
     // MARK: - Sample Data
-    static var sampleMessages: [Message] = [
-        Message(
+    static var sampleMessages: [ChatMessage] = [
+        ChatMessage(
             id: 1,
             userName: "Alice",
             text: "Lets goooooo @AJPicard913, I'm buying mine now",
             avatar: "sample1"
         ),
-        Message(
+        ChatMessage(
             id: 2,
             userName: "Bob",
             text: "Count me in! Can't wait!",
@@ -35,5 +37,4 @@ struct Message: Identifiable, Equatable {
         )
     ]
 }
-
 

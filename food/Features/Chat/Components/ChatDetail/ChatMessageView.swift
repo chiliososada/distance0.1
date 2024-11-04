@@ -35,7 +35,7 @@ struct BubbleShape: Shape {
 
 // MARK: - Message View
 struct MessageView: View {
-    let message: Message
+    let message: ChatMessage
     let isCurrentUser: Bool
     
     var body: some View {
@@ -105,7 +105,7 @@ struct MessageView_Previews: PreviewProvider {
         Group {
             // Current User Message
             MessageView(
-                message: Message(
+                message: ChatMessage(
                     id: 1,
                     userName: "Me",
                     text: "This is my message that might be very long and need to wrap to multiple lines!",
@@ -119,7 +119,7 @@ struct MessageView_Previews: PreviewProvider {
             
             // Other User Message
             MessageView(
-                message: Message(
+                message: ChatMessage(
                     id: 2,
                     userName: "Alice",
                     text: "Hi there! I'm Alice and this is also a long message to test wrapping.",
@@ -133,7 +133,7 @@ struct MessageView_Previews: PreviewProvider {
             
             // Dark Mode Preview
             MessageView(
-                message: Message(
+                message: ChatMessage(
                     id: 3,
                     userName: "Bob",
                     text: "Testing dark mode appearance",

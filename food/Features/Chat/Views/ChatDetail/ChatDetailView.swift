@@ -1,50 +1,7 @@
 import SwiftUI
 
 // MARK: - View Model
-final class ChatDetailViewModel: ObservableObject {
-    @Published var messages: [Message]
-    @Published var newMessage = ""
-    @Published var isAnnouncementVisible = true
-    @Published var showMemberList = false
-    
-    let chatRoom: ChatRoom
-    let currentUser = "Me"
-    
-    init(chatRoom: ChatRoom) {
-        self.chatRoom = chatRoom
-        self.messages = [
-            Message(id: 1, userName: "Alice", text: "Lets goooooo @AJPicard913, I'm buying mine now", avatar: "sample1"),
-            // ... 其他初始消息
-        ]
-    }
-    
-    func sendMessage() {
-        guard !newMessage.isEmpty else { return }
-        
-        let newMsg = Message(
-            id: messages.count + 1,
-            userName: currentUser,
-            text: newMessage,
-            avatar: "sample1"
-        )
-        
-        withAnimation {
-            messages.append(newMsg)
-        }
-        
-        newMessage = ""
-        dismissKeyboard()
-    }
-    
-    private func dismissKeyboard() {
-        UIApplication.shared.sendAction(
-            #selector(UIResponder.resignFirstResponder),
-            to: nil,
-            from: nil,
-            for: nil
-        )
-    }
-}
+
 
 // MARK: - Constants
 private enum Layout {
@@ -75,17 +32,38 @@ struct ChatDetailView: View {
     
     var body: some View {
         VStack(spacing: 1) {
-            AnnouncementSection(isVisible: $viewModel.isAnnouncementVisible)
-            MessagesSection(messages: viewModel.messages, currentUser: viewModel.currentUser)
+            // 公告区域
+            AnnouncementSection(
+                isVisible: $viewModel.isAnnouncementVisible
+            )
+            
+            // 消息列表
+            MessagesSection(
+                messages: viewModel.messages,
+                currentUser: viewModel.currentUser
+            )
+            
+            // 输入区域
             DetailInputSection(viewModel: viewModel)
         }
         .navigationBar(
             title: viewModel.chatRoom.name,
             onBack: { presentationMode.wrappedValue.dismiss() },
-            onSettings: { viewModel.showMemberList = true }
+            onSettings: { viewModel.showSettings() }
         )
         .tabBarVisibility(tabBarManager)
-        .memberListSheet(isPresented: $viewModel.showMemberList)
+        .memberListSheet(
+                   isPresented: $viewModel.showMemberList,
+                   chatRoom: viewModel.chatRoom  // 传递 chatRoom
+               )
+        .overlay {
+            if case .loading = viewModel.viewState {
+                ProgressView()
+                    .scaleEffect(1.5)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.black.opacity(0.2))
+            }
+        }
     }
 }
 
@@ -124,7 +102,7 @@ struct ToggleButton: View {
 }
 
 struct MessagesSection: View {
-    let messages: [Message]
+    let messages: [ChatMessage]
     let currentUser: String
     
     var body: some View {
@@ -229,22 +207,22 @@ extension View {
             .onDisappear { manager.isViewTabBarHidden = false }
     }
     
-    func memberListSheet(isPresented: Binding<Bool>) -> some View {
-        self.sheet(isPresented: isPresented) {
-            ZStack {
-                BlurView()
-                VStack {
-                    ChatSettingsView()
-                        .padding()
-                        .background(Color.white)
-                        .cornerRadius(30)
-                        .shadow(radius: 10)
-                        .padding()
+    func memberListSheet(isPresented: Binding<Bool>, chatRoom: ChatRoom) -> some View {
+            self.sheet(isPresented: isPresented) {
+                ZStack {
+                    BlurView()
+                    VStack {
+                        ChatSettingsView(chatRoom: chatRoom)
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(30)
+                            .shadow(radius: 10)
+                            .padding()
+                    }
+                    .background(Color.clear)
                 }
-                .background(Color.clear)
             }
         }
-    }
 }
 
 // MARK: - Toolbar Buttons

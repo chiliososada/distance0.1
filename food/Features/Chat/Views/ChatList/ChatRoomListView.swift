@@ -1,44 +1,5 @@
 import SwiftUI
 
-
-// MARK: - ViewModel
-final class ChatRoomsViewModel: ObservableObject {
-    @Published var selectedTab = 0
-    @Published var showSearchBar = false
-    @Published var searchText = ""
-    @Published var selectedChatRoom: ChatRoom?
-    @Published var isNavigating = false
-    @Published var unreadCount = 3 // 可以根据实际情况动态更新
-    
-    let chatRooms = [
-        ChatRoom(name: "Tina Aalto", lastMessage: "Will probably arrive at 9. See ya!", time: "20:30", avatar: "sample2", isGroupChat: false),
-        ChatRoom(name: "Jenny Chan", lastMessage: "It's not that big a deal.", time: "21:20", avatar: "sample2", isGroupChat: false),
-        ChatRoom(name: "Jane Cooper", lastMessage: "Does he write an email?", time: "6:18", avatar: "sample2", isGroupChat: false),
-        ChatRoom(name: "Study Group", lastMessage: "Let's meet at 3 PM tomorrow.", time: "18:00", avatar: "sample2", isGroupChat: true),
-        ChatRoom(name: "Family", lastMessage: "Don't forget to bring dessert!", time: "11:09", avatar: "sample2", isGroupChat: true),
-        ChatRoom(name: "Work Team", lastMessage: "The report is due today!", time: "10:26", avatar: "sample2", isGroupChat: true),
-        ChatRoom(name: "Jacob Jones", lastMessage: "Night night!", time: "2:55", avatar: "sample2", isGroupChat: false),
-        ChatRoom(name: "Running Club", lastMessage: "Who's in for the 5k?", time: "14:02", avatar: "sample2", isGroupChat: true),
-        ChatRoom(name: "Ronald Richards", lastMessage: "See you tomorrow at the meeting.", time: "14:45", avatar: "sample2", isGroupChat: false),
-        ChatRoom(name: "Game Night", lastMessage: "Board games on Friday!", time: "17:30", avatar: "sample2", isGroupChat: true)
-    ]
-    
-    var filteredRooms: [ChatRoom] {
-        let rooms = chatRooms.filter { room in
-            selectedTab == 0 ? !room.isGroupChat : room.isGroupChat
-        }
-        
-        if searchText.isEmpty {
-            return rooms
-        }
-        
-        return rooms.filter { room in
-            room.name.localizedCaseInsensitiveContains(searchText) ||
-            room.lastMessage.localizedCaseInsensitiveContains(searchText)
-        }
-    }
-}
-
 // MARK: - Constants
 private enum Layout {
     static let iconSize: CGFloat = 30
@@ -51,8 +12,9 @@ private enum Layout {
 }
 
 // MARK: - Main View
+
 struct ChatRoomListView: View {
-    @StateObject private var viewModel = ChatRoomsViewModel()
+    @StateObject private var viewModel = ChatRoomListViewModel()
     
     var body: some View {
         NavigationStack {
@@ -74,7 +36,7 @@ struct ChatRoomListView: View {
 
 // MARK: - Supporting Views
 struct ListHeaderView: View {
-    @ObservedObject var viewModel: ChatRoomsViewModel
+    @ObservedObject var viewModel: ChatRoomListViewModel
     
     var body: some View {
         HStack {
@@ -203,7 +165,7 @@ struct ChatRoomsTabButton: View {
 }
 
 struct ChatTabView: View {
-    @ObservedObject var viewModel: ChatRoomsViewModel
+    @ObservedObject var viewModel: ChatRoomListViewModel
     
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
