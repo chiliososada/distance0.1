@@ -54,7 +54,7 @@ struct ChatDetailView: View {
         .tabBarVisibility(tabBarManager)
         .memberListSheet(
                    isPresented: $viewModel.showMemberList,
-                   chatRoom: viewModel.chatRoom  // 传递 chatRoom
+                   chatRoom: viewModel.chatRoom  
                )
         .overlay {
             if case .loading = viewModel.viewState {

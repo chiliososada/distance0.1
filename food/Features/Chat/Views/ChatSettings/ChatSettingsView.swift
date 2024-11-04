@@ -15,7 +15,6 @@ private enum Layout {
     
     static let shadowColor = Color.gray.opacity(0.2)
 }
-
 // MARK: - Main View
 struct ChatSettingsView: View {
     @StateObject private var viewModel: ChatSettingsViewModel
