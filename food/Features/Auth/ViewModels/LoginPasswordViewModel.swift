@@ -13,6 +13,10 @@ final class LoginPasswordViewModel: ObservableObject {
     @Published var authState: AuthState = .idle
     @Published var isLoginEnabled: Bool = false
     @Published var navigateToForgetPassword = false
+    @Published var isLoading = false
+    @Published var showError = false
+    @Published var errorMessage = ""
+    
     
     // MARK: - Properties
     private let authManager: AuthManager

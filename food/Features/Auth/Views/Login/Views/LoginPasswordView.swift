@@ -4,6 +4,7 @@ struct LoginPasswordView: View {
     // MARK: - Properties
     @StateObject private var viewModel: LoginPasswordViewModel
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var tabBarManager: TabBarManager
     
     // MARK: - Initialization
@@ -31,10 +32,11 @@ struct LoginPasswordView: View {
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(leading: backButton)
-        .navigationDestination(isPresented: $viewModel.navigateToForgetPassword) {
-            ForgetPasswordAccountView()
-                .environmentObject(tabBarManager)
-        }
+//        .navigationDestination(isPresented: $viewModel.navigateToForgetPassword) {
+//            ForgetPasswordAccountView()
+//                .environmentObject(tabBarManager)
+//        }
+      
     }
     
     // MARK: - View Components
@@ -75,29 +77,71 @@ struct LoginPasswordView: View {
         )
     }
     
+//    private var loginSection: some View {
+//        Button {
+//            Task {
+//                await viewModel.login()
+//                if case .success = viewModel.authState {
+//                    viewModel.updateRootView(tabBarManager: tabBarManager)
+//                }
+//            }
+//        } label: {
+//            Text("登录")
+//                .font(.system(size: 18, weight: .medium))
+//                .frame(maxWidth: .infinity)
+//                .padding()
+//                .foregroundColor(.white)
+//                .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
+//                .cornerRadius(25)
+//        }
+//        .disabled(!viewModel.isLoginEnabled)
+//        .padding(.horizontal)
+//    }
     private var loginSection: some View {
-        Button {
-            Task {
-                await viewModel.login()
-                if case .success = viewModel.authState {
-                    viewModel.updateRootView(tabBarManager: tabBarManager)
-                }
-            }
-        } label: {
-            Text("登录")
-                .font(.system(size: 18, weight: .medium))
-                .frame(maxWidth: .infinity)
-                .padding()
-                .foregroundColor(.white)
-                .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
-                .cornerRadius(25)
-        }
-        .disabled(!viewModel.isLoginEnabled)
-        .padding(.horizontal)
-    }
+          Button(action: handleLogin) {
+              Text("登录")
+                  .font(.system(size: 18, weight: .medium))
+                  .frame(maxWidth: .infinity)
+                  .padding()
+                  .foregroundColor(.white)
+                  .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
+                  .cornerRadius(25)
+          }
+          .disabled(!viewModel.isLoginEnabled)
+          .padding(.horizontal)
+      }
     
+    private func handleLogin() {
+//            Task {
+//                viewModel.isLoading = true
+                
+               
+                 //   let success = try await viewModel.login()
+                    
+                   
+                        // 重置导航状态
+                        navigationManager.resetNavigation()
+                        
+                        // 切换到主页
+                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let window = windowScene.windows.first {
+                            
+                            let homeView = HomeView()
+                                .environmentObject(tabBarManager)
+                                .environmentObject(navigationManager)
+                            
+                            window.rootViewController = UIHostingController(rootView: homeView)
+                            window.makeKeyAndVisible()
+                        }
+                    
+                
+                viewModel.isLoading = false
+//            }
+        }
     private var forgotPasswordButton: some View {
-        Button(action: { viewModel.navigateToForgetPassword = true }) {
+        Button(action: {
+                 navigationManager.navigate(to: .forgetPassword)
+             }) {
             Text("忘记密码?")
                 .font(.system(size: 14))
                 .foregroundColor(.blue)

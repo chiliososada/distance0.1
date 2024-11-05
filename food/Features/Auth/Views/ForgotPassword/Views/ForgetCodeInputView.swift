@@ -7,6 +7,7 @@ struct ForgetCodeInputView: View {
     @StateObject private var viewModel = ForgetCodeViewModel()
     @FocusState private var focusedField: Int?
     @State private var navigateToNextScreen = false
+    @EnvironmentObject var navigationManager: AppNavigationManager
     let email: String
     
     var body: some View {
@@ -32,9 +33,9 @@ struct ForgetCodeInputView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(leading: backButton)
-        .navigationDestination(isPresented: $navigateToNextScreen) {
-            GetNewPasswordView()
-        }
+//        .navigationDestination(isPresented: $navigateToNextScreen) {
+//            GetNewPasswordView()
+//        }
         .overlay {
             if viewModel.isLoading {
                 loadingView
@@ -149,7 +150,7 @@ struct ForgetCodeInputView: View {
         // 模拟网络请求
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             viewModel.isLoading = false
-            navigateToNextScreen = true
+            navigationManager.navigate(to: .getNewPassword)
         }
     }
 }

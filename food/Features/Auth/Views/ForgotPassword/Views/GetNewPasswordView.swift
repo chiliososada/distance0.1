@@ -4,7 +4,7 @@ import SwiftUI
 struct GetNewPasswordView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var inputState = PasswordInputStateViewModel()
-    
+    @EnvironmentObject var navigationManager: AppNavigationManager
     @State private var keyboardHeight: CGFloat = 0
     @FocusState private var focusedField: Field?
     @State private var navigateToPasswordChanged = false
@@ -30,10 +30,10 @@ struct GetNewPasswordView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(leading: backButton, trailing: nextButton)
-        .navigationDestination(isPresented: $navigateToPasswordChanged) {
-            PasswordChangedView()
-                .environmentObject(TabBarManager())
-        }
+//        .navigationDestination(isPresented: $navigateToPasswordChanged) {
+//            PasswordChangedView()
+//                .environmentObject(TabBarManager())
+//        }
         .onAppear(perform: setupKeyboardObservers)
     }
     
@@ -94,7 +94,7 @@ struct GetNewPasswordView: View {
     }
     
     private var nextButton: some View {
-        Button(action: { if inputState.isValid { navigateToPasswordChanged = true } }) {
+        Button(action: { if inputState.isValid { navigationManager.navigate(to: .passwordChanged) } }) {
             Text("下一步")
                 .font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 16)

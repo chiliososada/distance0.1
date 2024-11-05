@@ -5,6 +5,7 @@ struct ForgetPasswordAccountView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var viewModel = ForgetPasswordViewModel()
     @State private var navigateToFoundEmail = false
+    @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var tabBarManager: TabBarManager
     
     var body: some View {
@@ -26,10 +27,10 @@ struct ForgetPasswordAccountView: View {
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(leading: backButton, trailing: nextButton)
-        .navigationDestination(isPresented: $navigateToFoundEmail) {
-            FoundEmailView(email: viewModel.email)
-                .environmentObject(tabBarManager)
-        }
+//        .navigationDestination(isPresented: $navigateToFoundEmail) {
+//            FoundEmailView(email: viewModel.email)
+//                .environmentObject(tabBarManager)
+//        }
     }
     
     // MARK: - UI Components
@@ -74,11 +75,12 @@ struct ForgetPasswordAccountView: View {
     }
     
     private var nextButton: some View {
-        Button(action: {
-            if viewModel.isEmailValid {
-                navigateToFoundEmail = true
-            }
-        }) {
+//        Button(action: {
+//            if viewModel.isEmailValid {
+//                navigateToFoundEmail = true
+//            }
+//        })
+        Button(action: handleNextStep){
             Text("下一步")
                 .font(.system(size: 14, weight: .medium))
                 .padding(.horizontal, 20)
@@ -89,6 +91,14 @@ struct ForgetPasswordAccountView: View {
         }
         .disabled(!viewModel.isEmailValid)
     }
+    private func handleNextStep() {
+                    if viewModel.isEmailValid {
+                        // 使用 navigationManager 导航到找到邮箱页面
+                        navigationManager.navigate(to: .foundEmail(email: viewModel.email))
+                    }
+               
+            
+        }
 }
 
 // MARK: - Preview

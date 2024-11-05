@@ -73,34 +73,15 @@ final class ProfileCardViewModel: ObservableObject {
 struct HomeLoginView: View {
     let velocity: CGFloat = 50
     @EnvironmentObject var tabBarManager: TabBarManager
-    
+    @EnvironmentObject var navigationManager: AppNavigationManager
     var body: some View {
-        NavigationStack {
+        
             VStack(spacing: Layout.spacing * 2) {
                 AnimationSection()
                 TitleSection()
-                ButtonSection()
+                ButtonSection(navigationManager: navigationManager)
                 MarqueeSection()
             }
-            .navigationDestination(for: String.self) { route in
-                destinationView(for: route)
-            }
-        }
-    }
-    
-    private func destinationView(for route: String) -> some View {
-        Group {
-            switch route {
-            case "register":
-                RegisterView()
-                    .environmentObject(tabBarManager)
-            case "login":
-                LoginInputView(showBackButton: true)
-                    .environmentObject(tabBarManager)
-            default:
-                EmptyView()
-            }
-        }
     }
 }
 
@@ -120,50 +101,66 @@ private struct TitleSection: View {
     }
 }
 
-private struct ButtonSection: View {
+struct ButtonSection: View {
+    let navigationManager: AppNavigationManager
+    
     var body: some View {
         HStack(spacing: Layout.spacing) {
-            NavigationButton(
-                title: "注册",
-                route: "register",
-                style: .outlined
-            )
+            // 注册按钮
+            Button(action: {
+                navigationManager.navigate(to: .register)
+            }) {
+                Text("注册")
+                    .frame(width: Layout.buttonWidth, height: Layout.buttonHeight)
+                    .foregroundColor(.black)
+                    .background(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Layout.cornerRadius)
+                            .stroke(Color.black, lineWidth: 1)
+                    )
+                    .cornerRadius(Layout.cornerRadius)
+            }
             
-            NavigationButton(
-                title: "登陆",
-                route: "login",
-                style: .filled
-            )
+            // 登录按钮
+            Button(action: {
+                navigationManager.navigate(to: .login(showBackButton: true))
+            }) {
+                Text("登陆")
+                    .frame(width: Layout.buttonWidth, height: Layout.buttonHeight)
+                    .foregroundColor(.white)
+                    .background(Color.black)
+                    .cornerRadius(Layout.cornerRadius)
+            }
         }
         .padding(.bottom, 10)
     }
 }
 
-private struct NavigationButton: View {
-    let title: String
-    let route: String
-    let style: ButtonStyle
-    
-    enum ButtonStyle {
-        case outlined, filled
-    }
-    
-    var body: some View {
-        NavigationLink(value: route) {
-            Text(title)
-                .frame(width: Layout.buttonWidth, height: Layout.buttonHeight)
-                .background(style == .filled ? Color.black : Color.white)
-                .foregroundColor(style == .filled ? .white : .black)
-                .cornerRadius(Layout.cornerRadius)
-                .if(style == .outlined) { view in
-                    view.overlay(
-                        RoundedRectangle(cornerRadius: Layout.cornerRadius)
-                            .stroke(Color.black, lineWidth: 1)
-                    )
-                }
-        }
-    }
-}
+//private struct NavigationButton: View {
+//    let title: String
+//    let route: String
+//    let style: ButtonStyle
+//    
+//    enum ButtonStyle {
+//        case outlined, filled
+//    }
+//    
+//    var body: some View {
+//        NavigationLink(value: route) {
+//            Text(title)
+//                .frame(width: Layout.buttonWidth, height: Layout.buttonHeight)
+//                .background(style == .filled ? Color.black : Color.white)
+//                .foregroundColor(style == .filled ? .white : .black)
+//                .cornerRadius(Layout.cornerRadius)
+//                .if(style == .outlined) { view in
+//                    view.overlay(
+//                        RoundedRectangle(cornerRadius: Layout.cornerRadius)
+//                            .stroke(Color.black, lineWidth: 1)
+//                    )
+//                }
+//        }
+//    }
+//}
 
 private struct MarqueeSection: View {
     var body: some View {
@@ -353,5 +350,6 @@ struct HomeLoginView_Previews: PreviewProvider {
     static var previews: some View {
         HomeLoginView()
             .environmentObject(TabBarManager())
+            .environmentObject(AppNavigationManager.shared)
     }
 }

@@ -7,6 +7,7 @@ struct CreateAccountView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var tabBarManager: TabBarManager
     @FocusState private var focusedField: Field?
+    @EnvironmentObject var navigationManager: AppNavigationManager
     
     // MARK: - Focus Fields
     enum Field: Hashable {
@@ -53,9 +54,9 @@ struct CreateAccountView: View {
         }
         .navigationBarItems(leading: backButton, trailing: nextButton)
         .navigationBarBackButtonHidden(true)
-        .navigationDestination(isPresented: $viewModel.navigateToVerification) {
-            VerificationView()
-        }
+//        .navigationDestination(isPresented: $viewModel.navigateToVerification) {
+//            VerificationView()
+//        }
         .alert("提示", isPresented: $viewModel.showAlert) {
             Button("确定", role: .cancel) {}
         } message: {
@@ -205,7 +206,8 @@ struct CreateAccountView: View {
     }
     
     private var nextButton: some View {
-        Button(action: { viewModel.createAccount() }) {
+        /*Button(action: { viewModel.createAccount() })*/
+        Button(action: handleNextButtonTap) {
             Text("下一步")
                 .font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 16)
@@ -216,8 +218,12 @@ struct CreateAccountView: View {
         }
         .disabled(!viewModel.formData.isValid)
     }
-}
+    private func handleNextButtonTap() {
+        viewModel.createAccount()
+        navigationManager.navigate(to: .verification)
+    }
 
+}
 
 // MARK: - FormField Component
 private struct FormField<Content: View>: View {

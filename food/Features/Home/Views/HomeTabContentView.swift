@@ -244,7 +244,7 @@ struct HomeTabContentView: View {
         ScrollView {
             LazyVStack(spacing: 16, pinnedViews: []) {
                 ForEach(viewModel.recommendedRecipes) { recipe in
-                    NavigationLink(destination: RecipeDetailView(recipe: recipe)) {
+                    NavigationLink(destination: RecipeDetailView(recipe: recipe) .environmentObject(AppNavigationManager.shared)) {
                         RecipeCard(recipe: recipe)
                             .id(recipe.id)
                     }
@@ -513,7 +513,7 @@ struct HomeTabContentView_WithPreviewData: View {
         ScrollView {
             LazyVStack(spacing: 16) {
                 ForEach(viewModel.recommendedRecipes) { recipe in
-                    NavigationLink(destination: RecipeDetailView(recipe: recipe)) {
+                    NavigationLink(destination: RecipeDetailView(recipe: recipe) .environmentObject(AppNavigationManager.shared)) {
                         RecipeCard(recipe: recipe)
                     }
                     .buttonStyle(PlainButtonStyle())

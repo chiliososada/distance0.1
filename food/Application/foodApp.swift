@@ -15,7 +15,6 @@ struct foodApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(tabBarManager)
-               
         }
     }
 }

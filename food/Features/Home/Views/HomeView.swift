@@ -2,96 +2,13 @@ import SwiftUI
 import CoreLocation
 
 // MARK: - HomeViewModel
-final class HomeViewModel: ObservableObject {
-    @Published var selectedTab = 0
-    @Published var isShowingPostInputView = false
-    @Published var isViewTabBarHidden = false
-    @Published var tabState: Visibility = .visible
-    @Published var showMenu = false
-    @Published var offset: CGFloat = 0
-    @Published var lastStoredOffset: CGFloat = 0
-    @Published var search: String = ""
-    @Published var isNavigationBarHidden = false
-    @Published var userLocationText = ""
-    @Published var locationManager = LocationManager.shared
-    
-    private var isInteracting = false
-    private var previousLocation: CLLocation?
-    
-    let sideBarWidth: CGFloat = UIScreen.main.bounds.width * 0.7
-    
-    var isHomeTab: Bool {
-          selectedTab == 0
-      }
-    
-    // MARK: - Menu Control Methods
-    func closeMenu() {
-        guard !isInteracting else { return }
-        isInteracting = true
-        
-        withAnimation {
-            showMenu = false
-            offset = 0
-        }
-        
-        resetInteractionState()
-    }
-    
-    func toggleMenu() {
-        guard !isInteracting else { return }
-        isInteracting = true
-        
-        withAnimation {
-            showMenu.toggle()
-        }
-        
-        resetInteractionState()
-    }
-    
-    private func resetInteractionState() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.isInteracting = false
-        }
-    }
-    
-    // MARK: - Location Methods
-    func updateLocationText() {
-        guard let location = locationManager.userLocation else { return }
-        
-        if let previous = previousLocation, location.distance(from: previous) < 100 {
-            return
-        }
-        
-        previousLocation = location
-        
-        let geocoder = CLGeocoder()
-        geocoder.reverseGeocodeLocation(location) { [weak self] placemarks, error in
-            guard let self = self,
-                  let placemark = placemarks?.first else { return }
-            
-            var components: [String] = []
-            
-            if let subLocality = placemark.subLocality, !subLocality.isEmpty {
-                components.append(subLocality)
-            }
-            if let locality = placemark.locality, !locality.isEmpty {
-                components.append(locality)
-            }
-            if let area = placemark.administrativeArea, !area.isEmpty {
-                components.append(area)
-            }
-            
-            DispatchQueue.main.async {
-                self.userLocationText = components.joined(separator: ", ")
-            }
-        }
-    }
-}
+
 
 // MARK: - HomeView
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject var tabBarManager: TabBarManager
+    @EnvironmentObject private var navigationManager: AppNavigationManager
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     var body: some View {
             Group {
@@ -163,26 +80,27 @@ struct HomeView: View {
     // MARK: - Tab Content
     private var tabViewContent: some View {
         VStack {
-            TabView(selection: $viewModel.selectedTab) {
+            TabView(selection: $navigationManager.selectedTab) {
                 homeTab
                     .tabItem { Image(systemName: "house.fill") }
-                    .tag(0)
+                    .tag(TabRoute.home)
                     
                 NearbyView()
                     .tabItem { Image(systemName: "location.fill") }
-                    .tag(1)
+                    .tag(TabRoute.nearby)
                 
                 plusTab
                     .tabItem { Image(systemName: "plus.circle.fill") }
-                    .tag(2)
+                    .tag(TabRoute.post)
+                 
                 
                 ChatRoomListView()
                     .tabItem { Image(systemName: "message.fill") }
-                    .tag(3)
+                    .tag(TabRoute.chat)
                 
                 ProfileView()
                     .tabItem { Image(systemName: "person.fill") }
-                    .tag(4)
+                    .tag(TabRoute.profile)
             }
             .accentColor(.black)
             .edgesIgnoringSafeArea(.bottom)
@@ -262,6 +180,7 @@ struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
             .environmentObject(TabBarManager())
+            .environmentObject(AppNavigationManager.shared)
     }
 }
 

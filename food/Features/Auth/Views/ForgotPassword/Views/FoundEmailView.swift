@@ -5,7 +5,7 @@ struct FoundEmailView: View {
     let email: String  // 改为 let 常量，因为邮箱不会改变
     @EnvironmentObject var tabBarManager: TabBarManager
     @State private var navigateToCodeInput = false
-    
+    @EnvironmentObject var navigationManager: AppNavigationManager
    
     private var titleText: some View {
         Text("请点击下一步，我们将会给你的邮箱发送一个代码。")
@@ -35,9 +35,10 @@ struct FoundEmailView: View {
     }
     
     private var nextButton: some View {
-        Button(action: {
-            navigateToCodeInput = true
-        }) {
+//        Button(action: {
+//            navigateToCodeInput = true
+//        })
+        Button(action: handleNextStep){
             Text("下一步")
                 .font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 16)
@@ -48,7 +49,11 @@ struct FoundEmailView: View {
         }
         .disabled(email.isEmpty)
     }
-
+    private func handleNextStep() {
+       
+        navigationManager.navigate(to: .forgetCode(email: email))
+        
+    }
     var body: some View {
         let content = ScrollView {
             VStack(spacing: 30) {
@@ -74,10 +79,10 @@ struct FoundEmailView: View {
         .background(Color.white)
         .navigationBarBackButtonHidden(true)
         .navigationBarItems(leading: backButton, trailing: nextButton)
-        .navigationDestination(isPresented: $navigateToCodeInput) {
-            ForgetCodeInputView(email: email)
-                .environmentObject(tabBarManager)
-        }
+//        .navigationDestination(isPresented: $navigateToCodeInput) {
+//            ForgetCodeInputView(email: email)
+//                .environmentObject(tabBarManager)
+//        }
     }
 }
 

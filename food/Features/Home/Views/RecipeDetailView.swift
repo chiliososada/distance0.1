@@ -14,6 +14,7 @@ struct RecipeDetailView: View {
     @State private var currentImageIndex = 0
     @State private var isPressed = false
     @EnvironmentObject var tabBarManager: TabBarManager
+    @EnvironmentObject var navigationManager: AppNavigationManager
     @Environment(\.presentationMode) var presentationMode
     var body: some View {
         ZStack(alignment: .top) {
@@ -31,7 +32,13 @@ struct RecipeDetailView: View {
             }
             
             // Floating Join Button
-            FloatingJoinButton(isPressed: $isPressed)
+            FloatingJoinButton(
+                           isPressed: $isPressed,
+                           action: {
+                               // 使用navigationManager直接导航到聊天
+                               navigationManager.navigateToChat(from: recipe)
+                           }
+                       )
         }
         .navigationBarTitle("距离我" + String(recipe.distance) + " m", displayMode: .inline)
         .navigationBarBackButtonHidden(true)
@@ -283,12 +290,13 @@ struct DetailItem: View {
 // MARK: - FloatingJoinButton
 struct FloatingJoinButton: View {
     @Binding var isPressed: Bool
+    let action: () -> Void
     
     var body: some View {
         GeometryReader { geometry in
             VStack {
                 Spacer()
-                Button(action: {}) {
+                Button(action: action) {
                     Text("进入")
                         .font(.headline)
                         .foregroundColor(.white)

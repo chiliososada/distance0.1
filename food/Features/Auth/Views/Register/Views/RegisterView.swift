@@ -5,6 +5,7 @@ struct RegisterView: View {
     @StateObject private var viewModel = RegisterViewModel()
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var tabBarManager: TabBarManager
+    @EnvironmentObject var navigationManager: AppNavigationManager
     
     // MARK: - Layout Constants
     private enum Constants {
@@ -26,41 +27,25 @@ struct RegisterView: View {
     
     // MARK: - Body
     var body: some View {
-            // 修改这里的视图结构
-           
-                VStack(spacing: Constants.spacing) {
-                    ScrollView {
-                        VStack(spacing: Constants.spacing) {
-                            titleSection
-                            socialLoginSection
-                            dividerSection
-                            emailInputSection
-                            navigationSection
-                        }
+            VStack(spacing: Constants.spacing) {
+                ScrollView {
+                    VStack(spacing: Constants.spacing) {
+                        titleSection
+                        socialLoginSection
+                        dividerSection
+                        emailInputSection
+                        navigationSection
                     }
                 }
-                .background(Color.white)
-                .navigationBarBackButtonHidden(true)
-                .navigationBarItems(
-                    leading: backButton
-                )
-                .navigationDestination(
-                    isPresented: $viewModel.navigateToCreateAccount
-                ) {
-                    CreateAccountView(emailOrPhone: viewModel.emailOrPhone)
-                }
-                .navigationDestination(
-                    isPresented: $viewModel.navigateToForgetPassword
-                ) {
-                    ForgetPasswordAccountView()
-                        .environmentObject(tabBarManager)
-                }
-                .alert("提示", isPresented: $viewModel.showAlert) {
-                    Button("确定", role: .cancel) {}
-                } message: {
-                    Text(viewModel.alertMessage)
-                }
-            
+            }
+            .background(Color.white)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarItems(leading: backButton)
+            .alert("提示", isPresented: $viewModel.showAlert) {
+                Button("确定", role: .cancel) {}
+            } message: {
+                Text(viewModel.alertMessage)
+            }
         }
     private var backButton: some View {
           Button(action: {
@@ -141,7 +126,10 @@ struct RegisterView: View {
     
     private var navigationSection: some View {
         VStack(spacing: Constants.spacing) {
-            Button(action: { viewModel.navigateToCreateAccount = true }) {
+            Button(action: {
+                           // 使用 navigationManager 导航到创建账号页面
+                           navigationManager.navigate(to: .createAccount(email: viewModel.emailOrPhone))
+                       })  {
                 Text("下一步")
                     .font(.system(size: Constants.buttonTextSize, weight: .medium))
                     .frame(maxWidth: .infinity)
@@ -152,7 +140,10 @@ struct RegisterView: View {
             }
             .disabled(!viewModel.isValid)
             
-            Button(action: { viewModel.navigateToForgetPassword = true }) {
+            Button(action: {
+                           // 使用 navigationManager 导航到忘记密码页面
+                           navigationManager.navigate(to: .forgetPassword)
+                       }) {
                 Text("忘记密码?")
                     .font(.system(size: Constants.buttonTextSize))
                     .foregroundColor(.blue)
@@ -170,6 +161,7 @@ struct RegisterView_Previews: PreviewProvider {
         NavigationView {
             RegisterView()
                 .environmentObject(TabBarManager())
+                .environmentObject(AppNavigationManager.shared)
         }
     }
 }

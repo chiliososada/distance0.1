@@ -25,6 +25,7 @@ struct ChatDetailView: View {
     @StateObject private var viewModel: ChatDetailViewModel
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var tabBarManager: TabBarManager
+    @EnvironmentObject var navigationManager: AppNavigationManager
     
     init(chatRoom: ChatRoom) {
         _viewModel = StateObject(wrappedValue: ChatDetailViewModel(chatRoom: chatRoom))
@@ -48,9 +49,19 @@ struct ChatDetailView: View {
         }
         .navigationBar(
             title: viewModel.chatRoom.name,
-            onBack: { presentationMode.wrappedValue.dismiss() },
-            onSettings: { viewModel.showSettings() }
+            onBack: {
+                // 使用navigationManager处理返回
+                navigationManager.goBack()
+            },
+            onSettings: {
+                viewModel.showSettings()
+            }
         )
+//        .navigationBar(
+//            title: viewModel.chatRoom.name,
+//            onBack: { presentationMode.wrappedValue.dismiss() },
+//            onSettings: { viewModel.showSettings() }
+//        )
         .tabBarVisibility(tabBarManager)
         .memberListSheet(
                    isPresented: $viewModel.showMemberList,

@@ -3,6 +3,7 @@ import SwiftUI
 struct LoginInputView: View {
     @StateObject private var viewModel = LoginViewModel()
     @Environment(\.presentationMode) var presentationMode
+    @EnvironmentObject var navigationManager: AppNavigationManager
     @State private var navigateToNextStep = false
     
     let showBackButton: Bool
@@ -26,9 +27,6 @@ struct LoginInputView: View {
             leading: backButton,
             trailing: nextButton
         )
-        .navigationDestination(isPresented: $navigateToNextStep) {
-            LoginPasswordView(emailOrUsername: viewModel.inputData.email)
-        }
         .alert(viewModel.alertMessage, isPresented: $viewModel.showAlert) {}
     }
     
@@ -94,7 +92,7 @@ struct LoginInputView: View {
     
     private var nextButton: some View {
         Button(action: {
-            navigateToNextStep = true
+            navigationManager.navigate(to: .loginPassword(email: viewModel.inputData.email))
         }) {
             Text("下一步")
                 .font(.system(size: 12, weight: .medium))

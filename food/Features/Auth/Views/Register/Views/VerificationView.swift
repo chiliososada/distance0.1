@@ -17,6 +17,7 @@ struct VerificationView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var verificationState = VerificationState()
     @FocusState private var focusedField: Int?
+    @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var tabBarManager: TabBarManager
     
     let emailPlaceholder: String = "chiliososada@gmail.com"
@@ -62,7 +63,7 @@ struct VerificationView: View {
     }
     
     private var submitButton: some View {
-        Button(action: goToHomeView) {
+        Button(action: handleVerificationSubmit) {
             Text("完成")
                 .font(.system(size: 18, weight: .medium))
                 .frame(maxWidth: .infinity)
@@ -83,6 +84,35 @@ struct VerificationView: View {
                 .foregroundColor(.black)
         }
     }
+    private func handleVerificationSubmit() {
+           Task {
+               // 开始加载状态（如果需要）
+               do {
+                   //let success = await verifyCode()
+                   if true {
+                       // 重置导航状态并切换到主页
+                       navigationManager.resetNavigation()
+                       
+                       // 切换根视图到 HomeView
+                       if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                          let window = windowScene.windows.first {
+                           window.rootViewController = UIHostingController(
+                               rootView: HomeView()
+                                   .environmentObject(navigationManager)
+                                   .environmentObject(tabBarManager)
+                           )
+                           window.makeKeyAndVisible()
+                       }
+                   } else {
+                       // 处理验证失败
+                       // 可以显示一个 alert 或其他错误提示
+                   }
+               } catch {
+                   // 处理错误
+                   print("Verification error: \(error)")
+               }
+           }
+       }
     
     private func goToHomeView() {
         guard verificationState.isComplete,
