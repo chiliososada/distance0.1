@@ -23,9 +23,8 @@ private enum Layout {
 // MARK: - Main View
 struct ChatDetailView: View {
     @StateObject private var viewModel: ChatDetailViewModel
-    @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var tabBarManager: TabBarManager
     @EnvironmentObject var navigationManager: AppNavigationManager
+    @EnvironmentObject var tabBarManager: TabBarManager
     
     init(chatRoom: ChatRoom) {
         _viewModel = StateObject(wrappedValue: ChatDetailViewModel(chatRoom: chatRoom))
@@ -47,34 +46,30 @@ struct ChatDetailView: View {
             // 输入区域
             DetailInputSection(viewModel: viewModel)
         }
-        .navigationBar(
-            title: viewModel.chatRoom.name,
-            onBack: {
-                // 使用navigationManager处理返回
-                navigationManager.goBack()
-            },
-            onSettings: {
-                viewModel.showSettings()
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                BackButton(action: {
+                    navigationManager.goBack()
+                })
             }
-        )
-//        .navigationBar(
-//            title: viewModel.chatRoom.name,
-//            onBack: { presentationMode.wrappedValue.dismiss() },
-//            onSettings: { viewModel.showSettings() }
-//        )
-        .tabBarVisibility(tabBarManager)
-        .memberListSheet(
-                   isPresented: $viewModel.showMemberList,
-                   chatRoom: viewModel.chatRoom  
-               )
-        .overlay {
-            if case .loading = viewModel.viewState {
-                ProgressView()
-                    .scaleEffect(1.5)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.black.opacity(0.2))
+            ToolbarItem(placement: .navigationBarTrailing) {
+                SettingsButton(action: {
+                    viewModel.showSettings()
+                })
+            }
+            ToolbarItem(placement: .principal) {
+                Text(viewModel.chatRoom.name)
+                    .font(.headline)
             }
         }
+        .tabBarVisibility(tabBarManager)
+        .memberListSheet(
+            isPresented: $viewModel.showMemberList,
+            chatRoom: viewModel.chatRoom
+        )
+      
     }
 }
 

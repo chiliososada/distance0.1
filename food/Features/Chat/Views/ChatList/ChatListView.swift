@@ -4,11 +4,7 @@ struct ChatListView: View {
     let chatRooms: [ChatRoom]
     @Binding var selectedChatRoom: ChatRoom?
     @Binding var isNavigating: Bool
-    
-    // 提取常用值为私有常量，避免重复创建
-    private let buttonCornerRadius: CGFloat = 10
-    private let shadowRadius: CGFloat = 3
-    private let verticalPadding: CGFloat = 5
+    @EnvironmentObject private var navigationManager: AppNavigationManager
     
     var body: some View {
         List {
@@ -16,10 +12,7 @@ struct ChatListView: View {
                 ChatRoomCell(
                     chatRoom: chatRoom,
                     onSelect: {
-                        withAnimation {
-                            selectedChatRoom = chatRoom
-                            isNavigating = true
-                        }
+                        navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
                     }
                 )
                 .listRowStyle()
@@ -79,5 +72,6 @@ struct ChatListView_Previews: PreviewProvider {
             selectedChatRoom: .constant(nil),
             isNavigating: .constant(false)
         )
+        .environmentObject(AppNavigationManager.shared)
     }
 }

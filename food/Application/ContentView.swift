@@ -25,7 +25,6 @@ struct ContentView: View {
                 switch route {
                 case .chatDetail(let chatRoom):
                     ChatDetailView(chatRoom: chatRoom)
-                        .environmentObject(navigationManager)
                 case .login(let showBackButton):
                     LoginInputView(showBackButton: showBackButton)
                 case .loginPassword(let email):

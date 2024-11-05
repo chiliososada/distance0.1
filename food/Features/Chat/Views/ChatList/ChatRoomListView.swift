@@ -11,13 +11,12 @@ private enum Layout {
     static let borderColor = Color.black.opacity(0.5)
 }
 
-// MARK: - Main View
-
 struct ChatRoomListView: View {
     @StateObject private var viewModel = ChatRoomListViewModel()
+    @EnvironmentObject private var navigationManager: AppNavigationManager
     
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationManager.navigationPath) {  // 添加 NavigationStack
             VStack(spacing: 0) {
                 ListHeaderView(viewModel: viewModel)
                 TabSelectionView(selectedTab: $viewModel.selectedTab)
@@ -25,9 +24,13 @@ struct ChatRoomListView: View {
             }
             .navigationBarHidden(true)
             .background(Color.white.edgesIgnoringSafeArea(.all))
-            .navigationDestination(isPresented: $viewModel.isNavigating) {
-                if let selectedRoom = viewModel.selectedChatRoom {
-                    ChatDetailView(chatRoom: selectedRoom)
+            .navigationDestination(for: AppRoute.self) { route in  // 添加导航目标
+                switch route {
+                case .chatDetail(let chatRoom):
+                    ChatDetailView(chatRoom: chatRoom)
+                        .environmentObject(navigationManager)
+                default:
+                    EmptyView()
                 }
             }
         }
@@ -166,6 +169,7 @@ struct ChatRoomsTabButton: View {
 
 struct ChatTabView: View {
     @ObservedObject var viewModel: ChatRoomListViewModel
+    @EnvironmentObject private var navigationManager: AppNavigationManager
     
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
@@ -187,16 +191,51 @@ struct ChatTabView: View {
     }
 }
 
+
+
+// MARK: - Supporting Views
+private struct ChatRoomCell: View {
+    let chatRoom: ChatRoom
+    let onSelect: () -> Void
+    
+    var body: some View {
+        Button(action: onSelect) {
+            ChatRoomRow(chatRoom: chatRoom)
+                .modifier(ChatRoomStyle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Modifiers
+private struct ChatRoomStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .background(Color.white)
+            .cornerRadius(10)
+            .shadow(
+                color: .gray.opacity(0.3),
+                radius: 3,
+                x: 0,
+                y: 3
+            )
+            .padding(.horizontal)
+            .padding(.vertical, 5)
+    }
+}
+
+private extension View {
+    func listRowStyle() -> some View {
+        self
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets())
+    }
+}
+
 // MARK: - Preview
 struct ChatRoomListView_Previews: PreviewProvider {
     static var previews: some View {
-        Group {
-            ChatRoomListView()
-                .previewDisplayName("Light Mode")
-            
-            ChatRoomListView()
-                .preferredColorScheme(.dark)
-                .previewDisplayName("Dark Mode")
-        }
+        ChatRoomListView()
+            .environmentObject(AppNavigationManager.shared)
     }
 }
