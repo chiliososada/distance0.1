@@ -67,7 +67,7 @@ struct ContentView: View {
                         )
                     case .searchFilter:
                         SearchFilterView(showFilterView: $navigationManager.isPresentingSheet)
-                    case .imageGallery(let images):
+                    case .imageGallery:
                         EmptyView() // 实现图片画廊视图
                     case .locationPicker:
                         EmptyView() // 实现位置选择器视图

@@ -46,6 +46,15 @@ struct ChatDetailView: View {
             // 输入区域
             DetailInputSection(viewModel: viewModel)
         }
+        .onAppear {
+                   tabBarManager.isNavigatingInTab = true
+               }
+               .onDisappear {
+                   // 只有当返回到主页面时才重置状态
+                   if navigationManager.navigationPath.count == 0 {
+                       tabBarManager.isNavigatingInTab = false
+                   }
+               }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -64,7 +73,7 @@ struct ChatDetailView: View {
                     .font(.headline)
             }
         }
-        .tabBarVisibility(tabBarManager)
+//        .tabBarVisibility(tabBarManager)
         .memberListSheet(
             isPresented: $viewModel.showMemberList,
             chatRoom: viewModel.chatRoom

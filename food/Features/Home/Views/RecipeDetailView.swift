@@ -68,9 +68,18 @@ struct RecipeDetailView: View {
                 }
             }
         }
-        .hideTabBarOnAppear(tabBarManager)  
-        .onAppear { tabBarManager.isViewTabBarHidden = true }
-        .onDisappear { tabBarManager.isViewTabBarHidden = false }
+        .onAppear {
+                   tabBarManager.isNavigatingInTab = true
+               }
+               .onDisappear {
+                   if navigationManager.navigationPath.count == 0 {
+                       tabBarManager.isNavigatingInTab = false
+                   }
+               }
+
+//        .hideTabBarOnAppear(tabBarManager)
+//        .onAppear { tabBarManager.isViewTabBarHidden = true }
+//        .onDisappear { tabBarManager.isViewTabBarHidden = false }
     }
     
        @State private var showError = false
@@ -78,6 +87,8 @@ struct RecipeDetailView: View {
          private func handleJoinChat() {
            
                    let chatRoom = createChatRoom()
+             // 保持 TabBar 隐藏状态
+                    tabBarManager.isNavigatingInTab = true
                    // 直接导航到聊天详情页面
                    navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
                

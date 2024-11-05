@@ -156,10 +156,11 @@ struct HomeView: View {
                  }
              }
          }
-         .toolbar(
-             (viewModel.tabState == .hidden || tabBarManager.isViewTabBarHidden) ? .hidden : .visible,
-             for: .tabBar
-         )
+        // HomeView中的TabBar控制
+        .toolbar(
+            (viewModel.tabState == .hidden || tabBarManager.isViewTabBarHidden || tabBarManager.isNavigatingInTab) ? .hidden : .visible,
+            for: .tabBar
+        )
          .animation(.easeInOut(duration: 0.2), value: viewModel.tabState == .hidden)
      }
     
