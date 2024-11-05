@@ -64,7 +64,7 @@ struct ContentView: View {
                     case .postInput:
                         PostInputView(
                             isPresented: $navigationManager.isPresentingSheet,
-                            selectedTab: .constant(navigationManager.selectedTab.rawValue)
+                             selectedTab: .constant(navigationManager.selectedTab)
                         )
                     case .searchFilter:
                         SearchFilterView(showFilterView: $navigationManager.isPresentingSheet)

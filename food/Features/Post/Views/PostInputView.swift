@@ -13,10 +13,10 @@ import MapItemPicker
 // MARK: - Main View
 struct PostInputView: View {
     @StateObject private var viewModel = PostInputViewModel()
-    @Environment(\.dismiss) private var dismiss
-    @Binding var isPresented: Bool
-    @Binding var selectedTab: Int
-    @FocusState private var focusedField: PostInputViewModel.FocusField?
+       @Environment(\.dismiss) private var dismiss
+       @Binding var isPresented: Bool
+       @Binding var selectedTab: TabRoute  // Change from Int to TabRoute
+       @FocusState private var focusedField: PostInputViewModel.FocusField?
     
     private enum Layout {
         static let spacing: CGFloat = 16
@@ -75,7 +75,11 @@ struct PostInputView: View {
                 }
             }
             .navigationBarItems(
-                leading: DismissButton(dismiss: dismiss, selectedTab: $selectedTab),
+                leading: DismissButton(
+                    dismiss: dismiss,
+                    selectedTab: .home,  // Use the TabRoute.home enum value
+                    isPresented: $isPresented
+                ),
                 trailing: PublishButton(showSecondView: $viewModel.showSecondView)
             )
          
@@ -351,16 +355,24 @@ struct ToolbarButton: View {
 // MARK: - Navigation Bar Components
 struct DismissButton: View {
     let dismiss: DismissAction
-    @Binding var selectedTab: Int
+    let selectedTab: TabRoute  // Change to TabRoute type
+    @Binding var isPresented: Bool
     
     var body: some View {
-        Button(action: {
-            dismiss()
-            selectedTab = 0
-        }) {
+        Button(action: handleDismiss) {
             Image(systemName: "xmark")
                 .font(.title2)
                 .foregroundColor(.black)
+        }
+    }
+    
+    private func handleDismiss() {
+        withAnimation {
+            AppNavigationManager.shared.switchTab(to: selectedTab) // Use the navigation manager to switch tabs
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+                isPresented = false
+                dismiss()
+            }
         }
     }
 }
@@ -408,7 +420,7 @@ struct PostInputView_Previews: PreviewProvider {
         NavigationView {
             PostInputView(
                 isPresented: .constant(true),
-                selectedTab: .constant(0)
+                selectedTab: .constant(.home)  // Use TabRoute.home
             )
         }
     }
