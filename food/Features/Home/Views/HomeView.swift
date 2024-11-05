@@ -137,36 +137,15 @@ struct HomeView: View {
                              switch route {
                              case .chatDetail(let chatRoom):
                                  ChatDetailView(chatRoom: chatRoom)
-                                     .onAppear {
-                                         tabBarManager.isNavigatingInTab = true
-                                     }
-                                     .onDisappear {
-                                         tabBarManager.isNavigatingInTab = false
-                                     }
+                                 
                              case .recipeDetail(let recipe):
                                  RecipeDetailView(recipe: recipe)
-                                     .onAppear {
-                                         tabBarManager.isNavigatingInTab = true
-                                     }
-                                     .onDisappear {
-                                         tabBarManager.isNavigatingInTab = false
-                                     }
+                                   
                              case .settings:
                                  PersonSettingsView()
-                                     .onAppear {
-                                         tabBarManager.isNavigatingInTab = true
-                                     }
-                                     .onDisappear {
-                                         tabBarManager.isNavigatingInTab = false
-                                     }
+                                   
                              case .profileEditor:
                                  ProfileEditorView()
-                                     .onAppear {
-                                         tabBarManager.isNavigatingInTab = true
-                                     }
-                                     .onDisappear {
-                                         tabBarManager.isNavigatingInTab = false
-                                     }
                              default:
                                  EmptyView()
                              }
