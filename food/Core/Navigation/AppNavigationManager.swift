@@ -26,7 +26,7 @@ enum AppRoute: Hashable {
     case profileEditor
     case settings
     case passwordChange
-    case recipeDetail(recipe: RecommendedRecipe)
+    case postDetail(post: LocationPost)
     
     // Sheet Presentations
     case postInput
@@ -102,7 +102,7 @@ final class AppNavigationManager: ObservableObject {
     }
     
 
-    func navigateToChat(from recipe: RecommendedRecipe) {
+    func navigateToChat(from recipe: LocationPost) {
         let chatRoom = createChatRoom(from: recipe)
         print("Creating navigation to chat room: \(chatRoom.name)")
         
@@ -113,15 +113,16 @@ final class AppNavigationManager: ObservableObject {
         }
     }
     
-    private func createChatRoom(from recipe: RecommendedRecipe) -> ChatRoom {
+    private func createChatRoom(from post: LocationPost) -> ChatRoom {
         return ChatRoom(
-            name: recipe.title,
+            name: post.title ?? "",  // 因为 title 是可选的，所以需要提供默认值
             lastMessage: "新的对话",
             time: formatCurrentTime(),
-            avatar: recipe.imageNames.first ?? "",
-            isGroupChat: recipe.participantsCount > 2
+            avatar: post.thumbnailImage,  // 使用计算属性 thumbnailImage
+            isGroupChat: post.participantsCount > 2
         )
     }
+
       
       // 辅助方法：格式化当前时间
       private func formatCurrentTime() -> String {

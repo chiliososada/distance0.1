@@ -5,13 +5,12 @@ import Combine
 @MainActor
 class NearbyViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published private(set) var places: [Place] = []
-    @Published var selectedPlaceNames: [String] = []
-    @Published var showBottomSheet: Bool = false
-    @Published var showFilterView: Bool = false  // Add this property
-    @Published private(set) var isLoading: Bool = false
-    @Published private(set) var error: Error?
-    @Published var search: String = ""
+    @Published var selectedPosts: [LocationPost] = []
+       @Published var showBottomSheet: Bool = false
+       @Published var showFilterView: Bool = false
+       @Published private(set) var isLoading: Bool = false
+       @Published private(set) var error: Error?
+       @Published var search: String = ""
     
     // MARK: - Dependencies
     private let mapDataManager: MapDataManager
@@ -23,12 +22,29 @@ class NearbyViewModel: ObservableObject {
         setupBindings()
     }
     
+    // MARK: - Public Methods
+      func updateSelectedPosts(from annotations: [MKAnnotation]) {
+          // 从注解中提取 LocationPost 对象
+          let posts = annotations.compactMap { annotation -> [LocationPost] in
+              if let post = annotation as? LocationPost {
+                  return [post]
+              } else if let cluster = annotation as? MKClusterAnnotation {
+                  // 对于聚合标注，提取所有成员
+                  return cluster.memberAnnotations.compactMap { $0 as? LocationPost }
+              }
+              return []
+          }.flatMap { $0 } // 展平数组
+          
+          selectedPosts = Array(posts)
+          showBottomSheet = !selectedPosts.isEmpty
+      }
+      
     // MARK: - Private Methods
     private func setupBindings() {
         mapDataManager.$visiblePlaces
             .receive(on: DispatchQueue.main)
             .sink { [weak self] newPlaces in
-                self?.places = newPlaces
+                self?.selectedPosts = newPlaces
             }
             .store(in: &cancellables)
         
@@ -48,34 +64,30 @@ class NearbyViewModel: ObservableObject {
     }
     
     // MARK: - Public Methods
+//    func loadPlaces(in region: MKCoordinateRegion) {
+//        Task {
+//            do {
+//                print("1. Loading places in region: \(region) ...")
+//                await mapDataManager.loadPlaces(in: region)
+//            } catch {
+//                self.error = error
+//            }
+//        }
+//    }
     func loadPlaces(in region: MKCoordinateRegion) {
-        Task {
-            do {
-                print("1. Loading places in region: \(region) ...")
-                await mapDataManager.loadPlaces(in: region)
-            } catch {
-                self.error = error
-            }
-        }
-    }
-    
+           Task {
+               await mapDataManager.loadPlaces(in: region)
+           }
+       }
     func cleanupInvisibleRegions(currentRegion: MKCoordinateRegion) {
-        Task {
-            do {
-                await mapDataManager.cleanupInvisibleRegions(currentRegion: currentRegion)
-            } catch {
-                self.error = error
-            }
-        }
-    }
+           Task {
+               await mapDataManager.cleanupInvisibleRegions(currentRegion: currentRegion)
+           }
+       }
     
     func prioritizeRegion(_ region: MKCoordinateRegion) {
         Task {
-            do {
                 await mapDataManager.prioritizeRegion(region)
-            } catch {
-                self.error = error
-            }
         }
     }
     

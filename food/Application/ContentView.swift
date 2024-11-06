@@ -51,8 +51,8 @@ struct ContentView: View {
                     PersonSettingsView()
                 case .passwordChange:
                     PasswordChangeView()
-                case .recipeDetail(let recipe):
-                    RecipeDetailView(recipe: recipe)
+                case .postDetail(let LocationPost):
+                    PostDetailView(post: LocationPost)
                 default:
                     EmptyView()
                 }

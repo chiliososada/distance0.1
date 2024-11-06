@@ -1,241 +1,111 @@
-//
 //  HomeTabContentViewModel.swift
 //  food
 //
 //  Created by toyousoft on 2024/11/05.
-//
 
-import  SwiftUI
+import SwiftUI
+import Combine
 
-// MARK: - HomeTabContentViewModel
 final class HomeTabContentViewModel: ObservableObject {
-    @Published var recommendedRecipes: [RecommendedRecipe] = []
+    // MARK: - Published Properties
+    @Published private(set) var posts: [LocationPost] = []
+    @Published private(set) var isLoading = false
+    @Published private(set) var error: Error?
     
+    // MARK: - Dependencies
+    private let postManager = LocationPostManager.shared
+    private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Initialization
     init() {
-        loadInitialData()
+        setupBindings()
+        Task {
+            await loadInitialData()
+        }
     }
     
-    private func loadInitialData() {
-        // 模拟数据加载
-        recommendedRecipes = [
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "有一起打球的的吗",
-                imageNames: ["sample1", "reco_2", "reco_3", "sample1", "reco_3"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-                
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "有一起打球的的吗",
-                imageNames: ["4_3"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "有一起打球的的吗",
-                imageNames: ["4_5"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "一起去看电影吧",
-                imageNames: ["1_1"],
-                authorName: "王小明",
-                location: "東京都 新宿区",
-                tags: ["娱乐", "电影", "社交"],
-                participantsCount: 56,
-                postedTime: "20 mins",
-                distance: 500,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "有一起打球的的吗",
-                imageNames: ["4_3","4_5"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "4_3有一起打球的的吗",
-                imageNames: ["4_3","4_5","1_1"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "4-3有一起打球的的1吗",
-                imageNames: ["4_3","4_3","4_3"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "4-5有一起打球的的吗",
-                imageNames: ["4_5","4_5","1_1","4_5"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "有一起打球的的吗",
-                imageNames: ["4_5","4_3"],
-                authorName: "劉子源",
-                location: "東京都 葛飾区 立石",
-                tags: ["娱乐", "运动", "篮球"],
-                participantsCount: 99,
-                postedTime: "10 mins",
-                distance: 300,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "一起去看电影吧",
-                imageNames: ["1_1","1_1","1_1"],
-                authorName: "王小明",
-                location: "東京都 新宿区",
-                tags: ["娱乐", "电影", "社交"],
-                participantsCount: 56,
-                postedTime: "20 mins",
-                distance: 500,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "音乐节拼车",
-                imageNames: ["sample1", "sample1", "sample1", "sample1"],
-                authorName: "李华",
-                location: "東京都 渋谷区",
-                tags: ["音乐", "节日", "拼车"],
-                participantsCount: 150,
-                postedTime: "30 mins",
-                distance: 700,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            ),
-            RecommendedRecipe(
-                imageName: "sample1",
-                title: "周末一起骑行",
-                imageNames: ["reco_3", "sample1"],
-                authorName: "张三",
-                location: "東京都 世田谷区",
-                tags: ["运动", "骑行", "健身"],
-                participantsCount: 25,
-                postedTime: "1 hour",
-                distance: 1000,
-                isLiked: false,
-                // 新增属性的值
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            )
-        ]
+    // MARK: - Private Methods
+    private func setupBindings() {
+        // 监听过滤后的帖子变化
+        postManager.$filteredPosts
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] posts in
+                self?.posts = posts
+            }
+            .store(in: &cancellables)
+        
+        // 监听加载状态
+        postManager.$isLoading
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.isLoading, on: self)
+            .store(in: &cancellables)
+        
+        // 监听错误状态
+        postManager.$error
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.error, on: self)
+            .store(in: &cancellables)
+    }
+    
+    @MainActor
+    private func loadInitialData() async {
+        do {
+            // 初始加载时不应用任何过滤
+            try await postManager.fetchPosts()
+        } catch {
+            self.error = error
+            print("Failed to load initial data: \(error)")
+        }
+    }
+    
+    // MARK: - Public Methods
+    @MainActor
+    func refresh() async {
+        do {
+            try await postManager.fetchPosts()
+        } catch {
+            self.error = error
+            print("Refresh failed: \(error)")
+        }
+    }
+    
+    @MainActor
+    func search(text: String) async {
+        do {
+            try await postManager.fetchPosts(searchText: text)
+        } catch {
+            self.error = error
+            print("Search failed: \(error)")
+        }
+    }
+    
+    func clearError() {
+        error = nil
     }
 }
+
+//// MARK: - Preview Helper
+//extension HomeTabContentViewModel {
+//    static var preview: HomeTabContentViewModel {
+//        let viewModel = HomeTabContentViewModel()
+//        viewModel.posts = [
+//            LocationPost(
+//                title: "有一起打球的的吗",
+//                content: "今天早上我有个计划，就是去入管局办理一些手续。",
+//                authorName: "劉子源",
+//                locationName: "東京都 葛飾区 立石",
+//                latitude: 35.681236,
+//                longitude: 139.767125,
+//                imageNames: ["sample1", "reco_2", "reco_3"],
+//                avatarImage: "sample2",
+//                tags: ["娱乐", "运动", "篮球"],
+//                participantsCount: 99,
+//                postedTime: "10 mins",
+//                remainingDays: "3 days",
+//                publishDate: "2024-10-01",
+//                joinedCount: "75＋"
+//            )
+//        ]
+//        return viewModel
+//    }
+//}

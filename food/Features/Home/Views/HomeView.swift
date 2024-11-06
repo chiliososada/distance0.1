@@ -138,8 +138,8 @@ struct HomeView: View {
                              case .chatDetail(let chatRoom):
                                  ChatDetailView(chatRoom: chatRoom)
                                  
-                             case .recipeDetail(let recipe):
-                                 RecipeDetailView(recipe: recipe)
+                             case .postDetail(let post):
+                                 PostDetailView(post: post)
                                    
                              case .settings:
                                  PersonSettingsView()

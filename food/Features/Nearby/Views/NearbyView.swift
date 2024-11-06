@@ -3,36 +3,53 @@ import MapKit
 
 struct NearbyView: View {
     @StateObject private var viewModel = NearbyViewModel()
-    
+    @EnvironmentObject private var navigationManager: AppNavigationManager
+    @EnvironmentObject private var tabBarManager: TabBarManager  // 添加 TabBarManager
     var body: some View {
-        ZStack {
-            ClusterMapView(
-                showBottomSheet: $viewModel.showBottomSheet,
-                selectedPlaceNames: $viewModel.selectedPlaceNames
-            )
-            .edgesIgnoringSafeArea([.top, .leading, .trailing])
-            
-            VStack {
-                HStack {
-                    Spacer()
-                    VStack {
-                        SearchBarView(search: $viewModel.search, showFilterView: $viewModel.showFilterView)
-                        ActionButtonsView(viewModel: viewModel)
+        NavigationStack(path: $navigationManager.navigationPath) {  // 添加 NavigationStack
+            ZStack {
+                ClusterMapView(
+                    viewModel: viewModel
+                )
+                .edgesIgnoringSafeArea([.top, .leading, .trailing])
+                
+                VStack {
+                    HStack {
+                        Spacer()
+                        VStack {
+                            SearchBarView(search: $viewModel.search, showFilterView: $viewModel.showFilterView)
+                            ActionButtonsView(viewModel: viewModel)
+                        }
+                        .padding(.top, 40)
+                        Spacer()
                     }
-                    .padding(.top, 40)
                     Spacer()
                 }
-                Spacer()
+            }
+            .navigationDestination(for: AppRoute.self) { route in
+                          switch route {
+                          case .postDetail(let post):
+                              PostDetailView(post: post)
+                                  .environmentObject(navigationManager)
+                                  .environmentObject(tabBarManager)
+                          default:
+                              EmptyView()
+               }
+             }
+//            .background(Color.clear)
+            .sheet(isPresented: $viewModel.showBottomSheet) {
+                BottomMenuView(selectedPosts: viewModel.selectedPosts)
+                    .environmentObject(navigationManager)
+                    .presentationDetents([.fraction(0.5), .large])
+            }
+            .sheet(isPresented: $viewModel.showFilterView) {
+                SearchFilterView(showFilterView: $viewModel.showFilterView)
             }
         }
-        .background(Color.clear)
-        .sheet(isPresented: $viewModel.showBottomSheet) {
-            BottomMenuView(placeNames: viewModel.selectedPlaceNames)
-                .presentationDetents([.fraction(0.5), .large])
-        }
-        .sheet(isPresented: $viewModel.showFilterView) {
-            SearchFilterView(showFilterView: $viewModel.showFilterView)
-        }
+        .onAppear {
+                   // 确保在 NearbyView 显示时显示 TabBar
+                   tabBarManager.isNavigatingInTab = false
+               }
     }
 }
 
@@ -40,26 +57,40 @@ struct NearbyView: View {
 struct NearbyView_Previews: PreviewProvider {
     static var previews: some View {
         NearbyView()
+            .environmentObject(AppNavigationManager.shared)  // 添加环境对象
+            .environmentObject(TabBarManager())  // 添加 TabBarManager
     }
 }
 
-
 struct BottomMenuView: View {
-    let placeNames: [String]
+    let selectedPosts: [LocationPost]
     @State private var showSponsored: Bool = true
+    @EnvironmentObject private var navigationManager: AppNavigationManager
+    @EnvironmentObject private var tabBarManager: TabBarManager
+    @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         VStack {
-            Text("Selected Places (\(placeNames.count))")
+            Text("Selected Places (\(selectedPosts.count))")
                 .font(.headline)
                 .padding()
             
             ScrollView {
                 LazyVStack(spacing: 16) {
-                    ForEach(Array(placeNames.enumerated()), id: \.element) { index, name in
-                        PlaceCardView(placeName: name)
-                            .padding(.horizontal)
-                            .padding(.vertical, 5)
+                    ForEach(selectedPosts) { post in
+                        PlaceCardView(
+                            post: post,
+                            action: {
+                                     dismiss()  // 先关闭 sheet
+                                // 确保在主线程执行导航
+                                                               DispatchQueue.main.async {
+                                                                   tabBarManager.isNavigatingInTab = true  // 导航时隐藏 TabBar
+                                                                   navigationManager.navigate(to: .postDetail(post: post))
+                                                               }
+                               }
+                        )
+                        .padding(.horizontal)
+                        .padding(.vertical, 5)
                     }
                 }
             }
@@ -68,28 +99,12 @@ struct BottomMenuView: View {
     }
 }
 
+// 如果需要传入更多信息，建议修改为：
 struct PlaceCardView: View {
-    let placeName: String
+    let post: LocationPost
+    let action: () -> Void
     
     var body: some View {
-        RecipeCard(
-            recipe: RecommendedRecipe(
-                imageName: "fresh_recipe_1",
-                title: placeName,
-                imageNames: ["fresh_recipe_1", "fresh_recipe_1"],
-                authorName: "Place Owner",
-                location: "Location",
-                tags: ["Tag1", "Tag2"],
-                participantsCount: 0,
-                postedTime: "Just now",
-                distance: 100,
-                isLiked: false,
-                avatarImage: "sample2",
-                remainingDays: "3 days",
-                publishDate: "2024-10-01",
-                joinedCount: "75＋",
-                content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
-            )
-        )
+        LocationPostCard(post: post, action: action)
     }
 }

@@ -9,8 +9,8 @@ import SwiftUI
 
 
 // MARK: - RecipeDetailView Optimizations
-struct RecipeDetailView: View {
-    let recipe: RecommendedRecipe
+struct PostDetailView: View {
+    let post: LocationPost
     @State private var currentImageIndex = 0
     @State private var isPressed = false
     @EnvironmentObject var tabBarManager: TabBarManager
@@ -23,11 +23,11 @@ struct RecipeDetailView: View {
                 VStack(spacing: 0) {
                     // Image Carousel without navigation buttons
                     ImageCarouselContent(
-                        images: recipe.imageNames,
+                        images: post.imageNames,
                         currentIndex: $currentImageIndex
                     )
                     
-                    DetailContent(recipe: recipe, currentImageIndex: $currentImageIndex)
+                    DetailContent(post: post, currentImageIndex: $currentImageIndex)
                 }
             }
             
@@ -40,7 +40,7 @@ struct RecipeDetailView: View {
 //                           }
                        )
         }
-        .navigationBarTitle("距离我" + String(recipe.distance) + " m", displayMode: .inline)
+        .navigationBarTitle(post.formattedDistance, displayMode: .inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
@@ -68,7 +68,7 @@ struct RecipeDetailView: View {
                 }
             }
         }
-        .onAppear {
+            .onAppear {
                    tabBarManager.isNavigatingInTab = true
                }
                .onDisappear {
@@ -94,14 +94,14 @@ struct RecipeDetailView: View {
                
        }
     private func createChatRoom() -> ChatRoom {
-          return ChatRoom(
-              name: recipe.title,
-              lastMessage: "新的对话",
-              time: formatCurrentTime(),
-              avatar: recipe.imageNames.first ?? "",
-              isGroupChat: recipe.participantsCount > 2
-          )
-      }
+            ChatRoom(
+                name: post.title ?? "",
+                lastMessage: "新的对话",
+                time: formatCurrentTime(),
+                avatar: post.thumbnailImage,
+                isGroupChat: post.participantsCount > 2
+            )
+        }
     private func formatCurrentTime() -> String {
            let formatter = DateFormatter()
            formatter.dateFormat = "HH:mm"
@@ -115,7 +115,7 @@ struct RecipeDetailView: View {
 
 // MARK: - DetailContent
 struct DetailContent: View {
-    let recipe: RecommendedRecipe
+    let post: LocationPost
     @Binding var currentImageIndex: Int
     
     var body: some View {
@@ -123,7 +123,7 @@ struct DetailContent: View {
             // Page Indicator
             HStack {
                 Spacer()
-                ForEach(0..<recipe.imageNames.count, id: \.self) { index in
+                ForEach(0..<post.imageNames.count, id: \.self) { index in
                     Circle()
                         .fill(index == currentImageIndex ? Color.black : Color.gray)
                         .frame(width: 8, height: 8)
@@ -137,30 +137,30 @@ struct DetailContent: View {
             HStack {
                 VStack(alignment: .leading) {
                     HStack {
-                        Image("sample2")
+                        Image(post.avatarImage)
                             .resizable()
                             .frame(width: 30, height: 30)
                             .clipShape(Circle())
-                        Text(recipe.authorName)
+                        Text(post.authorName)
                             .foregroundColor(.blue)
                             .font(.subheadline)
                         Spacer()
                         HStack {
                             Image(systemName: "clock.arrow.circlepath")
-                            Text(recipe.remainingDays)
+                            Text(post.remainingDays)
                                 .lineLimit(1)
                         }
                     }
                     
                     // Title
-                    Text(recipe.title)
+                    Text(post.title ?? "")
                         .font(.title2)
                         .fontWeight(.bold)
                     
                     // Tags
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(recipe.tags, id: \.self) { tag in
+                            ForEach(post.tags, id: \.self) { tag in
                                 Text(tag)
                                     .font(.caption)
                                     .padding(.horizontal, 12)
@@ -176,20 +176,19 @@ struct DetailContent: View {
                     HStack {
                         Image(systemName: "mappin.and.ellipse")
                             .foregroundColor(.gray)
-                        Text(recipe.location)
+                        Text(post.locationName)
                             .font(.subheadline)
                             .foregroundColor(.gray)
                         
                         Spacer()
                         
                         Button(action: {}) {
-                            Image(systemName: "star.fill")
+                            Image(systemName: post.isLiked ? "heart.fill" : "heart")
                                 .font(.title3)
-                                .foregroundColor(.yellow)
+                                .foregroundColor(post.isLiked ? .red : .gray)
                                 .padding(6)
                                 .background(Color.white)
                                 .cornerRadius(6)
-                                
                         }
                     }
                 }
@@ -207,8 +206,8 @@ struct DetailContent: View {
                     .padding(.horizontal)
                 
                 HStack(spacing: 10) {
-                    DetailItem(icon: "calendar", text: recipe.publishDate)
-                    DetailItem(icon: "person.2.fill", text: recipe.joinedCount)
+                    DetailItem(icon: "calendar", text: post.publishDate)
+                    DetailItem(icon: "person.2.fill", text: post.joinedCount)
                 }
                 .padding(.horizontal)
                 
@@ -216,7 +215,7 @@ struct DetailContent: View {
                     .font(.headline)
                     .padding(.horizontal)
                 
-                Text(recipe.content)
+                Text(post.content)
                     .font(.body)
                     .padding(.horizontal)
             }
@@ -264,36 +263,30 @@ struct FloatingJoinButton: View {
     }
 }
 
-// MARK: - Previews
-struct RecipeDetailView_Previews: PreviewProvider {
-    static var previewRecipe = RecommendedRecipe(
-        imageName: "sample1",
+// MARK: - Preview
+struct PostDetailView_Previews: PreviewProvider {
+    static var previewPost = LocationPost(
         title: "有一起打球的的吗",
-        imageNames: ["sample1", "reco_2", "reco_3"],
+        content: "今天早上我有个计划，就是去入管局办理一些手续。",
         authorName: "劉子源",
-        location: "東京都 葛飾区 立石",
+        locationName: "東京都 葛飾区 立石",
+        latitude: 35.681236,
+        longitude: 139.767125,
+        imageNames: ["sample1", "reco_2", "reco_3"],
+        avatarImage: "sample2",
         tags: ["娱乐", "运动", "篮球"],
         participantsCount: 99,
         postedTime: "10 mins",
-        distance: 300,
-        isLiked: false,
-        avatarImage: "sample2",
         remainingDays: "3 days",
         publishDate: "2024-10-01",
-        joinedCount: "75＋",
-        content: "今天早上我有个计划，就是去入管局办理一些手续。最近一直忙着工作，所以这件事拖了好久。想着今天正好有空，赶紧去处理一下。"
+        joinedCount: "75＋"
     )
     
     static var previews: some View {
-        // 亮色模式预览
-        RecipeDetailView(recipe: previewRecipe)
-            .environmentObject(TabBarManager())
-            .previewDisplayName("Light Mode")
-
-        // iPhone SE 预览
-        RecipeDetailView(recipe: previewRecipe)
-            .environmentObject(TabBarManager())
-            .previewDevice("iPhone SE (3rd generation)")
-            .previewDisplayName("iPhone SE")
+        NavigationView {
+            PostDetailView(post: previewPost)
+                .environmentObject(TabBarManager())
+                .environmentObject(AppNavigationManager.shared)
+        }
     }
 }

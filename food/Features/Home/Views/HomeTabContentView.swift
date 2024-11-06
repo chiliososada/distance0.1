@@ -11,9 +11,9 @@ struct HomeTabContentView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16, pinnedViews: []) {
-                ForEach(viewModel.recommendedRecipes) { recipe in
-                    RecipeCardButton(recipe: recipe) {
-                        navigationManager.navigate(to: .recipeDetail(recipe: recipe))
+                ForEach(viewModel.posts) { post in
+                    LocationPostButton(post: post) {
+                        navigationManager.navigate(to: .postDetail(post: post))
                     }
                 }
             }
@@ -23,28 +23,28 @@ struct HomeTabContentView: View {
     }
 }
 
-struct RecipeCardButton: View {
-    let recipe: RecommendedRecipe
+struct LocationPostButton: View {
+    let post: LocationPost
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            RecipeCard(recipe: recipe)
-                .id(recipe.id)
+            LocationPostCard(post: post, action: action)
+                       .id(post.id)
         }
         .buttonStyle(PlainButtonStyle())
     }
 }
 // MARK: - Author Header
 struct AuthorHeader: View {
-    let recipe: RecommendedRecipe
+    let post: LocationPost
     
     var body: some View {
         HStack(alignment: .center) {
             // 左侧头像和信息
             HStack(spacing: 8) {
                 // 头像
-                Image(recipe.imageName)
+                Image(post.avatarImage)
                     .resizable()
                     .scaledToFill()
                     .frame(width: 40, height: 40)
@@ -52,14 +52,14 @@ struct AuthorHeader: View {
                 
                 // 作者信息
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(recipe.authorName)
+                    Text(post.authorName)
                         .font(.subheadline)
                         .fontWeight(.medium)
                     
                     HStack {
                         Image(systemName: "location.circle.fill")
                             .foregroundColor(.gray)
-                        Text(recipe.location)
+                        Text(post.locationName)
                             .font(.caption)
                             .foregroundColor(.gray)
                             .lineLimit(1)
@@ -71,13 +71,14 @@ struct AuthorHeader: View {
             Spacer()
             
             Button(action: {}) {
-                Image(systemName: "heart")
+                Image(systemName: post.isLiked ? "heart.fill" : "heart")
                     .font(.title3)
-                    .foregroundColor(.gray)
+                    .foregroundColor(post.isLiked ? .red : .gray)
             }
         }
     }
 }
+
 
 
 struct TagsRow: View {
@@ -102,7 +103,7 @@ struct TagsRow: View {
 
 // MARK: - Card Footer
 struct CardFooter: View {
-    let recipe: RecommendedRecipe
+    let post: LocationPost
     
     var body: some View {
         HStack(alignment: .center) {
@@ -112,23 +113,23 @@ struct CardFooter: View {
                 HStack(spacing: 4) {
                     Image(systemName: "person.2")
                         .foregroundColor(.gray)
-                    Text("\(recipe.participantsCount)人")
+                    Text("\(post.participantsCount)人")
                 }
                 
                 // 时间信息
                 HStack(spacing: 4) {
                     Image(systemName: "clock")
                         .foregroundColor(.gray)
-                    Text(recipe.postedTime)
+                    Text(post.postedTime)
                 }
             }
             .font(.caption)
             .foregroundColor(.gray)
             
-            // 右对齐距离信息
             Spacer()
             
-            Text("距离我 \(recipe.distance)m")
+            // 距离信息，使用格式化的距离显示
+            Text(post.formattedDistance)
                 .font(.caption)
                 .foregroundColor(.gray)
         }
@@ -136,49 +137,4 @@ struct CardFooter: View {
 }
 
 
-// MARK: - Modified ViewModel for Preview
-extension HomeTabContentViewModel {
-    static var preview: HomeTabContentViewModel {
-        let viewModel = HomeTabContentViewModel()
-        viewModel.recommendedRecipes = RecommendedRecipe.sampleData
-        return viewModel
-    }
-}
 
-// MARK: - Modified HomeTabContentView for Preview
-struct HomeTabContentView_WithPreviewData: View {
-    @StateObject private var viewModel = HomeTabContentViewModel.preview
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    
-    var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 16) {
-                ForEach(viewModel.recommendedRecipes) { recipe in
-                    NavigationLink(destination: RecipeDetailView(recipe: recipe) .environmentObject(AppNavigationManager.shared)) {
-                        RecipeCard(recipe: recipe)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                }
-            }
-            .padding()
-        }
-        .background(Color(UIColor.systemBackground))
-    }
-}
-
-// MARK: - Previews
-struct HomeTabContentView_Previews: PreviewProvider {
-    static var previews: some View {
-   
-            // 亮色模式预览
-            NavigationView {
-                HomeTabContentView_WithPreviewData()
-                    .environmentObject(TabBarManager())
-                    .environment(\.colorScheme, .light)
-            }
-            .previewDisplayName("Light Mode")
-            
-           
-        
-    }
-}

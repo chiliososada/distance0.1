@@ -20,7 +20,7 @@ struct ClusterMapView: UIViewRepresentable {
         
         enum AnnotationType {
             static let cluster = "cluster"
-            static let place = "InterestingPlace"
+            static let place = "LocationPost"
         }
         
         static let markerTintColor = UIColor(displayP3Red: 0.082, green: 0.518, blue: 0.263, alpha: 1.0)
@@ -28,8 +28,9 @@ struct ClusterMapView: UIViewRepresentable {
     
     // MARK: - Properties
     @StateObject private var dataManager = MapDataManager()
-    @Binding var showBottomSheet: Bool
-    @Binding var selectedPlaceNames: [String]
+    @ObservedObject var viewModel: NearbyViewModel
+  
+//    @Binding var selectedPlaceNames: [String]
     
     // MARK: - Coordinator
     class Coordinator: NSObject, MKMapViewDelegate {
@@ -54,24 +55,31 @@ struct ClusterMapView: UIViewRepresentable {
         }
         
         func mapView(_ mapView: MKMapView, viewFor annotation: MKAnnotation) -> MKAnnotationView? {
-           
             switch annotation {
             case let cluster as MKClusterAnnotation:
                 return setupClusterAnnotationView(for: cluster, in: mapView)
-            case is Place:
-                return setupPlaceAnnotationView(for: annotation, in: mapView)
+            case let post as LocationPost:
+                return setupPlaceAnnotationView(for: post, in: mapView)
             default:
                 return nil
             }
         }
-        
+        //
+        //        func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
+        //            parent.showBottomSheet = true  // 确保底部表单显示
+        //            Task {
+        //                await handleAnnotationSelection(view, in: mapView)
+        //            }
+        //        }
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            parent.showBottomSheet = true  // 确保底部表单显示
-            Task {
-                await handleAnnotationSelection(view, in: mapView)
+            if let cluster = view.annotation as? MKClusterAnnotation {
+                parent.viewModel.updateSelectedPosts(from: cluster.memberAnnotations)
+            } else if let post = view.annotation as? LocationPost {
+                parent.viewModel.updateSelectedPosts(from: [post])
             }
+            
+            mapView.deselectAnnotation(view.annotation, animated: true)
         }
-        
         // MARK: - Private Helper Methods
         private func shouldUpdateRegion() -> Bool {
             let currentTime = Date()
@@ -92,7 +100,7 @@ struct ClusterMapView: UIViewRepresentable {
             
             // 获取当前显示的标注
             let currentAnnotations = mapView.annotations.filter { !($0 is MKUserLocation) }
-            let currentIds = Set(currentAnnotations.compactMap { ($0 as? Place)?.id })
+            let currentIds = Set(currentAnnotations.compactMap { ($0 as? LocationPost)?.id })
             
             // 获取新的标注
             let newPlaces = parent.dataManager.visiblePlaces
@@ -100,7 +108,7 @@ struct ClusterMapView: UIViewRepresentable {
             
             // 计算需要添加和移除的标注
             let annotationsToRemove = currentAnnotations.filter { annotation in
-                guard let place = annotation as? Place else { return true }
+                guard let place = annotation as? LocationPost else { return true }
                 return !newIds.contains(place.id)
             }
             
@@ -118,7 +126,7 @@ struct ClusterMapView: UIViewRepresentable {
         
         private func setupClusterAnnotationView(for cluster: MKClusterAnnotation, in mapView: MKMapView) -> MKMarkerAnnotationView {
             let annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: Constants.AnnotationType.cluster) as? MKMarkerAnnotationView
-                ?? MKMarkerAnnotationView(annotation: cluster, reuseIdentifier: Constants.AnnotationType.cluster)
+            ?? MKMarkerAnnotationView(annotation: cluster, reuseIdentifier: Constants.AnnotationType.cluster)
             
             configureBaseAnnotationView(annotationView)
             configureClusterTitle(for: cluster)
@@ -128,7 +136,7 @@ struct ClusterMapView: UIViewRepresentable {
         
         private func setupPlaceAnnotationView(for annotation: MKAnnotation, in mapView: MKMapView) -> MKMarkerAnnotationView {
             let annotationView = mapView.dequeueReusableAnnotationView(withIdentifier: Constants.AnnotationType.place) as? MKMarkerAnnotationView
-                ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: Constants.AnnotationType.place)
+            ?? MKMarkerAnnotationView(annotation: annotation, reuseIdentifier: Constants.AnnotationType.place)
             
             configureBaseAnnotationView(annotationView)
             configurePlaceAnnotation(annotationView)
@@ -149,21 +157,20 @@ struct ClusterMapView: UIViewRepresentable {
             view.clusteringIdentifier = Constants.AnnotationType.cluster
         }
         
+        
+        
         private func configureClusterTitle(for cluster: MKClusterAnnotation) {
             let sponsoredPlace = cluster.memberAnnotations
-                .compactMap { $0 as? Place }
-                .first { $0.sponsored }
-            
-            cluster.title = sponsoredPlace?.name ?? "\(cluster.memberAnnotations.count) 个地点"
+                .compactMap { $0 as? LocationPost }
+                .first { $0.isSponsored }  // 使用正确的属性
+            cluster.title = sponsoredPlace?.title ?? "\(cluster.memberAnnotations.count) 个地点"
         }
         
         @MainActor
         private func handleAnnotationSelection(_ view: MKAnnotationView, in mapView: MKMapView) async {
-            parent.showBottomSheet = true
-            
             if let cluster = view.annotation as? MKClusterAnnotation {
                 await handleClusterSelection(cluster)
-            } else if let place = view.annotation as? Place {
+            } else if let place = view.annotation as? LocationPost {
                 await handlePlaceSelection(place)
             }
             
@@ -172,20 +179,13 @@ struct ClusterMapView: UIViewRepresentable {
         
         @MainActor
         private func handleClusterSelection(_ cluster: MKClusterAnnotation) async {
-            let (sponsoredPlaces, normalPlaces) = cluster.memberAnnotations
-                .compactMap { $0 as? Place }
-                .reduce(into: ([String](), [String]())) { result, place in
-                    if place.sponsored {
-                        result.0.append(place.name)
-                    } else {
-                        result.1.append(place.name)
-                    }
-                }
+            // 直接从聚合标注中提取所有 LocationPost 对象
+            let posts = cluster.memberAnnotations.compactMap { $0 as? LocationPost }
             
-            // 更新状态
-              parent.showBottomSheet = true  // 确保底部表单显示
-              parent.selectedPlaceNames = sponsoredPlaces + normalPlaces
+            // 更新 ViewModel 的选中状态
+            parent.viewModel.updateSelectedPosts(from: cluster.memberAnnotations)
             
+            // 更新地图显示区域
             let region = MKCoordinateRegion(
                 center: cluster.coordinate,
                 span: Constants.clusterSpan
@@ -194,10 +194,11 @@ struct ClusterMapView: UIViewRepresentable {
         }
         
         @MainActor
-        private func handlePlaceSelection(_ place: Place) async {
-            parent.showBottomSheet = true  // 确保底部表单显示
-            parent.selectedPlaceNames = [place.name]
+        private func handlePlaceSelection(_ place: LocationPost) async {
+            // 更新 ViewModel 的选中状态
+            parent.viewModel.updateSelectedPosts(from: [place])
             
+            // 更新地图显示区域
             let region = MKCoordinateRegion(
                 center: place.coordinate,
                 span: Constants.singlePlaceSpan
