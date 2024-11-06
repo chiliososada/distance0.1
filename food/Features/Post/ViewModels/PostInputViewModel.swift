@@ -172,6 +172,7 @@ final class PostInputViewModel: ObservableObject {
            setupKeyboardObservers()
            // 初始化时获取位置
            updateLocationText()
+        checkAndLoadDraft() // 检查并加载草稿
         
       
        }
@@ -256,4 +257,42 @@ final class PostInputViewModel: ObservableObject {
         keyboardObservers.removeAll()
     }
     
+    // 检查是否有需要保存的内容
+        func showDraftActionSheet() -> Bool {
+            return !title.isEmpty || !content.isEmpty || !selectedTags.isEmpty || !selectedImages.isEmpty
+        }
+        
+        // 保存草稿
+        func saveDraft() {
+            let post = PostModel(
+                title: title,
+                content: content,
+                location: userLocationText,
+                tags: selectedTags,
+                images: selectedImages
+            )
+            PostDraftManager.shared.saveDraft(post)
+        }
+        
+        // 加载草稿
+        func loadDraft() {
+            guard let draft = PostDraftManager.shared.loadDraft() else { return }
+            
+            title = draft.title
+            content = draft.content
+            userLocationText = draft.location
+            selectedTags = draft.tags
+            selectedImages = draft.images
+        }
+        
+        // 清除草稿
+        func clearDraft() {
+            PostDraftManager.shared.clearDraft()
+        }
+    // 初始化时检查并加载草稿
+       func checkAndLoadDraft() {
+           if PostDraftManager.shared.hasDraft() {
+               loadDraft()
+           }
+       }
 }

@@ -77,8 +77,9 @@ struct PostInputView: View {
             .navigationBarItems(
                 leading: DismissButton(
                     dismiss: dismiss,
-                    selectedTab: .home,  // Use the TabRoute.home enum value
-                    isPresented: $isPresented
+                    selectedTab: .home,
+                    isPresented: $isPresented,
+                    viewModel: viewModel
                 ),
                 trailing: PublishButton(showSecondView: $viewModel.showSecondView)
             )
@@ -352,30 +353,30 @@ struct ToolbarButton: View {
         }
     }
 }
-// MARK: - Navigation Bar Components
-struct DismissButton: View {
-    let dismiss: DismissAction
-    let selectedTab: TabRoute  // Change to TabRoute type
-    @Binding var isPresented: Bool
-    
-    var body: some View {
-        Button(action: handleDismiss) {
-            Image(systemName: "xmark")
-                .font(.title2)
-                .foregroundColor(.black)
-        }
-    }
-    
-    private func handleDismiss() {
-        withAnimation {
-            AppNavigationManager.shared.switchTab(to: selectedTab) // Use the navigation manager to switch tabs
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-                isPresented = false
-                dismiss()
-            }
-        }
-    }
-}
+//// MARK: - Navigation Bar Components
+//struct DismissButton: View {
+//    let dismiss: DismissAction
+//    let selectedTab: TabRoute  // Change to TabRoute type
+//    @Binding var isPresented: Bool
+//    
+//    var body: some View {
+//        Button(action: handleDismiss) {
+//            Image(systemName: "xmark")
+//                .font(.title2)
+//                .foregroundColor(.black)
+//        }
+//    }
+//    
+//    private func handleDismiss() {
+//        withAnimation {
+//            AppNavigationManager.shared.switchTab(to: selectedTab) // Use the navigation manager to switch tabs
+//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+//                isPresented = false
+//                dismiss()
+//            }
+//        }
+//    }
+//}
 struct PublishButton: View {
     @Binding var showSecondView: Bool
     
