@@ -11,6 +11,20 @@ import SwiftUI
 // MARK: - RecipeDetailView Optimizations
 struct PostDetailView: View {
     let post: LocationPost
+    
+    
+    init(post: LocationPost) {
+           self.post = post
+           print("PostDetailView initialized with:")
+           print("- Title: \(post.title ?? "nil")")
+           print("- Author: \(post.authorName)")
+           print("- Images: \(post.imageNames)")
+           print("- Location: \(post.locationName)")
+       }
+    
+    
+    
+    
     @State private var currentImageIndex = 0
     @State private var isPressed = false
     @EnvironmentObject var tabBarManager: TabBarManager
@@ -44,9 +58,7 @@ struct PostDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
+                Button(action: handleBack) {
                     Image(systemName: "chevron.left")
                         .font(.title3)
                         .foregroundColor(.black)
@@ -81,32 +93,50 @@ struct PostDetailView: View {
 //        .onAppear { tabBarManager.isViewTabBarHidden = true }
 //        .onDisappear { tabBarManager.isViewTabBarHidden = false }
     }
-    
+    private func handleBack() {
+        
+        navigationManager.goBack()
+//            if navigationManager.navigationPath.count > 1 {
+//                // 如果导航栈中有多个页面，只返回一级
+//                navigationManager.goBack()
+//            } else {
+//                // 如果只有一个页面，返回到最近的标签页
+//                navigationManager.navigateToTab(.nearby)
+//                navigationManager.clearNavigationPath()  // 使用 clearNavigationPath 替代 removeAll
+//            }
+        }
        @State private var showError = false
        @State private var errorMessage = ""
-         private func handleJoinChat() {
-           
-                   let chatRoom = createChatRoom()
-             // 保持 TabBar 隐藏状态
-                    tabBarManager.isNavigatingInTab = true
-                   // 直接导航到聊天详情页面
-                   navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
-               
-       }
+  
+    
+    private func handleJoinChat() {
+        
+        let chatRoom = createChatRoom()
+        
+        // 保持 TabBar 隐藏状态
+        tabBarManager.isNavigatingInTab = true
+        // 直接导航到聊天详情页面
+        
+        navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
+    }
+    
     private func createChatRoom() -> ChatRoom {
-            ChatRoom(
-                name: post.title ?? "",
-                lastMessage: "新的对话",
-                time: formatCurrentTime(),
-                avatar: post.thumbnailImage,
-                isGroupChat: post.participantsCount > 2
-            )
-        }
+        print("Creating chat room from post: \(post.title ?? "")")
+        return ChatRoom(
+            name: post.title ?? "",
+            lastMessage: "新的对话",
+            time: formatCurrentTime(),
+            avatar: post.thumbnailImage,
+            isGroupChat: post.participantsCount > 2
+        )
+    }
+    
+    
     private func formatCurrentTime() -> String {
-           let formatter = DateFormatter()
-           formatter.dateFormat = "HH:mm"
-           return formatter.string(from: Date())
-       }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: Date())
+    }
 }
 
 

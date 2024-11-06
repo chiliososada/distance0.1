@@ -95,23 +95,22 @@ final class AppNavigationManager: ObservableObject {
             navigationPath.removeLast()
         }
     }
-    
+    func navigateToTab(_ tab: TabRoute) {
+            selectedTab = tab
+        }
     // MARK: - Tab Navigation
     func switchTab(to tab: TabRoute) {
         selectedTab = tab
     }
-    
 
-    func navigateToChat(from recipe: LocationPost) {
-        let chatRoom = createChatRoom(from: recipe)
-        print("Creating navigation to chat room: \(chatRoom.name)")
-        
-        // 确保在主线程更新 UI
-        DispatchQueue.main.async {
-            self.navigationPath.append(AppRoute.chatDetail(chatRoom: chatRoom))
-            print("Navigation path count after append: \(self.navigationPath.count)")
+    
+    func clearNavigationPath() {
+            // 移除导航路径中的所有项目
+            while !navigationPath.isEmpty {
+                navigationPath.removeLast()
+            }
         }
-    }
+    
     
     private func createChatRoom(from post: LocationPost) -> ChatRoom {
         return ChatRoom(
@@ -138,7 +137,7 @@ final class AppNavigationManager: ObservableObject {
         isPresentingSheet = false
         presentedSheet = nil
     }
-    
+
     // MARK: - UI State Control
     func setNavigationBarVisibility(_ isHidden: Bool) {
         isNavigationBarHidden = isHidden

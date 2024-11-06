@@ -27,6 +27,7 @@ struct ChatDetailView: View {
     @EnvironmentObject var tabBarManager: TabBarManager
     
     init(chatRoom: ChatRoom) {
+        print("chatdeteal view")
         _viewModel = StateObject(wrappedValue: ChatDetailViewModel(chatRoom: chatRoom))
     }
     

@@ -32,6 +32,10 @@ struct NearbyView: View {
                               PostDetailView(post: post)
                                   .environmentObject(navigationManager)
                                   .environmentObject(tabBarManager)
+                          case .chatDetail(let chatRoom):
+                                           ChatDetailView(chatRoom: chatRoom)
+                                               .environmentObject(navigationManager)
+                                               .environmentObject(tabBarManager)
                           default:
                               EmptyView()
                }
@@ -83,10 +87,11 @@ struct BottomMenuView: View {
                             action: {
                                      dismiss()  // 先关闭 sheet
                                 // 确保在主线程执行导航
-                                                               DispatchQueue.main.async {
-                                                                   tabBarManager.isNavigatingInTab = true  // 导航时隐藏 TabBar
-                                                                   navigationManager.navigate(to: .postDetail(post: post))
-                                                               }
+                                DispatchQueue.main.async {
+                                    tabBarManager.isNavigatingInTab = true
+                                    navigationManager.navigate(to: .postDetail(post: post))
+                                    
+                                }
                                }
                         )
                         .padding(.horizontal)

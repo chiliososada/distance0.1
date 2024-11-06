@@ -19,7 +19,23 @@ struct ChatRoom: Identifiable, Hashable {
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
-
+    static func == (lhs: ChatRoom, rhs: ChatRoom) -> Bool {
+           lhs.id == rhs.id
+    }
+    // MARK: - Initialization
+     init(
+         name: String,
+         lastMessage: String = "新的对话",  // 提供默认值
+         time: String = "现在",            // 提供默认值
+         avatar: String,
+         isGroupChat: Bool
+     ) {
+         self.name = name
+         self.lastMessage = lastMessage
+         self.time = time
+         self.avatar = avatar
+         self.isGroupChat = isGroupChat
+     }
 
     // MARK: - Sample Data
     static var sampleData: [ChatRoom] = [
