@@ -118,7 +118,7 @@ struct HomeView: View {
          NavigationStack(path: $navigationManager.navigationPath) {
              VStack(spacing: 0) {
                  SearchAndFilterView(search: $viewModel.search)
-                 
+                     .padding(.bottom, 10)
                  TabStateScrollView(
                      axis: .vertical,
                      showsIndicator: false,
