@@ -13,7 +13,7 @@ class TabBarManager: ObservableObject {
         isNavigatingInTab = false
         isViewTabBarHidden = false
     }
-    //---
+    
     func setNavigationState(_ isNavigating: Bool) {
             isNavigatingInTab = isNavigating
         }

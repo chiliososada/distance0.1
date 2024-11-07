@@ -15,13 +15,13 @@ class PostDraftManager {
     
     private init() {}
     
-    func saveDraft(_ post: PostModel) {
+    func saveDraft(_ post: LocationPost) {
         let draftData = PostDraft(
-            title: post.title,
+            title: post.title ?? "",
             content: post.content,
-            location: post.location,
+            location: post.locationName,
             tags: post.tags,
-            imageData: post.images.compactMap { $0.jpegData(compressionQuality: 0.7) }
+            imageNames: post.imageNames
         )
         
         if let encoded = try? JSONEncoder().encode(draftData) {
@@ -29,21 +29,47 @@ class PostDraftManager {
         }
     }
     
-    func loadDraft() -> PostModel? {
+    func loadDraft() -> LocationPost? {
         guard let data = defaults.data(forKey: draftKey),
               let draftData = try? JSONDecoder().decode(PostDraft.self, from: data)
-        else { return nil }
+        else { return createEmptyPost() }
         
-        let images = draftData.imageData.compactMap { data in
-            UIImage(data: data)
-        }
-        
-        return PostModel(
+        return LocationPost(
             title: draftData.title,
             content: draftData.content,
-            location: draftData.location,
+            authorName: "当前用户",  // 使用默认值
+            locationName: draftData.location,
+            latitude: 0,  // 可以在实际发布时更新
+            longitude: 0, // 可以在实际发布时更新
+            imageNames: draftData.imageNames,
+            avatarImage: "default_avatar",  // 使用默认值
             tags: draftData.tags,
-            images: images
+            participantsCount: 0,
+            postedTime: "",
+            remainingDays: "",
+            publishDate: "",
+            joinedCount: "0",
+            isSponsored: false
+        )
+    }
+    
+    private func createEmptyPost() -> LocationPost {
+        return LocationPost(
+            title: "",
+            content: "",
+            authorName: "当前用户",
+            locationName: "",
+            latitude: 0,
+            longitude: 0,
+            imageNames: [],
+            avatarImage: "default_avatar",
+            tags: [],
+            participantsCount: 0,
+            postedTime: "",
+            remainingDays: "",
+            publishDate: "",
+            joinedCount: "0",
+            isSponsored: false
         )
     }
     

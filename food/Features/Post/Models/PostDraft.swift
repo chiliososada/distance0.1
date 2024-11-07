@@ -11,5 +11,5 @@ struct PostDraft: Codable {
     let content: String
     let location: String
     let tags: [String]
-    let imageData: [Data]
+    let imageNames: [String]  // 仅存储图片名称/标识符
 }
