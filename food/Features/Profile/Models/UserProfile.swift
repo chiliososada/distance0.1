@@ -14,15 +14,6 @@ struct UserProfile: Codable {
     var location: String?
     var bio: String?
     var avatarUrl: String?
-   
-   
-    
-    // 统计信息
-    struct Stats {
-        let participantsCount: String
-        let viewedTopicsCount: String
-    }
-    
     // 个人设置
     struct Settings {
         var nickname: String
@@ -41,7 +32,7 @@ struct UserProfile: Codable {
         avatarUrl: "sample1"
     )
     
-    static let sampleStats = Stats(
+    static let sampleStats = UserStats(
         participantsCount: "1K+",
         viewedTopicsCount: "1M+"
     )
@@ -62,3 +53,7 @@ struct UserProfile: Codable {
     }
 }
 
+struct UserStats {
+    let participantsCount: String
+    let viewedTopicsCount: String
+}

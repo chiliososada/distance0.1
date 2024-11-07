@@ -191,28 +191,16 @@ struct TabButtonRow: View {
 
 struct ContentListSection: View {
     let selectedTab: Int
-    let publishedContent: [ReviewItem]
-    let savedContent: [ReviewItem]
-    var onEdit: ((ReviewItem) -> Void)? = nil
-    var onDelete: ((ReviewItem) -> Void)? = nil
+    let publishedContent: [LocationPost]
+    let savedContent: [LocationPost]
+    var onEdit: ((LocationPost) -> Void)? = nil
+    var onDelete: ((LocationPost) -> Void)? = nil
     
     var body: some View {
         LazyVStack(spacing: 12) {
             ForEach(selectedTab == 0 ? publishedContent : savedContent) { item in
                 MyReviewRow(
-                    data: ReviewItem(
-                        name: item.name,
-                        date: item.date,
-                        location: item.location,
-                        review: item.review,
-                        participants: item.participants,
-                        tags: item.tags,
-                        timeElapsed: item.timeElapsed,
-                        distance: item.distance,
-                        title: item.title,
-                        showAvatar: item.showAvatar,
-                        avatarImage: item.avatarImage
-                    ),
+                    data: item,
                     onEdit: { onEdit?(item) },
                     onDelete: { onDelete?(item) }
                 )
