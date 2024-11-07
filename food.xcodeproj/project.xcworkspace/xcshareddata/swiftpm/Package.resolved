@@ -1,0 +1,15 @@
+{
+  "originHash" : "d3923055cfce6456700790c09dce201a86c65622f71ef0d7247c00c2e6c07f3b",
+  "pins" : [
+    {
+      "identity" : "swiftui-map-item-picker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/chiliososada/swiftui-map-item-picker.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "b1ec55c9dbe0d227b4a1cdc6726f494462a91c7d"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -263,27 +263,45 @@ final class PostInputViewModel: ObservableObject {
         }
         
         // 保存草稿
-        func saveDraft() {
-            let post = PostModel(
-                title: title,
-                content: content,
-                location: userLocationText,
-                tags: selectedTags,
-                images: selectedImages
-            )
-            PostDraftManager.shared.saveDraft(post)
+    func saveDraft() {
+        let imageNames = selectedImages.enumerated().map { index, _ in
+            "draft_image_\(index)"
         }
         
+        let post = LocationPost(
+            title: title,
+            content: content,
+            authorName: "当前用户",  // 使用默认值
+            locationName: userLocationText,
+            latitude: locationManager.userLocation?.coordinate.latitude ?? 0,
+            longitude: locationManager.userLocation?.coordinate.longitude ?? 0,
+            imageNames: imageNames,
+            avatarImage: "default_avatar",
+            tags: selectedTags,
+            participantsCount: 0,
+            postedTime: "",
+            remainingDays: "",
+            publishDate: "",
+            joinedCount: "0",
+            isSponsored: false
+        )
+        
+        PostDraftManager.shared.saveDraft(post)
+    }
+        
         // 加载草稿
-        func loadDraft() {
-            guard let draft = PostDraftManager.shared.loadDraft() else { return }
-            
-            title = draft.title
-            content = draft.content
-            userLocationText = draft.location
-            selectedTags = draft.tags
-            selectedImages = draft.images
-        }
+       func loadDraft() {
+           guard let draft = PostDraftManager.shared.loadDraft() else { return }
+           
+           title = draft.title ?? ""
+           content = draft.content
+           userLocationText = draft.locationName
+           selectedTags = draft.tags
+           
+           // 这里需要处理图片加载
+           // 注意：实际应用中你可能需要从本地存储加载图片
+           selectedImages = []  // 需要实现从imageNames加载实际UIImage的逻辑
+       }
         
         // 清除草稿
         func clearDraft() {

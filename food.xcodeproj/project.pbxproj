@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6891CD1D2CD0B053007B5FB1 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6891CD1C2CD0B053007B5FB1 /* MapItemPicker */; };
 		6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6893160D2CC6A7CA00FCD327 /* MapItemPicker */; };
+		68B64D012CDC6A6A00E41464 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 68B64D002CDC6A6A00E41464 /* MapItemPicker */; };
 		68D87A1D2CD0AEB200AB9996 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 68D87A1C2CD0AEB200AB9996 /* MapItemPicker */; };
 		8821892D25BEC29B00820A7E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8821892C25BEC29B00820A7E /* Assets.xcassets */; };
 		8821893025BEC29B00820A7E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8821892F25BEC29B00820A7E /* Preview Assets.xcassets */; };
@@ -70,6 +71,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				68B64D012CDC6A6A00E41464 /* MapItemPicker in Frameworks */,
 				68D87A1D2CD0AEB200AB9996 /* MapItemPicker in Frameworks */,
 				6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */,
 				6891CD1D2CD0B053007B5FB1 /* MapItemPicker in Frameworks */,
@@ -262,7 +264,7 @@
 			);
 			mainGroup = 8821891C25BEC29900820A7E;
 			packageReferences = (
-				6891CD1B2CD0B053007B5FB1 /* XCLocalSwiftPackageReference "../swiftui-map-item-picker" */,
+				68B64CFF2CDC6A6A00E41464 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */,
 			);
 			productRefGroup = 8821892625BEC29900820A7E /* Products */;
 			projectDirPath = "";
@@ -628,13 +630,6 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		6891CD1B2CD0B053007B5FB1 /* XCLocalSwiftPackageReference "../swiftui-map-item-picker" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../swiftui-map-item-picker";
-		};
-/* End XCLocalSwiftPackageReference section */
-
 /* Begin XCRemoteSwiftPackageReference section */
 		6893160C2CC6A7CA00FCD327 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */ = {
 			isa = XCRemoteSwiftPackageReference;
@@ -642,6 +637,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.0.0;
+			};
+		};
+		68B64CFF2CDC6A6A00E41464 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/chiliososada/swiftui-map-item-picker.git";
+			requirement = {
+				branch = main;
+				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -654,6 +657,11 @@
 		6893160D2CC6A7CA00FCD327 /* MapItemPicker */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 6893160C2CC6A7CA00FCD327 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */;
+			productName = MapItemPicker;
+		};
+		68B64D002CDC6A6A00E41464 /* MapItemPicker */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68B64CFF2CDC6A6A00E41464 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */;
 			productName = MapItemPicker;
 		};
 		68D87A1C2CD0AEB200AB9996 /* MapItemPicker */ = {
