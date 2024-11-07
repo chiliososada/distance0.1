@@ -258,58 +258,74 @@ final class PostInputViewModel: ObservableObject {
     }
     
     // 检查是否有需要保存的内容
-        func showDraftActionSheet() -> Bool {
+    func showDraftActionSheet() -> Bool {
             return !title.isEmpty || !content.isEmpty || !selectedTags.isEmpty || !selectedImages.isEmpty
         }
         
         // 保存草稿
     func saveDraft() {
-        let imageNames = selectedImages.enumerated().map { index, _ in
-            "draft_image_\(index)"
-        }
-        
-        let post = LocationPost(
-            title: title,
-            content: content,
-            authorName: "当前用户",  // 使用默认值
-            locationName: userLocationText,
-            latitude: locationManager.userLocation?.coordinate.latitude ?? 0,
-            longitude: locationManager.userLocation?.coordinate.longitude ?? 0,
-            imageNames: imageNames,
-            avatarImage: "default_avatar",
-            tags: selectedTags,
-            participantsCount: 0,
-            postedTime: "",
-            remainingDays: "",
-            publishDate: "",
-            joinedCount: "0",
-            isSponsored: false
-        )
-        
-        PostDraftManager.shared.saveDraft(post)
-    }
+          // 1. 首先通过 DraftImageManager 保存所有图片
+          let imageIdentifiers = selectedImages.compactMap { image in
+              DraftImageManager.shared.saveImage(image)
+          }
+          
+          // 2. 创建 PostDraft 对象
+          let draft = PostDraft(
+              title: title,
+              content: content,
+              location: userLocationText,
+              tags: selectedTags,
+              imageNames: imageIdentifiers  // 使用保存后的图片标识符
+          )
+          
+          // 3. 将草稿数据保存到 UserDefaults
+          if let encoded = try? JSONEncoder().encode(draft) {
+              UserDefaults.standard.set(encoded, forKey: "post_draft")
+          }
+      }
         
         // 加载草稿
-       func loadDraft() {
-           guard let draft = PostDraftManager.shared.loadDraft() else { return }
+     func loadDraft() {
+           // 1. 从 UserDefaults 加载草稿数据
+           guard let data = UserDefaults.standard.data(forKey: "post_draft"),
+                 let draft = try? JSONDecoder().decode(PostDraft.self, from: data) else {
+               return
+           }
            
-           title = draft.title ?? ""
+           // 2. 设置基本数据
+           title = draft.title
            content = draft.content
-           userLocationText = draft.locationName
+           userLocationText = draft.location
            selectedTags = draft.tags
            
-           // 这里需要处理图片加载
-           // 注意：实际应用中你可能需要从本地存储加载图片
-           selectedImages = []  // 需要实现从imageNames加载实际UIImage的逻辑
+           // 3. 加载图片
+           selectedImages = draft.imageNames.compactMap { identifier in
+               DraftImageManager.shared.loadImage(identifier: identifier)
+           }
        }
         
         // 清除草稿
-        func clearDraft() {
-            PostDraftManager.shared.clearDraft()
-        }
+    func clearDraft() {
+         // 1. 清除 UserDefaults 中的数据
+         UserDefaults.standard.removeObject(forKey: "post_draft")
+         
+         // 2. 清除所有保存的图片
+         DraftImageManager.shared.clearAllDraftImages()
+         
+         // 3. 重置视图模型的状态
+         title = ""
+         content = ""
+         userLocationText = ""
+         selectedTags = []
+         selectedImages = []
+     }
+    // 检查是否存在草稿
+      func hasDraft() -> Bool {
+          return UserDefaults.standard.data(forKey: "post_draft") != nil
+      }
     // 初始化时检查并加载草稿
-       func checkAndLoadDraft() {
-           if PostDraftManager.shared.hasDraft() {
+    func checkAndLoadDraft() {
+           if hasDraft() {
                loadDraft()
            }
        }

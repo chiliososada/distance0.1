@@ -1,83 +1,168 @@
 //
-//  PostDraftManager.swift
+//  DraftImageManager.swift
 //  food
 //
-//  Created by toyousoft on 2024/11/06.
+//  Created by toyousoft on 2024/11/07.
 //
 
-import Foundation
 import UIKit
 
-class PostDraftManager {
-    static let shared = PostDraftManager()
-    private let defaults = UserDefaults.standard
-    private let draftKey = "post_draft"
+
+class DraftImageManager {
+   
+    static let shared = DraftImageManager()
     
-    private init() {}
+  
+    private let fileManager = FileManager.default
+    private let draftImagesDirectory = "DraftImages"
     
-    func saveDraft(_ post: LocationPost) {
-        let draftData = PostDraft(
-            title: post.title ?? "",
-            content: post.content,
-            location: post.locationName,
-            tags: post.tags,
-            imageNames: post.imageNames
-        )
+   
+    private init() {
+        createDraftImagesDirectoryIfNeeded()
+    }
+    
+ 
+    private var draftImagesURL: URL? {
+        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            print("Failed to get documents directory")
+            return nil
+        }
+        return documentsDirectory.appendingPathComponent(draftImagesDirectory)
+    }
+    
+    private func createDraftImagesDirectoryIfNeeded() {
+        guard let draftImagesURL = draftImagesURL else {
+            print("Failed to get draft images URL")
+            return
+        }
         
-        if let encoded = try? JSONEncoder().encode(draftData) {
-            defaults.set(encoded, forKey: draftKey)
+        if !fileManager.fileExists(atPath: draftImagesURL.path) {
+            do {
+                try fileManager.createDirectory(at: draftImagesURL,
+                                             withIntermediateDirectories: true)
+            } catch {
+                print("Failed to create draft images directory: \(error)")
+            }
         }
     }
     
-    func loadDraft() -> LocationPost? {
-        guard let data = defaults.data(forKey: draftKey),
-              let draftData = try? JSONDecoder().decode(PostDraft.self, from: data)
-        else { return createEmptyPost() }
+ 
+    func saveImage(_ image: UIImage) -> String? {
+        guard let draftImagesURL = draftImagesURL else {
+            print("Failed to get draft images URL")
+            return nil
+        }
         
-        return LocationPost(
-            title: draftData.title,
-            content: draftData.content,
-            authorName: "当前用户",  // 使用默认值
-            locationName: draftData.location,
-            latitude: 0,  // 可以在实际发布时更新
-            longitude: 0, // 可以在实际发布时更新
-            imageNames: draftData.imageNames,
-            avatarImage: "default_avatar",  // 使用默认值
-            tags: draftData.tags,
-            participantsCount: 0,
-            postedTime: "",
-            remainingDays: "",
-            publishDate: "",
-            joinedCount: "0",
-            isSponsored: false
-        )
+        let identifier = UUID().uuidString
+        let imageURL = draftImagesURL.appendingPathComponent(identifier)
+        
+        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+            print("Failed to convert image to data")
+            return nil
+        }
+        
+        do {
+            try imageData.write(to: imageURL)
+            return identifier
+        } catch {
+            print("Failed to save image: \(error)")
+            return nil
+        }
     }
     
-    private func createEmptyPost() -> LocationPost {
-        return LocationPost(
-            title: "",
-            content: "",
-            authorName: "当前用户",
-            locationName: "",
-            latitude: 0,
-            longitude: 0,
-            imageNames: [],
-            avatarImage: "default_avatar",
-            tags: [],
-            participantsCount: 0,
-            postedTime: "",
-            remainingDays: "",
-            publishDate: "",
-            joinedCount: "0",
-            isSponsored: false
-        )
+    func loadImage(identifier: String) -> UIImage? {
+        guard let draftImagesURL = draftImagesURL else {
+            print("Failed to get draft images URL")
+            return nil
+        }
+        
+        let imageURL = draftImagesURL.appendingPathComponent(identifier)
+        
+        do {
+            let imageData = try Data(contentsOf: imageURL)
+            guard let image = UIImage(data: imageData) else {
+                print("Failed to create image from data")
+                return nil
+            }
+            return image
+        } catch {
+            print("Failed to load image: \(error)")
+            return nil
+        }
     }
     
-    func clearDraft() {
-        defaults.removeObject(forKey: draftKey)
+  
+    func clearAllDraftImages() {
+        guard let draftImagesURL = draftImagesURL else {
+            print("Failed to get draft images URL")
+            return
+        }
+        
+        do {
+            try fileManager.removeItem(at: draftImagesURL)
+            createDraftImagesDirectoryIfNeeded()
+        } catch {
+            print("Failed to clear draft images: \(error)")
+        }
     }
     
-    func hasDraft() -> Bool {
-        return defaults.data(forKey: draftKey) != nil
+  
+    func deleteImage(identifier: String) {
+        guard let draftImagesURL = draftImagesURL else {
+            print("Failed to get draft images URL")
+            return
+        }
+        
+        let imageURL = draftImagesURL.appendingPathComponent(identifier)
+        
+        do {
+            try fileManager.removeItem(at: imageURL)
+        } catch {
+            print("Failed to delete image: \(error)")
+        }
+    }
+    
+    
+    func deleteImages(identifiers: [String]) {
+        identifiers.forEach { deleteImage(identifier: $0) }
+    }
+    
+  
+    func getAllImageIdentifiers() -> [String] {
+        guard let draftImagesURL = draftImagesURL else {
+            return []
+        }
+        
+        do {
+            return try fileManager.contentsOfDirectory(atPath: draftImagesURL.path)
+        } catch {
+            print("Failed to get image identifiers: \(error)")
+            return []
+        }
+    }
+    
+
+    func imageExists(identifier: String) -> Bool {
+        guard let draftImagesURL = draftImagesURL else {
+            return false
+        }
+        
+        let imageURL = draftImagesURL.appendingPathComponent(identifier)
+        return fileManager.fileExists(atPath: imageURL.path)
+    }
+    
+  
+    func getDraftImagesSize() -> Int64 {
+        guard let draftImagesURL = draftImagesURL else {
+            return 0
+        }
+        
+        do {
+            let resourceValues = try draftImagesURL.resourceValues(forKeys: [.totalFileAllocatedSizeKey])
+            return Int64(resourceValues.totalFileAllocatedSize ?? 0)
+        } catch {
+            print("Failed to get directory size: \(error)")
+            return 0
+        }
     }
 }
