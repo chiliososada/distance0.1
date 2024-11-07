@@ -1,9 +1,5 @@
 import SwiftUI
 
-
-
-
-
 // MARK: - Constants
 private enum Layout {
     static let avatarSize: CGFloat = 40
