@@ -11,12 +11,13 @@ private enum Layout {
     static let borderColor = Color.black.opacity(0.5)
 }
 
+// MARK: - Main View
 struct ChatRoomListView: View {
     @StateObject private var viewModel = ChatRoomListViewModel()
     @EnvironmentObject private var navigationManager: AppNavigationManager
     
     var body: some View {
-        NavigationStack(path: $navigationManager.navigationPath) {  // 添加 NavigationStack
+        NavigationStack(path: $navigationManager.navigationPath) {
             VStack(spacing: 0) {
                 ListHeaderView(viewModel: viewModel)
                 TabSelectionView(selectedTab: $viewModel.selectedTab)
@@ -24,7 +25,7 @@ struct ChatRoomListView: View {
             }
             .navigationBarHidden(true)
             .background(Color.white.edgesIgnoringSafeArea(.all))
-            .navigationDestination(for: AppRoute.self) { route in  // 添加导航目标
+            .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .chatDetail(let chatRoom):
                     ChatDetailView(chatRoom: chatRoom)
@@ -37,7 +38,7 @@ struct ChatRoomListView: View {
     }
 }
 
-// MARK: - Supporting Views
+// MARK: - Header Components
 struct ListHeaderView: View {
     @ObservedObject var viewModel: ChatRoomListViewModel
     
@@ -126,6 +127,7 @@ struct UnreadBadge: View {
     }
 }
 
+// MARK: - Tab Components
 struct TabSelectionView: View {
     @Binding var selectedTab: Int
     
@@ -167,23 +169,22 @@ struct ChatRoomsTabButton: View {
     }
 }
 
+// MARK: - Chat List Components
 struct ChatTabView: View {
     @ObservedObject var viewModel: ChatRoomListViewModel
     @EnvironmentObject private var navigationManager: AppNavigationManager
     
     var body: some View {
         TabView(selection: $viewModel.selectedTab) {
-            ChatListView(
+            ChatListContent(
                 chatRooms: viewModel.filteredRooms,
-                selectedChatRoom: $viewModel.selectedChatRoom,
-                isNavigating: $viewModel.isNavigating
+                navigationManager: navigationManager
             )
             .tag(0)
             
-            ChatListView(
+            ChatListContent(
                 chatRooms: viewModel.filteredRooms,
-                selectedChatRoom: $viewModel.selectedChatRoom,
-                isNavigating: $viewModel.isNavigating
+                navigationManager: navigationManager
             )
             .tag(1)
         }
@@ -191,10 +192,29 @@ struct ChatTabView: View {
     }
 }
 
+struct ChatListContent: View {
+    let chatRooms: [ChatRoom]
+    let navigationManager: AppNavigationManager
+    
+    var body: some View {
+        List {
+            ForEach(chatRooms) { chatRoom in
+                ChatRoomCell(
+                    chatRoom: chatRoom,
+                    onSelect: {
+                        navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
+                    }
+                )
+                .listRowStyle()
+            }
+        }
+        .listStyle(PlainListStyle())
+        .background(Color.white)
+    }
+}
 
-
-// MARK: - Supporting Views
-private struct ChatRoomCell: View {
+// MARK: - Cell Components
+struct ChatRoomCell: View {
     let chatRoom: ChatRoom
     let onSelect: () -> Void
     
@@ -207,8 +227,8 @@ private struct ChatRoomCell: View {
     }
 }
 
-// MARK: - Modifiers
-private struct ChatRoomStyle: ViewModifier {
+// MARK: - View Modifiers
+struct ChatRoomStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
             .background(Color.white)
@@ -224,6 +244,7 @@ private struct ChatRoomStyle: ViewModifier {
     }
 }
 
+// MARK: - View Extensions
 private extension View {
     func listRowStyle() -> some View {
         self
@@ -232,10 +253,11 @@ private extension View {
     }
 }
 
-// MARK: - Preview
+// MARK: - Preview Provider
 struct ChatRoomListView_Previews: PreviewProvider {
     static var previews: some View {
         ChatRoomListView()
             .environmentObject(AppNavigationManager.shared)
+            .environmentObject(TabBarManager())
     }
 }

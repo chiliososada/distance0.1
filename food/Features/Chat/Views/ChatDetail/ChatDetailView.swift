@@ -41,7 +41,7 @@ struct ChatDetailView: View {
             // 消息列表
             MessagesSection(
                 messages: viewModel.messages,
-                currentUser: viewModel.currentUser
+                currentMember: viewModel.currentMember
             )
             
             // 输入区域
@@ -117,9 +117,10 @@ struct ToggleButton: View {
     }
 }
 
+// MessagesSection 更新
 struct MessagesSection: View {
-    let messages: [ChatMessage]
-    let currentUser: String
+    let messages: [Message]
+    let currentMember: Member
     
     var body: some View {
         ScrollView {
@@ -127,7 +128,7 @@ struct MessagesSection: View {
                 ForEach(messages) { message in
                     MessageView(
                         message: message,
-                        isCurrentUser: message.userName == currentUser
+                        isCurrentUser: message.sender.id == currentMember.id
                     )
                 }
             }
@@ -278,10 +279,34 @@ struct ChatDetailView_Previews: PreviewProvider {
             ChatDetailView(
                 chatRoom: ChatRoom(
                     name: "Sample Chat",
-                    lastMessage: "This is the last message",
-                    time: "14:30",
+                    type: .group,
                     avatar: "sampleAvatar",
-                    isGroupChat: true
+                    lastMessage: Message(
+                        id: UUID(),
+                        sender: Member(
+                            id: UUID(),
+                            name: "Alice",
+                            avatar: "sample1",
+                            role: .member
+                        ),
+                        content: .text("This is the last message"),
+                        timestamp: Date(),
+                        status: .sent
+                    ),
+                    members: [
+                        Member(
+                            id: UUID(),
+                            name: "Alice",
+                            avatar: "sample1",
+                            role: .owner
+                        ),
+                        Member(
+                            id: UUID(),
+                            name: "Bob",
+                            avatar: "sample2",
+                            role: .member
+                        )
+                    ]
                 )
             )
             .environmentObject(TabBarManager())

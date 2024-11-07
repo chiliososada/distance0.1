@@ -1,7 +1,5 @@
 import SwiftUI
 
-
-
 // MARK: - Constants
 private enum Layout {
     static let avatarSize: CGFloat = 40
@@ -14,6 +12,7 @@ private enum Layout {
     static let currentUserBubbleColor = Color.blue.opacity(0.4)
     static let otherUserBubbleColor = Color(.systemGray6)
     static let userNameColor = Color.gray
+    static let statusColor = Color.gray.opacity(0.6)
 }
 
 // MARK: - Bubble Shape
@@ -35,7 +34,7 @@ struct BubbleShape: Shape {
 
 // MARK: - Message View
 struct MessageView: View {
-    let message: ChatMessage
+    let message: Message
     let isCurrentUser: Bool
     
     var body: some View {
@@ -43,9 +42,9 @@ struct MessageView: View {
             if isCurrentUser {
                 Spacer()
                 messageContent
-                UserAvatar(imageName: message.avatar)
+                UserAvatar(member: message.sender)
             } else {
-                UserAvatar(imageName: message.avatar)
+                UserAvatar(member: message.sender)
                 messageContent
                 Spacer()
             }
@@ -56,18 +55,21 @@ struct MessageView: View {
     private var messageContent: some View {
         VStack(alignment: isCurrentUser ? .trailing : .leading,
                spacing: Layout.messageSpacing) {
-            UserNameLabel(name: message.userName)
-            MessageBubble(text: message.text, isCurrentUser: isCurrentUser)
+            UserNameLabel(name: message.sender.name)
+            MessageBubble(message: message, isCurrentUser: isCurrentUser)
+            if isCurrentUser {
+                MessageStatus(status: message.status)
+            }
         }
     }
 }
 
 // MARK: - Supporting Views
 struct UserAvatar: View {
-    let imageName: String
+    let member: Member
     
     var body: some View {
-        Image(imageName)
+        Image(member.avatar)
             .resizable()
             .aspectRatio(contentMode: .fill)
             .frame(width: Layout.avatarSize, height: Layout.avatarSize)
@@ -86,30 +88,85 @@ struct UserNameLabel: View {
 }
 
 struct MessageBubble: View {
-    let text: String
+    let message: Message
     let isCurrentUser: Bool
     
     var body: some View {
-        Text(text)
-            .padding(Layout.bubblePadding)
-            .background(
-                isCurrentUser ? Layout.currentUserBubbleColor : Layout.otherUserBubbleColor
-            )
-            .clipShape(BubbleShape(isCurrentUser: isCurrentUser))
+        Group {
+            switch message.content {
+            case .text(let text):
+                Text(text)
+            case .image:
+                Text("📸 Photo")
+                    .italic()
+            case .file(_, let filename):
+                Text("📎 \(filename)")
+                    .italic()
+            case .system(let text):
+                Text(text)
+                    .italic()
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(Layout.bubblePadding)
+        .background(
+            isCurrentUser ? Layout.currentUserBubbleColor : Layout.otherUserBubbleColor
+        )
+        .clipShape(BubbleShape(isCurrentUser: isCurrentUser))
+    }
+}
+
+struct MessageStatus: View {
+    let status: Message.MessageStatus
+    
+    var body: some View {
+        Text(statusText)
+            .font(.caption2)
+            .foregroundColor(Layout.statusColor)
+    }
+    
+    private var statusText: String {
+        switch status {
+        case .sending:
+            return "发送中..."
+        case .sent:
+            return "已发送"
+        case .delivered:
+            return "已送达"
+        case .read:
+            return "已读"
+        case .failed:
+            return "发送失败"
+        }
     }
 }
 
 // MARK: - Previews
 struct MessageView_Previews: PreviewProvider {
+    static let currentMember = Member(
+        id: UUID(),
+        name: "Me",
+        avatar: "sample1",
+        role: .member
+    )
+    
+    static let otherMember = Member(
+        id: UUID(),
+        name: "Alice",
+        avatar: "sample2",
+        role: .member
+    )
+    
     static var previews: some View {
         Group {
             // Current User Message
             MessageView(
-                message: ChatMessage(
-                    id: 1,
-                    userName: "Me",
-                    text: "This is my message that might be very long and need to wrap to multiple lines!",
-                    avatar: "sample1"
+                message: Message(
+                    id: UUID(),
+                    sender: currentMember,
+                    content: .text("This is my message that might be very long and need to wrap to multiple lines!"),
+                    timestamp: Date(),
+                    status: .sent
                 ),
                 isCurrentUser: true
             )
@@ -119,11 +176,12 @@ struct MessageView_Previews: PreviewProvider {
             
             // Other User Message
             MessageView(
-                message: ChatMessage(
-                    id: 2,
-                    userName: "Alice",
-                    text: "Hi there! I'm Alice and this is also a long message to test wrapping.",
-                    avatar: "sample2"
+                message: Message(
+                    id: UUID(),
+                    sender: otherMember,
+                    content: .text("Hi there! I'm Alice and this is also a long message to test wrapping."),
+                    timestamp: Date(),
+                    status: .read
                 ),
                 isCurrentUser: false
             )
@@ -131,13 +189,44 @@ struct MessageView_Previews: PreviewProvider {
             .padding()
             .previewDisplayName("Other User")
             
+            // System Message
+            MessageView(
+                message: Message(
+                    id: UUID(),
+                    sender: otherMember,
+                    content: .system("Alice joined the group"),
+                    timestamp: Date(),
+                    status: .delivered
+                ),
+                isCurrentUser: false
+            )
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .previewDisplayName("System Message")
+            
+            // Image Message
+            MessageView(
+                message: Message(
+                    id: UUID(),
+                    sender: currentMember,
+                    content: .image(URL(string: "https://example.com/image.jpg")!),
+                    timestamp: Date(),
+                    status: .sending
+                ),
+                isCurrentUser: true
+            )
+            .previewLayout(.sizeThatFits)
+            .padding()
+            .previewDisplayName("Image Message")
+            
             // Dark Mode Preview
             MessageView(
-                message: ChatMessage(
-                    id: 3,
-                    userName: "Bob",
-                    text: "Testing dark mode appearance",
-                    avatar: "sample1"
+                message: Message(
+                    id: UUID(),
+                    sender: currentMember,
+                    content: .text("Testing dark mode appearance"),
+                    timestamp: Date(),
+                    status: .failed
                 ),
                 isCurrentUser: true
             )

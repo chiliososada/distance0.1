@@ -9,6 +9,7 @@ private enum Layout {
     static let horizontalPadding: CGFloat = 16
     static let messageSpacing: CGFloat = 5
     static let borderWidth: CGFloat = 1
+    static let unreadDotSize: CGFloat = 8
 }
 
 // MARK: - Main View
@@ -19,17 +20,17 @@ struct ChatRoomRow: View {
         HStack {
             AvatarView(
                 imageName: chatRoom.avatar,
-                isGroupChat: chatRoom.isGroupChat
+                isGroup: chatRoom.type == .group
             )
             
             MessageContent(
                 name: chatRoom.name,
-                message: chatRoom.lastMessage
+                lastMessage: chatRoom.lastMessage
             )
             
             Spacer()
             
-            TimeView(time: chatRoom.time)
+            TimeView(timestamp: chatRoom.lastMessage?.timestamp)
         }
         .padding(.vertical, Layout.verticalPadding)
         .padding(.horizontal, Layout.horizontalPadding)
@@ -40,7 +41,7 @@ struct ChatRoomRow: View {
 // MARK: - Supporting Views
 private struct AvatarView: View {
     let imageName: String
-    let isGroupChat: Bool
+    let isGroup: Bool
     
     var body: some View {
         ZStack {
@@ -55,7 +56,7 @@ private struct AvatarView: View {
                 )
             
             // Group Chat Indicator
-            if isGroupChat {
+            if isGroup {
                 GroupChatIcon()
             }
         }
@@ -76,7 +77,7 @@ private struct GroupChatIcon: View {
 
 private struct MessageContent: View {
     let name: String
-    let message: String
+    let lastMessage: Message?
     
     var body: some View {
         VStack(alignment: .leading, spacing: Layout.messageSpacing) {
@@ -84,36 +85,70 @@ private struct MessageContent: View {
                 .font(.headline)
                 .foregroundColor(.primary)
             
-            Text(message)
+            Text(messagePreview)
                 .font(.subheadline)
                 .foregroundColor(.gray)
                 .lineLimit(1)
         }
     }
+    
+    private var messagePreview: String {
+        lastMessage?.previewText ?? "No messages yet"
+    }
 }
 
 private struct TimeView: View {
-    let time: String
+    let timestamp: Date?
     
     var body: some View {
-        Text(time)
+        Text(formattedTime)
             .font(.footnote)
             .foregroundColor(.gray)
+    }
+    
+    private var formattedTime: String {
+        guard let timestamp = timestamp else { return "" }
+        
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .short
+        
+        // 如果是今天的消息，显示具体时间
+        if Calendar.current.isDateInToday(timestamp) {
+            let timeFormatter = DateFormatter()
+            timeFormatter.dateFormat = "HH:mm"
+            return timeFormatter.string(from: timestamp)
+        }
+        
+        // 其他情况显示相对时间
+        return formatter.localizedString(for: timestamp, relativeTo: Date())
     }
 }
 
 // MARK: - Preview Provider
 struct ChatRoomRow_Previews: PreviewProvider {
+    static let previewMember = Member(
+        id: UUID(),
+        name: "Alice",
+        avatar: "sample1",
+        role: .member
+    )
+    
     static var previews: some View {
         Group {
             // Regular Chat Preview
             ChatRoomRow(
                 chatRoom: ChatRoom(
                     name: "Tina Aalto",
-                    lastMessage: "Will probably arrive at 9. See ya!",
-                    time: "20:30",
+                    type: .individual,
                     avatar: "sample2",
-                    isGroupChat: false
+                    lastMessage: Message(
+                        id: UUID(),
+                        sender: previewMember,
+                        content: .text("Will probably arrive at 9. See ya!"),
+                        timestamp: Date().addingTimeInterval(-1800),
+                        status: .sent
+                    ),
+                    members: [previewMember]
                 )
             )
             .previewDisplayName("Individual Chat")
@@ -122,13 +157,30 @@ struct ChatRoomRow_Previews: PreviewProvider {
             ChatRoomRow(
                 chatRoom: ChatRoom(
                     name: "Team Meeting",
-                    lastMessage: "Let's discuss this tomorrow",
-                    time: "15:45",
+                    type: .group,
                     avatar: "sample2",
-                    isGroupChat: true
+                    lastMessage: Message(
+                        id: UUID(),
+                        sender: previewMember,
+                        content: .text("Let's discuss this tomorrow"),
+                        timestamp: Date().addingTimeInterval(-3600),
+                        status: .read
+                    ),
+                    members: [previewMember]
                 )
             )
             .previewDisplayName("Group Chat")
+            
+            // No Message Preview
+            ChatRoomRow(
+                chatRoom: ChatRoom(
+                    name: "New Chat",
+                    type: .individual,
+                    avatar: "sample1",
+                    members: [previewMember]
+                )
+            )
+            .previewDisplayName("No Messages")
         }
         .previewLayout(.sizeThatFits)
         .padding()

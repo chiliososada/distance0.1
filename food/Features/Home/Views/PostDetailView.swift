@@ -122,20 +122,39 @@ struct PostDetailView: View {
     
     private func createChatRoom() -> ChatRoom {
         print("Creating chat room from post: \(post.title ?? "")")
+        
+        // 创建当前用户作为成员
+        let currentMember = Member(
+            id: UUID(),
+            name: "Me", // 这里应该使用实际的当前用户名
+            avatar: "sample1", // 这里应该使用实际的当前用户头像
+            role: .owner
+        )
+        
+        // 创建初始系统消息
+        let initialMessage = Message(
+            id: UUID(),
+            sender: currentMember,
+            content: .system("聊天室已创建"),
+            timestamp: Date(),
+            status: .sent
+        )
+        
         return ChatRoom(
             name: post.title ?? "",
-            lastMessage: "新的对话",
-            time: formatCurrentTime(),
+            type: post.participantsCount > 2 ? .group : .individual,
             avatar: post.thumbnailImage,
-            isGroupChat: post.participantsCount > 2
+            lastMessage: initialMessage,
+            members: [currentMember],
+            announcement: post.participantsCount > 2 ? Announcement(
+                id: UUID(),
+                content: "欢迎加入聊天室",
+                timestamp: Date(),
+                link: nil,
+                creator: currentMember
+            ) : nil,
+            isTopChat: false
         )
-    }
-    
-    
-    private func formatCurrentTime() -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: Date())
     }
 }
 

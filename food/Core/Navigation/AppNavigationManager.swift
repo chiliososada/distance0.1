@@ -112,23 +112,29 @@ final class AppNavigationManager: ObservableObject {
         }
     
     
-    private func createChatRoom(from post: LocationPost) -> ChatRoom {
-        return ChatRoom(
-            name: post.title ?? "",  // 因为 title 是可选的，所以需要提供默认值
-            lastMessage: "新的对话",
-            time: formatCurrentTime(),
-            avatar: post.thumbnailImage,  // 使用计算属性 thumbnailImage
-            isGroupChat: post.participantsCount > 2
-        )
-    }
-
-      
-      // 辅助方法：格式化当前时间
-      private func formatCurrentTime() -> String {
-          let formatter = DateFormatter()
-          formatter.dateFormat = "HH:mm"
-          return formatter.string(from: Date())
-      }
+//    private func createChatRoom(from post: LocationPost) -> ChatRoom {
+//        return ChatRoom(
+//            name: post.title ?? "",  // 因为 title 是可选的，所以需要提供默认值
+//            lastMessage: "新的对话",
+//            time: formatCurrentTime(),
+//            avatar: post.thumbnailImage,  // 使用计算属性 thumbnailImage
+//            isGroupChat: post.participantsCount > 2
+//        )
+//    }
+//
+//      
+//      // 辅助方法：格式化当前时间
+//      private func formatCurrentTime() -> String {
+//          let formatter = DateFormatter()
+//          formatter.dateFormat = "HH:mm"
+//          return formatter.string(from: Date())
+//      }
+//    
+    
+    
+    
+    
+    
     func resetNavigation() {
         chatNavigationSource = .normal
         selectedTab = .home
