@@ -6,105 +6,73 @@ import Combine
 class NearbyViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var selectedPosts: [LocationPost] = []
-       @Published var showBottomSheet: Bool = false
-       @Published var showFilterView: Bool = false
-       @Published private(set) var isLoading: Bool = false
-       @Published private(set) var error: Error?
-       @Published var search: String = ""
+    @Published var showBottomSheet: Bool = false
+    @Published var showFilterView: Bool = false
+    @Published var search: String = ""
     
     // MARK: - Dependencies
     private let mapDataManager: MapDataManager
-    private var cancellables = Set<AnyCancellable>()
+    
+    // MARK: - Computed Properties
+    var isLoading: Bool { mapDataManager.isLoading }
+    var error: Error? { mapDataManager.error }
+    var visiblePlaces: [LocationPost] { mapDataManager.visiblePlaces }
     
     // MARK: - Initialization
     init(mapDataManager: MapDataManager = MapDataManager()) {
         self.mapDataManager = mapDataManager
-        setupBindings()
     }
     
     // MARK: - Public Methods
-      func updateSelectedPosts(from annotations: [MKAnnotation]) {
-          // 从注解中提取 LocationPost 对象
-          let posts = annotations.compactMap { annotation -> [LocationPost] in
-              if let post = annotation as? LocationPost {
-                  return [post]
-              } else if let cluster = annotation as? MKClusterAnnotation {
-                  // 对于聚合标注，提取所有成员
-                  return cluster.memberAnnotations.compactMap { $0 as? LocationPost }
-              }
-              return []
-          }.flatMap { $0 } // 展平数组
-          
-          selectedPosts = Array(posts)
-          showBottomSheet = !selectedPosts.isEmpty
-      }
-      
-    // MARK: - Private Methods
-    private func setupBindings() {
-        mapDataManager.$visiblePlaces
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newPlaces in
-                self?.selectedPosts = newPlaces
+    func updateSelectedPosts(from annotations: [MKAnnotation]) {
+        let posts = annotations.compactMap { annotation -> [LocationPost] in
+            if let post = annotation as? LocationPost {
+                return [post]
+            } else if let cluster = annotation as? MKClusterAnnotation {
+                return cluster.memberAnnotations.compactMap { $0 as? LocationPost }
             }
-            .store(in: &cancellables)
+            return []
+        }.flatMap { $0 }
         
-        mapDataManager.$isLoading
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] loading in
-                self?.isLoading = loading
-            }
-            .store(in: &cancellables)
-        
-        mapDataManager.$error
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] newError in
-                self?.error = newError
-            }
-            .store(in: &cancellables)
+        selectedPosts = Array(posts)
+        showBottomSheet = !selectedPosts.isEmpty
     }
     
-    // MARK: - Public Methods
-//    func loadPlaces(in region: MKCoordinateRegion) {
-//        Task {
-//            do {
-//                print("1. Loading places in region: \(region) ...")
-//                await mapDataManager.loadPlaces(in: region)
-//            } catch {
-//                self.error = error
-//            }
-//        }
-//    }
-    func loadPlaces(in region: MKCoordinateRegion) {
-           Task {
-               await mapDataManager.loadPlaces(in: region)
-           }
-       }
-    func cleanupInvisibleRegions(currentRegion: MKCoordinateRegion) {
-           Task {
-               await mapDataManager.cleanupInvisibleRegions(currentRegion: currentRegion)
-           }
-       }
+    func handleMapRegionChange(_ region: MKCoordinateRegion) async {
+        await mapDataManager.loadPlaces(in: region)
+        await mapDataManager.cleanupInvisibleRegions(currentRegion: region)
+    }
     
-    func prioritizeRegion(_ region: MKCoordinateRegion) {
-        Task {
-                await mapDataManager.prioritizeRegion(region)
-        }
+    func prioritizeRegion(_ region: MKCoordinateRegion) async {
+        await mapDataManager.prioritizeRegion(region)
     }
     
     // MARK: - Button Action Handlers
     func handleHotspotsTap() {
-        // Implement the functionality for hotspots tap
+        // 实现热点功能：显示热门区域或热门地点
+        Task {
+            // 这里可以添加具体实现
+        }
     }
     
     func handleLocationTap() {
-        // Implement the functionality for location tap
+        // 实现定位功能：定位到用户当前位置
+        Task {
+            // 这里可以添加具体实现
+        }
     }
     
     func handleBuildingsTap() {
-        // Implement the functionality for buildings tap
+        // 实现建筑功能：显示或隐藏建筑物
+        Task {
+            // 这里可以添加具体实现
+        }
     }
     
     func handleWavesTap() {
-        // Implement the functionality for waves tap
+        // 实现波浪功能：显示特定图层或效果
+        Task {
+            // 这里可以添加具体实现
+        }
     }
 }
