@@ -85,7 +85,7 @@ struct BottomMenuView: View {
                         PlaceCardView(
                             post: post,
                             action: {
-                                     dismiss()  // 先关闭 sheet
+                                dismiss()  // 先关闭 sheet
                                 // 确保在主线程执行导航
                                 DispatchQueue.main.async {
                                     tabBarManager.isNavigatingInTab = true
@@ -104,7 +104,7 @@ struct BottomMenuView: View {
     }
 }
 
-// 如果需要传入更多信息，建议修改为：
+
 struct PlaceCardView: View {
     let post: LocationPost
     let action: () -> Void

@@ -1,10 +1,3 @@
-//
-//  LocationService.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/09.
-//
-
 import Foundation
 import MapKit
 
@@ -18,21 +11,146 @@ enum APIError: Error {
 }
 
 // MARK: - LocationService
-actor LocationService {
+actor PostLocationService {
     // MARK: - Properties
     private let baseURL: String
     private let session: URLSession
     private var activeRequests: [String: Task<[LocationPost], Error>] = [:]
+    private let isTestMode: Bool
+    
+    // MARK: - Mock Data
+    private let mockData: [String: [LocationPost]] = [
+        "tokyo": [
+            LocationPost(
+                id: UUID().uuidString,
+                title: "东京中央市场",
+                content: "这里是东京最大的海鲜市场，每天清晨都有新鲜的金枪鱼拍卖",
+                authorName: "美食探险家",
+                locationName: "東京都中央区築地5丁目",
+                latitude: 35.6654,
+                longitude: 139.7707,
+                imageNames: ["sample1", "sample1", "sample1"],
+                avatarImage: "sample1",
+                tags: ["美食", "市场", "海鲜"],
+                participantsCount: 156,
+                postedTime: "3小时前",
+                remainingDays: "长期",
+                publishDate: "2024-11-09",
+                joinedCount: "150+",
+                isSponsored: true
+            ),
+            LocationPost(
+                id: UUID().uuidString,
+                title: "浅草寺",
+                content: "浅草寺是东京最古老的寺庙，每年吸引数百万游客前来参观",
+                authorName: "文化达人",
+                locationName: "東京都台東区浅草2丁目",
+                latitude: 35.7147,
+                longitude: 139.7966,
+                imageNames: ["sample1", "sample1"],
+                avatarImage: "sample1",
+                tags: ["文化", "寺庙", "观光"],
+                participantsCount: 234,
+                postedTime: "1天前",
+                remainingDays: "长期",
+                publishDate: "2024-11-08",
+                joinedCount: "200+",
+                isSponsored: false
+            )
+        ],
+        "shibuya": [
+            LocationPost(
+                id: UUID().uuidString,
+                title: "涉谷美食探店",
+                content: "发现一家超赞的拉面店，店主是米其林三星大厨",
+                authorName: "吃货小王",
+                locationName: "東京都渋谷区道玄坂",
+                latitude: 35.6585,
+                longitude: 139.7017,
+                imageNames: ["sample1", "sample1", "sample1", "sample1"],
+                avatarImage: "sample1",
+                tags: ["美食", "拉面", "米其林"],
+                participantsCount: 89,
+                postedTime: "5小时前",
+                remainingDays: "1周",
+                publishDate: "2024-11-09",
+                joinedCount: "80+",
+                isSponsored: true
+            ),
+            LocationPost(
+                id: UUID().uuidString,
+                title: "涉谷购物体验",
+                content: "109百货周年庆，超多限定商品和折扣",
+                authorName: "购物达人",
+                locationName: "東京都渋谷区神南1丁目",
+                latitude: 35.6590,
+                longitude: 139.7035,
+                imageNames: ["sample1", "sample1"],
+                avatarImage: "sample1",
+                tags: ["购物", "折扣", "时尚"],
+                participantsCount: 167,
+                postedTime: "2小时前",
+                remainingDays: "3天",
+                publishDate: "2024-11-09",
+                joinedCount: "160+",
+                isSponsored: false
+            )
+        ],
+        "shinjuku": [
+            LocationPost(
+                id: UUID().uuidString,
+                title: "新宿御苑赏枫",
+                content: "新宿御苑的枫叶正是最佳观赏期，快来打卡",
+                authorName: "自然摄影师",
+                locationName: "東京都新宿区内藤町11",
+                latitude: 35.6851,
+                longitude: 139.7100,
+                imageNames: ["sample1", "sample1", "sample1"],
+                avatarImage: "sample1",
+                tags: ["赏枫", "公园", "摄影"],
+                participantsCount: 145,
+                postedTime: "6小时前",
+                remainingDays: "2周",
+                publishDate: "2024-11-09",
+                joinedCount: "140+",
+                isSponsored: true
+            ),
+            LocationPost(
+                id: UUID().uuidString,
+                title: "歌舞伎町探险",
+                content: "发现一家超棒的深夜食堂，价格实惠料理美味",
+                authorName: "夜生活达人",
+                locationName: "東京都新宿区歌舞伎町",
+                latitude: 35.6956,
+                longitude: 139.7034,
+                imageNames: ["sample1", "sample2"],
+                avatarImage: "sample1",
+                tags: ["美食", "夜生活", "深夜食堂"],
+                participantsCount: 78,
+                postedTime: "1小时前",
+                remainingDays: "长期",
+                publishDate: "2024-11-09",
+                joinedCount: "70+",
+                isSponsored: false
+            )
+        ]
+    ]
     
     // MARK: - Initialization
     init(baseURL: String = "https://your-api-endpoint.com",
-         session: URLSession = .shared) {
+         session: URLSession = .shared,
+         isTestMode: Bool = true) {  // 默认使用测试模式
         self.baseURL = baseURL
         self.session = session
+        self.isTestMode = isTestMode
     }
     
     // MARK: - Public Methods
     func fetchLocations(region: MKCoordinateRegion) async throws -> [LocationPost] {
+        if isTestMode {
+            return await fetchMockLocations(for: region)
+        }
+        
         // 生成区域的唯一键
         let regionKey = generateRegionKey(for: region)
         
@@ -99,11 +217,24 @@ actor LocationService {
         let lon = String(format: "%.4f", region.center.longitude)
         return "\(lat):\(lon)"
     }
+    
+    private func fetchMockLocations(for region: MKCoordinateRegion) -> [LocationPost] {
+        // 根据区域返回模拟数据
+        if region.center.latitude >= 35.6500 && region.center.latitude <= 35.6700
+            && region.center.longitude >= 139.7000 && region.center.longitude <= 139.7800 {
+            return mockData["tokyo"] ?? []
+        } else if region.center.latitude >= 35.6500 && region.center.latitude <= 35.6600
+            && region.center.longitude >= 139.7000 && region.center.longitude <= 139.7100 {
+            return mockData["shibuya"] ?? []
+        } else if region.center.latitude >= 35.6800 && region.center.latitude <= 35.7000
+            && region.center.longitude >= 139.7000 && region.center.longitude <= 139.7200 {
+            return mockData["shinjuku"] ?? []
+        }
+        return []
+    }
 }
 
 // MARK: - API Response Models
-// 如果你的API响应有特定的格式，可以在这里定义相应的模型
-// 例如：
 struct APIResponse<T: Decodable>: Decodable {
     let data: T
     let status: String

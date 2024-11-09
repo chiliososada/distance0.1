@@ -31,6 +31,9 @@ final class MapDataManager: ObservableObject {
     
     // MARK: - Private Properties
     private let cacheManager: CacheManager
+    
+    private let locationService: PostLocationService
+    
     private let queue: DispatchQueue
     private var lastLoadTime: Date
     private var cleanupTimer: Timer?
@@ -172,14 +175,16 @@ final class MapDataManager: ObservableObject {
         return dataSets
     }()
     
-    // MARK: - Initialization
-    init(queue: DispatchQueue = .init(label: "com.app.mapdatamanager", qos: .userInitiated)) {
-        self.cacheManager = CacheManager()
-        self.queue = queue
-        self.lastLoadTime = .distantPast
-        setupNotifications()
-        setupPeriodicCleanup()
-    }
+    init(locationService: PostLocationService = PostLocationService(),
+            queue: DispatchQueue = .init(label: "com.app.mapdatamanager", qos: .userInitiated)) {
+           self.locationService = locationService
+           self.cacheManager = CacheManager()
+           self.queue = queue
+           self.lastLoadTime = .distantPast
+           setupNotifications()
+           setupPeriodicCleanup()
+       }
+       
     
     deinit {
         cleanupTimer?.invalidate()
@@ -272,16 +277,29 @@ private extension MapDataManager {
         }
     }
     
-    func fetchPlaces(for regionKey: String, in region: MKCoordinateRegion) async -> [LocationPost] {
-        if let cachedPlaces = await cacheManager.getPlaces(for: regionKey) {
-            return cachedPlaces
-        }
-        let places = fetchPlacesFromServer(in: region)
-        await cacheManager.addRegion(regionKey, places: places)
-        return places
-    }
+//    func fetchPlaces(for regionKey: String, in region: MKCoordinateRegion) async -> [LocationPost] {
+//        if let cachedPlaces = await cacheManager.getPlaces(for: regionKey) {
+//            return cachedPlaces
+//        }
+//        let places = fetchPlacesFromServer(in: region)
+//        await cacheManager.addRegion(regionKey, places: places)
+//        return places
+//    }
 
-    
+    // fetchPlaces 方法
+      private func fetchPlaces(for regionKey: String, in region: MKCoordinateRegion) async -> [LocationPost] {
+          if let cachedPlaces = await cacheManager.getPlaces(for: regionKey) {
+              return cachedPlaces
+          }
+          do {
+              let places = try await fetchPlacesFromServer(in: region)
+              await cacheManager.addRegion(regionKey, places: places)
+              return places
+          } catch {
+              print("Error fetching places: \(error)")
+              return []
+          }
+      }
     func sortPlacesByDistance(_ places: [LocationPost], from center: CLLocationCoordinate2D) async -> [LocationPost] {
         Array(
             places
@@ -328,6 +346,15 @@ private extension MapDataManager {
             .flatMap { $0 }
             .filter { isCoordinate($0.coordinate, inRegion: region) }
     }
+    
+//    private func fetchPlacesFromServer(in region: MKCoordinateRegion) async throws -> [LocationPost] {
+//           do {
+//               return try await locationService.fetchLocations(region: region)
+//           } catch {
+//               self.error = error
+//               return []
+//           }
+//       }
     
     func preloadSurroundingRegions(around region: MKCoordinateRegion) async {
         let latDelta = region.span.latitudeDelta
