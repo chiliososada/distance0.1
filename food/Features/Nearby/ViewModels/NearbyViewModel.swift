@@ -74,6 +74,7 @@ class NearbyViewModel: ObservableObject {
     
     // MARK: - Button Action Handlers
     func handleHotspotsTap() {
+        print("handleHotspotsTap")
         Task {
             isLoading = true
             defer { isLoading = false }
@@ -89,10 +90,11 @@ class NearbyViewModel: ObservableObject {
     }
     
     func handleLocationTap() {
+        print("handleLocationTap")
         Task {
             isLoading = true
             defer { isLoading = false }
-            
+        
             locationManager.startUpdatingLocation()
             
             // 使用 Combine 监听位置更新
