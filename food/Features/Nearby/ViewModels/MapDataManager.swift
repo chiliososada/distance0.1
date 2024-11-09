@@ -1,81 +1,46 @@
-//
-//  Untitled.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/04.
-//
-
 import SwiftUI
 import MapKit
 
-// MARK: - MapDataManager
-final class MapDataManager: ObservableObject {
-    // 添加分块加载的常量
-      private enum LoadingConstants {
-          static let maxAnnotationsPerBatch = 100
-          static let batchLoadDelay: TimeInterval = 0.1
-          static let visibleAnnotationsLimit = 200
-      }
-    // MARK: - Constants
-    private enum Constants {
-        static let cacheLimit = 50
-        static let cacheSizeLimit = 50 * 1024 * 1024 // 50MB
-        static let updateThrottle: TimeInterval = 0.3
-        static let gridSize = 0.01 // 网格大小为0.01经纬度
-        static let surroundingOffsets = [-1, 0, 1]
+// MARK: - Constants
+private enum MapConstants {
+    enum Loading {
+        static let maxAnnotationsPerBatch = 100
+        static let batchLoadDelay: TimeInterval = 0.1
+        static let visibleLimit = 200
+        static let cleanupInterval: TimeInterval = 30
     }
     
+    enum Cache {
+        static let limit = 50
+        static let sizeLimit = 50 * 1024 * 1024 // 50MB
+        static let updateThrottle: TimeInterval = 0.3
+    }
+    
+    enum Grid {
+        static let size = 0.01 // 网格大小为0.01经纬度
+        static let surroundingOffsets = [-1, 0, 1]
+    }
+}
+
+// MARK: - MapDataManager
+final class MapDataManager: ObservableObject {
     // MARK: - Published Properties
     @Published private(set) var visiblePlaces: [LocationPost] = []
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
     
     // MARK: - Private Properties
-    private actor CacheManager {
-        var loadedRegions: Set<String> = []
-        let cache = NSCache<NSString, NSArray>()
-        
-        init() {
-            cache.countLimit = Constants.cacheLimit
-            cache.totalCostLimit = Constants.cacheSizeLimit
-        }
-        
-        func clearCache() {
-            cache.removeAllObjects()
-            loadedRegions.removeAll()
-        }
-        
-        func addRegion(_ key: String, places: [LocationPost]) {
-            cache.setObject(places as NSArray, forKey: key as NSString)
-            loadedRegions.insert(key)
-        }
-        
-        func getPlaces(for key: String) -> [LocationPost]? {
-            guard loadedRegions.contains(key),
-                  let places = cache.object(forKey: key as NSString) as? [LocationPost] else {
-                return nil
-            }
-            return places
-        }
-        
-        func removeRegion(_ key: String) {
-            loadedRegions.remove(key)
-            cache.removeObject(forKey: key as NSString)
-        }
-    }
-    
-    private let cacheManager = CacheManager()
-    private let queue = DispatchQueue(label: "com.app.mapdatamanager", qos: .userInitiated)
-    private var lastLoadTime: Date = .distantPast
+    private let cacheManager: CacheManager
+    private let queue: DispatchQueue
+    private var lastLoadTime: Date
+    private var cleanupTimer: Timer?
     private var loadingTasks: [String: Task<Void, Never>] = [:]
     
-    // MARK: - Test Data
-    // Test Data
     private let testDataSets: [String: [LocationPost]] = {
         var dataSets: [String: [LocationPost]] = [:]
         
         // 东京站附近的景点
-        let tokyoStationSpots = [
+        let tokyoStationSpots: [LocationPost] = [
             LocationPost(
                 title: "东京站",
                 content: "东京的中心交通枢纽",
@@ -129,7 +94,7 @@ final class MapDataManager: ObservableObject {
         dataSets["tokyo_station"] = tokyoStationSpots
         
         // 涉谷区域的景点
-        let shibuyaSpots = [
+        let shibuyaSpots: [LocationPost] = [
             LocationPost(
                 title: "涉谷十字路口",
                 content: "世界著名的繁忙路口",
@@ -167,7 +132,7 @@ final class MapDataManager: ObservableObject {
         dataSets["shibuya"] = shibuyaSpots
         
         // 浅草区域的景点
-        let asakusaSpots = [
+        let asakusaSpots: [LocationPost] = [
             LocationPost(
                 title: "浅草寺",
                 content: "东京最古老的寺庙",
@@ -208,113 +173,39 @@ final class MapDataManager: ObservableObject {
     }()
     
     // MARK: - Initialization
-    init() {
+    init(queue: DispatchQueue = .init(label: "com.app.mapdatamanager", qos: .userInitiated)) {
+        self.cacheManager = CacheManager()
+        self.queue = queue
+        self.lastLoadTime = .distantPast
         setupNotifications()
         setupPeriodicCleanup()
     }
     
     deinit {
+        cleanupTimer?.invalidate()
         NotificationCenter.default.removeObserver(self)
     }
-    private func setupPeriodicCleanup() {
-          Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
-              Task { [weak self] in
-                  await self?.performPeriodicCleanup()
-              }
-          }
-      }
-      
-      private func performPeriodicCleanup() async {
-          // 清理过期数据
-          await cleanupExpiredData()
-          // 检查并限制可见标注数量
-          await limitVisibleAnnotations()
-      }
-      
-      private func cleanupExpiredData() async {
-          // 只保留最近访问的区域数据
-          let allRegions = await cacheManager.loadedRegions
-          if allRegions.count > Constants.cacheLimit / 2 {
-              let regionsToRemove = allRegions.prefix(allRegions.count - Constants.cacheLimit / 2)
-              for region in regionsToRemove {
-                  await cacheManager.removeRegion(region)
-              }
-          }
-      }
-      
-      private func limitVisibleAnnotations() async {
-          if visiblePlaces.count > LoadingConstants.visibleAnnotationsLimit {
-              visiblePlaces = Array(visiblePlaces.prefix(LoadingConstants.visibleAnnotationsLimit))
-          }
-      }
-    // MARK: - Public Methods
+}
+
+// MARK: - Public Methods
+extension MapDataManager {
+    
     @MainActor
     func loadPlaces(in region: MKCoordinateRegion) async {
-        let now = Date()
-        guard now.timeIntervalSince(lastLoadTime) >= Constants.updateThrottle else { return }
-        lastLoadTime = now
+        guard shouldUpdateRegion() else { return }
         
         isLoading = true
         defer { isLoading = false }
         
         let regionKey = getRegionKey(for: region)
-        
-        // 获取并处理所有地点
-        let allPlaces: [LocationPost]
-        if let cachedPlaces = await cacheManager.getPlaces(for: regionKey) {
-            allPlaces = cachedPlaces
-        } else {
-            allPlaces = fetchPlacesFromServer(in: region)
-            await cacheManager.addRegion(regionKey, places: allPlaces)
-        }
-        
-        // 计算距离并排序
-        let sortedPlaces = allPlaces
-            .map { LocationPost -> LocationPost in
-                let placeLocation = CLLocation(latitude: LocationPost.coordinate.latitude, longitude: LocationPost.coordinate.longitude)
-                let centerLocation = CLLocation(latitude: region.center.latitude, longitude: region.center.longitude)
-                LocationPost.cachedDistance = placeLocation.distance(from: centerLocation)
-                return LocationPost
-            }
-            .sorted { ($0.cachedDistance ?? 0) < ($1.cachedDistance ?? 0) }
-            .prefix(LoadingConstants.visibleAnnotationsLimit)
-        
-        // 批量更新 visiblePlaces
+        let allPlaces = await fetchPlaces(for: regionKey, in: region)
+        let sortedPlaces = await sortPlacesByDistance(allPlaces, from: region.center)
         await updateVisiblePlacesInBatches(Array(sortedPlaces))
     }
     
     @MainActor
-    private func updateVisiblePlacesInBatches(_ places: [LocationPost]) async {
-        let batchSize = LoadingConstants.maxAnnotationsPerBatch
-        for startIndex in stride(from: 0, to: places.count, by: batchSize) {
-            let endIndex = min(startIndex + batchSize, places.count)
-            let batch = Array(places[startIndex..<endIndex])
-            
-            // 在主线程更新UI
-            if startIndex == 0 {
-                visiblePlaces = batch
-            } else {
-                visiblePlaces.append(contentsOf: batch)
-            }
-            
-            if endIndex < places.count {
-                try? await Task.sleep(nanoseconds: UInt64(LoadingConstants.batchLoadDelay * 1_000_000_000))
-            }
-        }
-    }
-    
-    @MainActor
     func cleanupInvisibleRegions(currentRegion: MKCoordinateRegion) async {
-        let loadedRegions = await cacheManager.loadedRegions
-        
-        // 使用 async let 并发处理清理操作
-        await withThrowingTaskGroup(of: Void.self) { group in
-            for regionKey in loadedRegions where !isRegionOverlapping(regionKey: regionKey, with: currentRegion) {
-                group.addTask {
-                    await self.cacheManager.removeRegion(regionKey)
-                }
-            }
-        }
+        await performRegionCleanup(for: currentRegion)
     }
     
     @MainActor
@@ -322,9 +213,31 @@ final class MapDataManager: ObservableObject {
         await loadPlaces(in: region)
         await preloadSurroundingRegions(around: region)
     }
+}
+
+// MARK: - Private Methods
+private extension MapDataManager {
+    func shouldUpdateRegion() -> Bool {
+        let now = Date()
+        guard now.timeIntervalSince(lastLoadTime) >= MapConstants.Cache.updateThrottle else {
+            return false
+        }
+        lastLoadTime = now
+        return true
+    }
     
-    // MARK: - Private Methods
-    private func setupNotifications() {
+    func setupPeriodicCleanup() {
+        cleanupTimer = Timer.scheduledTimer(
+            withTimeInterval: MapConstants.Loading.cleanupInterval,
+            repeats: true
+        ) { [weak self] _ in
+            Task { [weak self] in
+                await self?.performPeriodicCleanup()
+            }
+        }
+    }
+    
+    func setupNotifications() {
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification,
             object: nil,
@@ -336,30 +249,92 @@ final class MapDataManager: ObservableObject {
         }
     }
     
-    private func getRegionKey(for region: MKCoordinateRegion) -> String {
-        let latGrid = Int(region.center.latitude / Constants.gridSize)
-        let lonGrid = Int(region.center.longitude / Constants.gridSize)
+    @MainActor
+    func performPeriodicCleanup() async {
+        await cleanupExpiredData()
+        await limitVisibleAnnotations()
+    }
+    
+    func cleanupExpiredData() async {
+        let allRegions = await cacheManager.loadedRegions
+        if allRegions.count > MapConstants.Cache.limit / 2 {
+            let regionsToRemove = allRegions.prefix(allRegions.count - MapConstants.Cache.limit / 2)
+            for region in regionsToRemove {
+                await cacheManager.removeRegion(region)
+            }
+        }
+    }
+    
+    @MainActor
+    func limitVisibleAnnotations() async {
+        if visiblePlaces.count > MapConstants.Loading.visibleLimit {
+            visiblePlaces = Array(visiblePlaces.prefix(MapConstants.Loading.visibleLimit))
+        }
+    }
+    
+    func fetchPlaces(for regionKey: String, in region: MKCoordinateRegion) async -> [LocationPost] {
+        if let cachedPlaces = await cacheManager.getPlaces(for: regionKey) {
+            return cachedPlaces
+        }
+        let places = fetchPlacesFromServer(in: region)
+        await cacheManager.addRegion(regionKey, places: places)
+        return places
+    }
+
+    
+    func sortPlacesByDistance(_ places: [LocationPost], from center: CLLocationCoordinate2D) async -> [LocationPost] {
+        Array(
+            places
+                .map { place -> LocationPost in
+                    let placeLocation = CLLocation(latitude: place.coordinate.latitude,
+                                               longitude: place.coordinate.longitude)
+                    let centerLocation = CLLocation(latitude: center.latitude,
+                                                longitude: center.longitude)
+                    place.cachedDistance = placeLocation.distance(from: centerLocation)
+                    return place
+                }
+                .sorted { ($0.cachedDistance ?? 0) < ($1.cachedDistance ?? 0) }
+                .prefix(MapConstants.Loading.visibleLimit)
+        )
+    }
+    
+    @MainActor
+    func updateVisiblePlacesInBatches(_ places: [LocationPost]) async {
+        let batchSize = MapConstants.Loading.maxAnnotationsPerBatch
+        for startIndex in stride(from: 0, to: places.count, by: batchSize) {
+            let endIndex = min(startIndex + batchSize, places.count)
+            let batch = Array(places[startIndex..<endIndex])
+            
+            if startIndex == 0 {
+                visiblePlaces = batch
+            } else {
+                visiblePlaces.append(contentsOf: batch)
+            }
+            
+            if endIndex < places.count {
+                try? await Task.sleep(nanoseconds: UInt64(MapConstants.Loading.batchLoadDelay * 1_000_000_000))
+            }
+        }
+    }
+    
+    func getRegionKey(for region: MKCoordinateRegion) -> String {
+        let latGrid = Int(region.center.latitude / MapConstants.Grid.size)
+        let lonGrid = Int(region.center.longitude / MapConstants.Grid.size)
         return "\(latGrid):\(lonGrid)"
     }
     
-    private func fetchPlacesFromServer(in region: MKCoordinateRegion) -> [LocationPost] {
-        var nearbyPlaces: [LocationPost] = []
-        for (_, places) in testDataSets {
-            for place in places where isCoordinate(place.coordinate, inRegion: region) {
-                nearbyPlaces.append(place)
-            }
-        }
-        return nearbyPlaces
+    func fetchPlacesFromServer(in region: MKCoordinateRegion) -> [LocationPost] {
+        testDataSets.values
+            .flatMap { $0 }
+            .filter { isCoordinate($0.coordinate, inRegion: region) }
     }
     
-    private func preloadSurroundingRegions(around region: MKCoordinateRegion) async {
+    func preloadSurroundingRegions(around region: MKCoordinateRegion) async {
         let latDelta = region.span.latitudeDelta
         let lonDelta = region.span.longitudeDelta
         
-        for latOffset in Constants.surroundingOffsets {
-            for lonOffset in Constants.surroundingOffsets {
-                guard latOffset != 0 || lonOffset != 0 else { continue }
-                
+        for latOffset in MapConstants.Grid.surroundingOffsets {
+            for lonOffset in MapConstants.Grid.surroundingOffsets where !(latOffset == 0 && lonOffset == 0) {
                 let newCenter = CLLocationCoordinate2D(
                     latitude: region.center.latitude + Double(latOffset) * latDelta,
                     longitude: region.center.longitude + Double(lonOffset) * lonDelta
@@ -375,7 +350,20 @@ final class MapDataManager: ObservableObject {
         }
     }
     
-    private func isRegionOverlapping(regionKey: String, with currentRegion: MKCoordinateRegion) -> Bool {
+    @MainActor
+    func performRegionCleanup(for currentRegion: MKCoordinateRegion) async {
+        let loadedRegions = await cacheManager.loadedRegions
+        await withTaskGroup(of: Void.self) { group in
+            for regionKey in loadedRegions where !isRegionOverlapping(regionKey: regionKey,
+                                                                   with: currentRegion) {
+                group.addTask {
+                    await self.cacheManager.removeRegion(regionKey)
+                }
+            }
+        }
+    }
+    
+    func isRegionOverlapping(regionKey: String, with currentRegion: MKCoordinateRegion) -> Bool {
         let components = regionKey.split(separator: ":")
         guard components.count == 2,
               let latGrid = Int(components[0]),
@@ -383,8 +371,8 @@ final class MapDataManager: ObservableObject {
             return false
         }
         
-        let regionLat = Double(latGrid) * Constants.gridSize
-        let regionLon = Double(lonGrid) * Constants.gridSize
+        let regionLat = Double(latGrid) * MapConstants.Grid.size
+        let regionLon = Double(lonGrid) * MapConstants.Grid.size
         
         let currentLatMin = currentRegion.center.latitude - currentRegion.span.latitudeDelta/2
         let currentLatMax = currentRegion.center.latitude + currentRegion.span.latitudeDelta/2
@@ -395,7 +383,7 @@ final class MapDataManager: ObservableObject {
                regionLon >= currentLonMin && regionLon <= currentLonMax
     }
     
-    private func isCoordinate(_ coordinate: CLLocationCoordinate2D, inRegion region: MKCoordinateRegion) -> Bool {
+    func isCoordinate(_ coordinate: CLLocationCoordinate2D, inRegion region: MKCoordinateRegion) -> Bool {
         let latDelta = region.span.latitudeDelta / 2.0
         let lonDelta = region.span.longitudeDelta / 2.0
         
@@ -411,3 +399,37 @@ final class MapDataManager: ObservableObject {
     }
 }
 
+// MARK: - CacheManager
+private actor CacheManager {
+    var loadedRegions: Set<String> = []
+    private let cache: NSCache<NSString, NSArray>
+    
+    init() {
+        self.cache = NSCache<NSString, NSArray>()
+        self.cache.countLimit = MapConstants.Cache.limit
+        self.cache.totalCostLimit = MapConstants.Cache.sizeLimit
+    }
+    
+    func clearCache() {
+        cache.removeAllObjects()
+        loadedRegions.removeAll()
+    }
+    
+    func addRegion(_ key: String, places: [LocationPost]) {
+        cache.setObject(places as NSArray, forKey: key as NSString)
+        loadedRegions.insert(key)
+    }
+    
+    func getPlaces(for key: String) -> [LocationPost]? {
+        guard loadedRegions.contains(key),
+              let places = cache.object(forKey: key as NSString) as? [LocationPost] else {
+            return nil
+        }
+        return places
+    }
+    
+    func removeRegion(_ key: String) {
+        loadedRegions.remove(key)
+        cache.removeObject(forKey: key as NSString)
+    }
+}
