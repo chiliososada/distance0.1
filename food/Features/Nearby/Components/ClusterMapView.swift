@@ -25,10 +25,15 @@ struct ClusterMapView: UIViewRepresentable {
         
         static let markerTintColor = UIColor(displayP3Red: 0.082, green: 0.518, blue: 0.263, alpha: 1.0)
     }
-    
     // MARK: - Properties
-    @StateObject private var dataManager = MapDataManager()
-    @ObservedObject var viewModel: NearbyViewModel
+       private let dataManager: MapDataManager
+       @ObservedObject var viewModel: NearbyViewModel
+       
+       // MARK: - Initialization
+       init(dataManager: MapDataManager, viewModel: NearbyViewModel) {
+           self.dataManager = dataManager
+           self.viewModel = viewModel
+       }
   
 //    @Binding var selectedPlaceNames: [String]
     

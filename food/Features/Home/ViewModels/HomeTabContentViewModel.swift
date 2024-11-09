@@ -1,111 +1,135 @@
-//  HomeTabContentViewModel.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/05.
-
 import SwiftUI
 import Combine
 
+@MainActor
 final class HomeTabContentViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published private(set) var posts: [LocationPost] = []
     @Published private(set) var isLoading = false
     @Published private(set) var error: Error?
+    @Published var searchText = ""
     
-    // MARK: - Dependencies
-    private let postManager = LocationPostManager.shared
+    // MARK: - Private Properties
+    private let locationService: PostLocationService
     private var cancellables = Set<AnyCancellable>()
+    private let debounceInterval: TimeInterval = 0.3
     
     // MARK: - Initialization
-    init() {
+    init(locationService: PostLocationService? = nil) {
+        self.locationService = locationService ?? PostLocationService.shared
         setupBindings()
-        Task {
-            await loadInitialData()
+    }
+
+    // MARK: - Public Methods
+    func loadInitialPosts() async {
+        await fetchPosts()
+    }
+    
+    func refreshPosts() async {
+        await fetchPosts()
+    }
+    
+    func filterPosts(by category: String? = nil, tags: Set<String>? = nil) async {
+        guard !isLoading else { return }
+        
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            // 获取所有帖子
+            try await locationService.fetchPosts()
+            var filteredPosts = locationService.posts
+            
+            // 应用分类过滤
+            if let category = category {
+                filteredPosts = filteredPosts.filter { $0.tags.contains(category) }
+            }
+            
+            // 应用标签过滤
+            if let tags = tags, !tags.isEmpty {
+                filteredPosts = filteredPosts.filter { post in
+                    !Set(post.tags).intersection(tags).isEmpty
+                }
+            }
+            
+            // 应用搜索过滤
+            if !searchText.isEmpty {
+                filteredPosts = filteredPosts.filter { post in
+                    post.title?.localizedCaseInsensitiveContains(searchText) == true ||
+                    post.content.localizedCaseInsensitiveContains(searchText) ||
+                    post.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
+                }
+            }
+            
+            self.posts = filteredPosts
+            
+        } catch {
+            self.error = error
         }
     }
     
     // MARK: - Private Methods
     private func setupBindings() {
-        // 监听过滤后的帖子变化
-        postManager.$filteredPosts
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] posts in
-                self?.posts = posts
+        // 搜索文本变化时自动触发过滤
+        $searchText
+            .debounce(for: .seconds(debounceInterval), scheduler: RunLoop.main)
+            .sink { [weak self] _ in
+                Task { [weak self] in
+                    await self?.filterPosts()
+                }
             }
             .store(in: &cancellables)
+    }
+    
+    private func fetchPosts() async {
+        guard !isLoading else { return }
         
-        // 监听加载状态
-        postManager.$isLoading
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.isLoading, on: self)
-            .store(in: &cancellables)
+        isLoading = true
+        defer { isLoading = false }
         
-        // 监听错误状态
-        postManager.$error
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.error, on: self)
-            .store(in: &cancellables)
-    }
-    
-    @MainActor
-    private func loadInitialData() async {
         do {
-            // 初始加载时不应用任何过滤
-            try await postManager.fetchPosts()
+            try await locationService.fetchPosts()
+            self.posts = locationService.posts
         } catch {
             self.error = error
-            print("Failed to load initial data: \(error)")
         }
     }
     
-    // MARK: - Public Methods
-    @MainActor
-    func refresh() async {
-        do {
-            try await postManager.fetchPosts()
-        } catch {
-            self.error = error
-            print("Refresh failed: \(error)")
-        }
+    // MARK: - Post Management Methods
+    func deletePost(_ post: LocationPost) async {
+        // TODO: Implement post deletion through PostLocationService
+        // This would require adding deletion functionality to PostLocationService
     }
     
-    @MainActor
-    func search(text: String) async {
-        do {
-            try await postManager.fetchPosts(searchText: text)
-        } catch {
-            self.error = error
-            print("Search failed: \(error)")
-        }
+    func updatePost(_ post: LocationPost) async {
+        // TODO: Implement post updating through PostLocationService
+        // This would require adding update functionality to PostLocationService
     }
     
+    func createPost(_ post: LocationPost) async {
+        // TODO: Implement post creation through PostLocationService
+        // This would require adding creation functionality to PostLocationService
+    }
+    
+    // MARK: - Helper Methods
     func clearError() {
         error = nil
     }
+    
+    func reset() {
+        posts = []
+        error = nil
+        searchText = ""
+    }
 }
 
-//// MARK: - Preview Helper
-//extension HomeTabContentViewModel {
-//    static var preview: HomeTabContentViewModel {
-//        let viewModel = HomeTabContentViewModel()
-//        viewModel.posts = [
-//            LocationPost(
-//                title: "有一起打球的的吗",
-//                content: "今天早上我有个计划，就是去入管局办理一些手续。",
-//                authorName: "劉子源",
-//                locationName: "東京都 葛飾区 立石",
-//                latitude: 35.681236,
-//                longitude: 139.767125,
-//                imageNames: ["sample1", "reco_2", "reco_3"],
-//                avatarImage: "sample2",
-//                tags: ["娱乐", "运动", "篮球"],
-//                participantsCount: 99,
-//                postedTime: "10 mins",
-//                remainingDays: "3 days",
-//                publishDate: "2024-10-01",
-//                joinedCount: "75＋"
-//            )
-//        ]
-//        return viewModel
-//    }
-//}
+#if DEBUG
+extension HomeTabContentViewModel {
+    static var preview: HomeTabContentViewModel {
+        let viewModel = HomeTabContentViewModel()
+        // 可以在这里设置一些预览用的模拟数据
+        viewModel.posts = [/* 一些示例数据 */]
+        return viewModel
+    }
+}
+#endif

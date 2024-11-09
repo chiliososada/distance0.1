@@ -13,7 +13,7 @@ class NearbyViewModel: ObservableObject {
     @Published private(set) var error: Error?
     
     // MARK: - Dependencies
-    private let mapDataManager: MapDataManager
+    let mapDataManager: MapDataManager
     private let locationManager = LocationManager.shared
     private var cancellables = Set<AnyCancellable>()
     private var searchDebounceTask: Task<Void, Never>?
@@ -25,11 +25,13 @@ class NearbyViewModel: ObservableObject {
     var visiblePlaces: [LocationPost] { mapDataManager.visiblePlaces }
     
     // MARK: - Initialization
-    init(mapDataManager: MapDataManager = MapDataManager()) {
-        self.mapDataManager = mapDataManager
-        setupBindings()
-    }
-    
+       init() {
+           // 直接创建依赖
+           let queue = DispatchQueue(label: "com.app.mapdatamanager", qos: .userInitiated)
+           self.mapDataManager = MapDataManager(locationService: PostLocationService.shared,
+                                             queue: queue)
+           setupBindings()
+       }
     deinit {
         searchDebounceTask?.cancel()
         cancellables.forEach { $0.cancel() }

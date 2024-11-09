@@ -9,8 +9,9 @@ struct NearbyView: View {
         NavigationStack(path: $navigationManager.navigationPath) {  // 添加 NavigationStack
             ZStack {
                 ClusterMapView(
-                    viewModel: viewModel
-                )
+                                   dataManager: viewModel.mapDataManager,
+                                   viewModel: viewModel
+                               )
                 .edgesIgnoringSafeArea([.top, .leading, .trailing])
                 
                 VStack {
@@ -40,7 +41,6 @@ struct NearbyView: View {
                               EmptyView()
                }
              }
-//            .background(Color.clear)
             .sheet(isPresented: $viewModel.showBottomSheet) {
                 BottomMenuView(selectedPosts: viewModel.selectedPosts)
                     .environmentObject(navigationManager)
@@ -51,7 +51,6 @@ struct NearbyView: View {
             }
         }
         .onAppear {
-                   // 确保在 NearbyView 显示时显示 TabBar
                    tabBarManager.isNavigatingInTab = false
                }
     }
