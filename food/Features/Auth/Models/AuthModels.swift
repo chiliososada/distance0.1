@@ -33,35 +33,7 @@ struct AuthInputData {
     }
 }
 
-// MARK: - Auth Errors
-enum AuthError: Error {
-    case invalidEmail
-    case invalidPassword
-    case passwordMismatch
-    case invalidVerificationCode
-    case networkError
-    case serverError(String)
-    case unknown
-    
-    var message: String {
-        switch self {
-        case .invalidEmail:
-            return "请输入有效的电子邮箱地址"
-        case .invalidPassword:
-            return "密码长度必须至少为8位"
-        case .passwordMismatch:
-            return "两次输入的密码不一致"
-        case .invalidVerificationCode:
-            return "验证码无效"
-        case .networkError:
-            return "网络连接失败"
-        case .serverError(let message):
-            return message
-        case .unknown:
-            return "未知错误"
-        }
-    }
-}
+
 
 // MARK: - Auth State
 enum AuthState {

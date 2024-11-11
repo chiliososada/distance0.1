@@ -111,144 +111,136 @@ struct ProfileField: View {
 struct ProfileEditorView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var profileState = ProfileEditState()
-    
+    @EnvironmentObject var authManager: AuthManager
     var body: some View {
-        VStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    avatarSection
-                    infoSection
-                }
-            }
-        }
-        .navigationTitle("个人信息")
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: backButton, trailing: saveButton)
-        .sheet(isPresented: $profileState.showImagePicker) {
-            ImagePicker(selectedImage: $profileState.selectedImage)
-        }
-        .sheet(isPresented: $profileState.isShowingDatePicker) {
-                    datePickerSheet
-                }
-    }
+          VStack {
+              ScrollView {
+                  VStack(spacing: 20) {
+                      avatarSection
+                      infoSection
+                  }
+              }
+          }
+          .navigationTitle("个人信息")
+          .navigationBarTitleDisplayMode(.inline)
+          .navigationBarBackButtonHidden(true)
+          .navigationBarItems(leading: backButton, trailing: saveButton)
+          .sheet(isPresented: $profileState.showImagePicker) {
+              ImagePicker(selectedImage: $profileState.selectedImage)
+          }
+          .sheet(isPresented: $profileState.isShowingDatePicker) {
+              datePickerSheet
+          }
+      }
     
     private var avatarSection: some View {
-        VStack {
-            ProfileAvatarView(
-                image: profileState.selectedImage,
-                action: { profileState.showImagePickerOptions = true }
-            )
-            
-            Text("ID: \(profileState.idNumber)")
-                .font(.footnote)
-                .foregroundColor(.gray)
-                .padding(.top, 4)
-        }
-        .padding(.top, 40)
-        .confirmationDialog(
-            "选择头像",
-            isPresented: $profileState.showImagePickerOptions,
-            titleVisibility: .visible
-        ) {
-            Button("从相册选择") {
-                profileState.showImagePicker = true
-            }
-            Button("取消", role: .cancel) {}
-        }
-    }
+           VStack {
+               ProfileAvatarView(
+                   image: profileState.selectedImage,
+                   action: { profileState.showImagePickerOptions = true }
+               )
+               
+               Text("ID: \(profileState.idNumber)")
+                   .font(.footnote)
+                   .foregroundColor(.gray)
+                   .padding(.top, 4)
+           }
+           .padding(.top, 40)
+           .confirmationDialog(
+               "选择头像",
+               isPresented: $profileState.showImagePickerOptions,
+               titleVisibility: .visible
+           ) {
+               Button("从相册选择") {
+                   profileState.showImagePicker = true
+               }
+               Button("取消", role: .cancel) {}
+           }
+       }
     // 添加出生日期选择器组件
     private var birthDateSelector: some View {
-        VStack(alignment: .leading) {
-            Text("出生年月")
-                .font(.headline)
-            
-            Button(action: {
-                profileState.isShowingDatePicker = true
-            }) {
-                HStack {
-                    Text(profileState.birthDate, style: .date)
-                        .foregroundColor(.black)
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(.gray)
-                }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color.white)
-                )
-            }
-            .buttonStyle(PlainButtonStyle()) // 去掉默认的按钮样式
-        }
-    }
+           VStack(alignment: .leading) {
+               Text("出生年月")
+                   .font(.headline)
+               
+               Button(action: {
+                   profileState.isShowingDatePicker = true
+               }) {
+                   HStack {
+                       Text(profileState.birthDate, style: .date)
+                           .foregroundColor(.black)
+                       
+                       Spacer()
+                       
+                       Image(systemName: "chevron.right")
+                           .foregroundColor(.gray)
+                   }
+                   .padding()
+                   .background(
+                       RoundedRectangle(cornerRadius: 8)
+                           .fill(Color.white)
+                   )
+               }
+               .buttonStyle(PlainButtonStyle())
+           }
+       }
     private var datePickerSheet: some View {
-        VStack {
-            HStack {
-                Button("取消") {
-                    profileState.isShowingDatePicker = false
-                }
-                Spacer()
-                Text("选择你的生日")
-                    .font(.headline)
-                Spacer()
-                Button("保存") {
-                    profileState.isShowingDatePicker = false
-                }
-            }
-            .padding()
+         VStack {
+             HStack {
+                 Button("取消") {
+                     profileState.isShowingDatePicker = false
+                 }
+                 Spacer()
+                 Text("选择你的生日")
+                     .font(.headline)
+                 Spacer()
+                 Button("保存") {
+                     profileState.isShowingDatePicker = false
+                 }
+             }
+             .padding()
 
-            DatePicker(
-                "",
-                selection: $profileState.birthDate,
-                displayedComponents: [.date]
-            )
-            .datePickerStyle(.wheel)
-            .labelsHidden()
-            .environment(\.locale, Locale(identifier: "zh_CN")) // 强制为中文显示
-            .padding()
-        }
-    }
+             DatePicker(
+                 "",
+                 selection: $profileState.birthDate,
+                 displayedComponents: [.date]
+             )
+             .datePickerStyle(.wheel)
+             .labelsHidden()
+             .environment(\.locale, Locale(identifier: "zh_CN"))
+             .padding()
+         }
+     }
     private var infoSection: some View {
-        VStack(alignment: .leading, spacing: 30) {
-            ProfileField(
-                title: "昵称",
-                text: $profileState.nickname,
-                placeholder: "请输入昵称"
-            )
-            
-            genderSelector
-            birthDateSelector
-            ProfileField(
-                title: "个性签名",
-                text: $profileState.bio,
-                placeholder: "请输入个性签名"
-            )
-        }
-        .padding(.horizontal, 20)
-    }
+         VStack(alignment: .leading, spacing: 30) {
+             ProfileField(
+                 title: "昵称",
+                 text: $profileState.nickname,
+                 placeholder: "请输入昵称"
+             )
+             
+             genderSelector
+             birthDateSelector
+             
+             ProfileField(
+                 title: "个性签名",
+                 text: $profileState.bio,
+                 placeholder: "请输入个性签名"
+             )
+         }
+         .padding(.horizontal, 20)
+     }
     
     private var genderSelector: some View {
         VStack(alignment: .leading) {
             Text("性别")
                 .font(.headline)
             Picker("性别", selection: $profileState.selectedGender) {
-                ForEach(profileState.genders, id: \.self) { gender in
-                    Text(gender).tag(gender)
+                ForEach(UserProfile.Gender.allCases, id: \.self) { gender in
+                    Text(gender.localizedString).tag(gender)
                 }
             }
             .pickerStyle(SegmentedPickerStyle())
-            .padding(.vertical, 12)
-            .padding(.horizontal)
-            .overlay(
-                Rectangle()
-                    .frame(height: 1)
-                    .foregroundColor(.gray.opacity(0.5))
-                    .padding(.horizontal, 10),
-                alignment: .bottom
-            )
         }
     }
     
@@ -274,8 +266,40 @@ struct ProfileEditorView: View {
     }
     
     private func handleSave() {
-        // 处理保存逻辑
-    }
+//           // guard let userProfile = authManager.userProfile else { return }
+//
+//            // 创建新的Settings
+//            let newSettings = UserProfile.Settings(
+//                nickname: profileState.nickname,
+//                bio: profileState.bio,
+//                idNumber: profileState.idNumber,
+//                gender: profileState.selectedGender,
+//                birthDate: profileState.birthDate,
+//                notificationsEnabled: userProfile.settings.notificationsEnabled,
+//                privacySettings: userProfile.settings.privacySettings
+//            )
+//            
+//            // 更新用户配置文件
+//            var updatedProfile = userProfile
+//            updatedProfile.settings = newSettings
+//            updatedProfile.lastUpdated = Date()
+//            
+//            // 如果有新的头像图片，这里应该先上传图片
+//            // 然后更新avatarUrl
+//            if let newImage = profileState.selectedImage {
+//                // 处理图片上传
+//                // uploadImage(newImage) { url in
+//                //     updatedProfile.avatarUrl = url
+//                //     updateProfile(updatedProfile)
+//                // }
+//            }
+            
+            // 调用AuthManager更新用户配置
+            // authManager.updateProfile(updatedProfile)
+            
+            // 关闭编辑视图
+            presentationMode.wrappedValue.dismiss()
+        }
 }
 
 struct ProfileEditorView_Previews: PreviewProvider {

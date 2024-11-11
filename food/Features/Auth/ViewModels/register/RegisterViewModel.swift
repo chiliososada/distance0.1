@@ -1,28 +1,15 @@
-//
-//  RegisterViewModel.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/04.
-//
-
 import Foundation
 import SwiftUI
 
 final class RegisterViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var emailOrPhone = ""
-    @Published var navigateToCreateAccount = false
-    @Published var navigateToForgetPassword = false
-    
-    // MARK: - Validation Properties
     @Published var isValid = false
-    @Published var authState: AuthState = .idle
-    @Published var showAlert = false
-    @Published var alertMessage = ""
-    
-    // MARK: - Social Login States
     @Published var isProcessingGoogle = false
     @Published var isProcessingApple = false
+    @Published var showAlert = false
+    @Published var alertMessage = ""
+    @Published var isLoading = false
     
     // MARK: - Dependencies
     private let authManager: AuthManager
@@ -37,21 +24,33 @@ final class RegisterViewModel: ObservableObject {
         validateEmail()
     }
     
-    func handleGoogleLogin() {
+    // Firebase Google Sign In
+    func handleGoogleLogin() async {
         isProcessingGoogle = true
-        // 模拟网络请求
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.isProcessingGoogle = false
-            // 处理Google登录逻辑
+        defer { isProcessingGoogle = false }
+        
+        do {
+            // 实现 Google 登录
+            // 等待 AuthManager 添加相关方法
+            // try await authManager.signInWithGoogle()
+        } catch {
+            showAlert = true
+            alertMessage = error.localizedDescription
         }
     }
     
-    func handleAppleLogin() {
+    // Firebase Apple Sign In
+    func handleAppleLogin() async {
         isProcessingApple = true
-        // 模拟网络请求
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            self?.isProcessingApple = false
-            // 处理Apple登录逻辑
+        defer { isProcessingApple = false }
+        
+        do {
+            // 实现 Apple 登录
+            // 等待 AuthManager 添加相关方法
+            // try await authManager.signInWithApple()
+        } catch {
+            showAlert = true
+            alertMessage = error.localizedDescription
         }
     }
     

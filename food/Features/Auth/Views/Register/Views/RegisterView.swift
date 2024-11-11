@@ -4,13 +4,11 @@ struct RegisterView: View {
     // MARK: - Properties
     @StateObject private var viewModel = RegisterViewModel()
     @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var tabBarManager: TabBarManager
     @EnvironmentObject var navigationManager: AppNavigationManager
     
     // MARK: - Layout Constants
-    private enum Constants {
+    private enum Layout {
         static let spacing: CGFloat = 20
-        static let buttonHeight: CGFloat = 25
         static let iconSize: CGFloat = 20
         static let cornerRadius: CGFloat = 25
         static let titleSize: CGFloat = 28
@@ -27,140 +25,146 @@ struct RegisterView: View {
     
     // MARK: - Body
     var body: some View {
-            VStack(spacing: Constants.spacing) {
-                ScrollView {
-                    VStack(spacing: Constants.spacing) {
-                        titleSection
-                        socialLoginSection
-                        dividerSection
-                        emailInputSection
-                        navigationSection
-                    }
+        VStack(spacing: Layout.spacing) {
+            ScrollView {
+                VStack(spacing: Layout.spacing) {
+                    titleSection
+                    emailInputSection
+                    dividerSection
+                    socialLoginSection
                 }
             }
-            .background(Color.white)
-            .navigationBarBackButtonHidden(true)
-            .navigationBarItems(leading: backButton)
-            .alert("提示", isPresented: $viewModel.showAlert) {
-                Button("确定", role: .cancel) {}
-            } message: {
-                Text(viewModel.alertMessage)
+        }
+        .background(Color.white)
+        .navigationBarBackButtonHidden(true)
+        .navigationBarItems(leading: backButton)
+        .alert("提示", isPresented: $viewModel.showAlert) {
+            Button("确定", role: .cancel) {}
+        } message: {
+            Text(viewModel.alertMessage)
+        }
+        .overlay {
+            if viewModel.isLoading {
+                loadingView
             }
         }
-    private var backButton: some View {
-          Button(action: {
-              presentationMode.wrappedValue.dismiss()
-          }) {
-              Image(systemName: "arrow.left")
-                  .font(.system(size: Constants.buttonTextSize, weight: .medium))
-                  .foregroundColor(.black)
-          }
-      }
+    }
     
     // MARK: - View Components
     private var titleSection: some View {
         HStack {
             Text("开始注册Distance吧")
-                .font(.system(size: Constants.titleSize, weight: .bold))
+                .font(.system(size: Layout.titleSize, weight: .bold))
                 .foregroundColor(.black)
             Spacer()
         }
-        .padding(.horizontal, Constants.Padding.horizontal)
-        .padding(.top, Constants.Padding.top)
-        .padding(.bottom, Constants.Padding.bottom)
+        .padding(.horizontal, Layout.Padding.horizontal)
+        .padding(.top, Layout.Padding.top)
     }
     
-    private var socialLoginSection: some View {
-        VStack(spacing: Constants.spacing) {
-            SocialLoginButton(
-                icon: "google",
-                title: "使用 Google 账号登录",
-                isSystemImage: false,
-                iconColor: .gray
-            ) {
-                viewModel.handleGoogleLogin()
-            }
-            .disabled(viewModel.isProcessingGoogle)
+    private var emailInputSection: some View {
+        VStack(spacing: Layout.spacing) {
+            TextField("邮件地址", text: $viewModel.emailOrPhone)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.emailAddress)
+                .onChange(of: viewModel.emailOrPhone) {
+                    viewModel.handleEmailInput()
+                }
             
-            SocialLoginButton(
-                icon: "applelogo",
-                title: "使用 Apple 登录",
-                isSystemImage: true,
-                iconColor: .blue
-            ) {
-                viewModel.handleAppleLogin()
+            Button(action: {
+                guard viewModel.isValid else { return }
+                navigationManager.navigate(to: .createAccount(email: viewModel.emailOrPhone))
+            }) {
+                Text("继续使用邮箱")
+                    .font(.system(size: Layout.buttonTextSize, weight: .medium))
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .foregroundColor(.white)
+                    .background(viewModel.isValid ? Color.black : Color.gray)
+                    .cornerRadius(Layout.cornerRadius)
             }
-            .disabled(viewModel.isProcessingApple)
+            .disabled(!viewModel.isValid)
         }
-        .padding(.horizontal, Constants.Padding.horizontal)
+        .padding(.horizontal, Layout.Padding.horizontal)
     }
     
     private var dividerSection: some View {
         HStack {
             Rectangle()
-                .frame(height: Constants.strokeWidth)
-                .foregroundColor(.gray.opacity(Constants.dividerOpacity))
+                .frame(height: Layout.strokeWidth)
+                .foregroundColor(.gray.opacity(Layout.dividerOpacity))
             
             Text("或")
-                .font(.system(size: Constants.buttonTextSize))
                 .foregroundColor(.gray)
             
             Rectangle()
-                .frame(height: Constants.strokeWidth)
-                .foregroundColor(.gray.opacity(Constants.dividerOpacity))
+                .frame(height: Layout.strokeWidth)
+                .foregroundColor(.gray.opacity(Layout.dividerOpacity))
         }
-        .padding(.horizontal, Constants.Padding.horizontal)
+        .padding(.horizontal, Layout.Padding.horizontal)
     }
     
-    private var emailInputSection: some View {
-        TextField("邮件地址", text: $viewModel.emailOrPhone)
-            .textFieldStyle(RoundedBorderTextFieldStyle())
-            .textInputAutocapitalization(.never)
-            .autocorrectionDisabled()
-            .keyboardType(.emailAddress)
-            .onChange(of: viewModel.emailOrPhone) {
-                viewModel.handleEmailInput()
-            }
-            .padding(.horizontal, Constants.Padding.horizontal)
-    }
-    
-    private var navigationSection: some View {
-        VStack(spacing: Constants.spacing) {
+    private var socialLoginSection: some View {
+        VStack(spacing: Layout.spacing) {
             Button(action: {
-                           // 使用 navigationManager 导航到创建账号页面
-                           navigationManager.navigate(to: .createAccount(email: viewModel.emailOrPhone))
-                       })  {
-                Text("下一步")
-                    .font(.system(size: Constants.buttonTextSize, weight: .medium))
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .foregroundColor(.white)
-                    .background(viewModel.isValid ? Color.black : Color.gray)
-                    .cornerRadius(Constants.cornerRadius)
+                Task {
+                    await viewModel.handleGoogleLogin()
+                }
+            }) {
+                SocialLoginButton(
+                    icon: "google",
+                    title: "使用 Google 账号注册",
+                    isSystemImage: false,
+                    iconColor: .gray,
+                    action: {}
+                )
             }
-            .disabled(!viewModel.isValid)
+            .disabled(viewModel.isProcessingGoogle)
             
             Button(action: {
-                           // 使用 navigationManager 导航到忘记密码页面
-                           navigationManager.navigate(to: .forgetPassword)
-                       }) {
-                Text("忘记密码?")
-                    .font(.system(size: Constants.buttonTextSize))
-                    .foregroundColor(.blue)
+                Task {
+                    await viewModel.handleAppleLogin()
+                }
+            }) {
+                SocialLoginButton(
+                    icon: "applelogo",
+                    title: "使用 Apple 账号注册",
+                    isSystemImage: true,
+                    iconColor: .black,
+                    action: {}
+                )
             }
+            .disabled(viewModel.isProcessingApple)
         }
-        .padding(.horizontal, Constants.Padding.horizontal)
+        .padding(.horizontal, Layout.Padding.horizontal)
+    }
+    
+    private var backButton: some View {
+        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+            Image(systemName: "arrow.left")
+                .font(.system(size: Layout.buttonTextSize, weight: .medium))
+                .foregroundColor(.black)
+        }
+    }
+    
+    private var loadingView: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(1.5)
+        }
+        .edgesIgnoringSafeArea(.all)
     }
 }
-
-
 
 // MARK: - Preview
 struct RegisterView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             RegisterView()
-                .environmentObject(TabBarManager())
                 .environmentObject(AppNavigationManager.shared)
         }
     }

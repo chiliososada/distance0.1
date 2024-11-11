@@ -29,11 +29,11 @@ struct ProfileView: View {
                 LazyVStack(spacing: 10) {
                     //Color.clear.frame(height: 44)
                     MapSnapshotSection(
-                        mapImage: viewModel.mapPreviewImage, // 使用预览图
-                        isLoading: viewModel.isLoadingMap,
-                        offset: viewModel.offset,
-                        stats: viewModel.userStats
-                    )
+                                         mapImage: viewModel.mapPreviewImage,
+                                         isLoading: viewModel.isLoadingMap,
+                                         offset: viewModel.offset,
+                                         profile: viewModel.userProfile
+                                     )
                     
                     UserProfileSection(profile: viewModel.userProfile)
                     
@@ -67,7 +67,7 @@ struct MapSnapshotSection: View {
     let mapImage: UIImage?
     let isLoading: Bool
     let offset: CGFloat
-    let stats: UserStats
+    let profile: UserProfile
     
     var body: some View {
         ZStack {
@@ -83,7 +83,7 @@ struct MapSnapshotSection: View {
                     .shadow(radius: 5)
             }
             
-            StatisticsOverlay(stats: stats)
+            StatisticsOverlay(stats: profile.stats)
         }
         .padding(.top, offset < 0 ? -offset : 0)
         .padding(.horizontal)
@@ -92,14 +92,15 @@ struct MapSnapshotSection: View {
 }
 
 
+
 struct StatisticsOverlay: View {
-    let stats: UserStats
+    let stats: UserProfile.UserStats
     
     var body: some View {
         VStack {
             HStack(spacing: 20) {
-                StatBox(title: "参加过我话题的人", value: stats.participantsCount)
-                StatBox(title: "我浏览过的话题数", value: stats.viewedTopicsCount)
+                StatBox(title: "参加过我话题的人", value: stats.formattedParticipantsCount)
+                StatBox(title: "我浏览过的话题数", value: stats.formattedViewedTopicsCount)
             }
         }
         .padding()

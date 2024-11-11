@@ -1,24 +1,47 @@
 import SwiftUI
-
+import FirebaseAuth
 
 
 // ContentView.swift
 struct ContentView: View {
-    @StateObject private var tabBarManager = TabBarManager()
-    @StateObject private var authManager = AuthManager()
-    @StateObject private var navigationManager = AppNavigationManager.shared
+    // 使用环境对象而不是创建新的实例
+    @EnvironmentObject var tabBarManager: TabBarManager
+    @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var navigationManager: AppNavigationManager
+    @EnvironmentObject var locationManager: LocationManager
     
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {
             Group {
                 if authManager.isLoggedIn {
-                    HomeView()
-                        .environmentObject(tabBarManager)
-                        .environmentObject(authManager)
+                    if authManager.isEmailVerified {
+                        HomeView()
+                            .onAppear {
+                                navigationManager.resetNavigation()
+                                tabBarManager.resetNavigationState()
+                              
+                                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                   let window = windowScene.windows.first {
+                                    // 使用已有的环境对象，而不是创建新的
+                                    let homeView = HomeView()
+                                        .environmentObject(tabBarManager)
+                                        .environmentObject(navigationManager)
+                                        .environmentObject(authManager)
+                                        .environmentObject(locationManager)
+                                    
+                                    window.rootViewController = UIHostingController(rootView: homeView)
+                                    window.makeKeyAndVisible()
+                                }
+                            }
+                        //                                     .environmentObject(TabBarManager())
+                        //                                     .environmentObject(AuthManager())
+                        //                                     .environmentObject(AppNavigationManager.shared)
+                        //                                     .environmentObject(LocationManager.shared)
+                    } else {
+                        VerificationView(email: Auth.auth().currentUser?.email)
+                    }
                 } else {
                     HomeLoginView()
-                        .environmentObject(tabBarManager)
-                        .environmentObject(authManager)
                 }
             }
             .navigationDestination(for: AppRoute.self) { route in
@@ -33,18 +56,18 @@ struct ContentView: View {
                     RegisterView()
                 case .createAccount(let email):
                     CreateAccountView(emailOrPhone: email)
-                case .verification:
-                    VerificationView()
+                case .verification(let email):
+                    VerificationView(email: email)
                 case .passwordChanged:
                     PasswordChangedView()
                 case .forgetPassword:
-                    ForgetPasswordAccountView()
-                case .foundEmail(let email):
-                    FoundEmailView(email: email)
-                case .forgetCode(let email):
-                    ForgetCodeInputView(email: email)
-                case .getNewPassword:
-                    GetNewPasswordView()
+                    ForgetPasswordView()
+                    //                case .foundEmail(let email):
+                    //                    FoundEmailView(email: email)
+                    //                case .forgetCode(let email):
+                    //                    ForgetCodeInputView(email: email)
+                    //                case .getNewPassword:
+                    //                    GetNewPasswordView()
                 case .profileEditor:
                     ProfileEditorView()
                 case .settings:
@@ -63,33 +86,37 @@ struct ContentView: View {
                     case .postInput:
                         PostInputView(
                             isPresented: $navigationManager.isPresentingSheet,
-                             selectedTab: .constant(navigationManager.selectedTab)
+                            selectedTab: .constant(navigationManager.selectedTab)
                         )
                     case .searchFilter:
                         SearchFilterView(showFilterView: $navigationManager.isPresentingSheet)
                     case .imageGallery:
-                        EmptyView() // 实现图片画廊视图
+                        EmptyView()
                     case .locationPicker:
-                        EmptyView() // 实现位置选择器视图
+                        EmptyView()
                     default:
                         EmptyView()
                     }
                 }
             }
+            .task {
+                // 在视图加载时检查认证状态
+                await authManager.checkAuthState()
+                if authManager.isLoggedIn {
+                    await authManager.checkEmailVerification()
+                }
+            }
         }
-        .environmentObject(navigationManager)
     }
 }
 
+// MARK: - Preview Provider
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
             .environmentObject(TabBarManager())
+            .environmentObject(AuthManager())
+            .environmentObject(AppNavigationManager.shared)
+            .environmentObject(LocationManager.shared)
     }
 }
-
-// 在登录成功的地方调用：
-// authManager.signIn()
-
-// 在需要登出的地方调用：
-// authManager.signOut()

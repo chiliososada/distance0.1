@@ -17,16 +17,41 @@ final class ProfileViewModel: ObservableObject {
     @Published var isLoadingMap = true
     
     private let coordinate = CLLocationCoordinate2D(latitude: 35.7433, longitude: 139.8476)
-    let userStats = UserStats(participantsCount: "1K+", viewedTopicsCount: "1M+")
-    let userProfile = UserProfile(
-        userId: "user123",
-        userName: "liu ziyuan",
-        location: "東京都 葛飾区 立石",
-        bio: "我是一个专注于前端开发的程序员",
-        avatarUrl: "sample1"
-    )
+    
+    var userProfile: UserProfile
     
     init() {
+        // 创建一个示例用户配置
+        self.userProfile = UserProfile(
+            id: "user123",
+            userName: "liu ziyuan",
+            email: "example@email.com",
+            phoneNumber: nil,
+            location: "東京都 葛飾区 立石",
+            bio: "我是一个专注于前端开发的程序员",
+            avatarUrl: "sample1",
+            settings: UserProfile.Settings(
+                nickname: "东京 it 小白",
+                bio: "美妙的生活由此开始~",
+                idNumber: "178385",
+                gender: .male,
+                birthDate: Date(),
+                notificationsEnabled: true,
+                privacySettings: UserProfile.Settings.PrivacySettings(
+                    isProfilePublic: true,
+                    showLocation: true,
+                    showOnlineStatus: true
+                )
+            ),
+            stats: UserProfile.UserStats(
+                participantsCount: 1200,
+                viewedTopicsCount: 1500000,
+                postsCount: 42,
+                followersCount: 358,
+                followingCount: 285
+            )
+        )
+        
         generateMapSnapshots()
     }
     

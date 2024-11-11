@@ -96,14 +96,7 @@ struct PostDetailView: View {
     private func handleBack() {
         
         navigationManager.goBack()
-//            if navigationManager.navigationPath.count > 1 {
-//                // 如果导航栈中有多个页面，只返回一级
-//                navigationManager.goBack()
-//            } else {
-//                // 如果只有一个页面，返回到最近的标签页
-//                navigationManager.navigateToTab(.nearby)
-//                navigationManager.clearNavigationPath()  // 使用 clearNavigationPath 替代 removeAll
-//            }
+
         }
        @State private var showError = false
        @State private var errorMessage = ""

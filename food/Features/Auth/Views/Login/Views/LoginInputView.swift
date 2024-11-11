@@ -91,19 +91,21 @@ struct LoginInputView: View {
     }
     
     private var nextButton: some View {
-        Button(action: {
-            navigationManager.navigate(to: .loginPassword(email: viewModel.inputData.email))
-        }) {
-            Text("下一步")
-                .font(.system(size: 12, weight: .medium))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 6)
-                .foregroundColor(.white)
-                .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
-                .cornerRadius(25)
-        }
-        .disabled(!viewModel.isLoginEnabled)
-    }
+          Button(action: {
+              if viewModel.validateAndProceed() {
+                  navigationManager.navigate(to: .loginPassword(email: viewModel.inputData.email))
+              }
+          }) {
+              Text("下一步")
+                  .font(.system(size: 12, weight: .medium))
+                  .padding(.horizontal, 16)
+                  .padding(.vertical, 6)
+                  .foregroundColor(.white)
+                  .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
+                  .cornerRadius(25)
+          }
+          .disabled(!viewModel.isLoginEnabled)
+      }
 }
 
 // MARK: - Preview

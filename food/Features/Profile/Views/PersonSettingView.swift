@@ -6,42 +6,65 @@ final class PersonSettingsState: ObservableObject {
     let appVersion: String = "1.2.8(171)"
     
     private let authManager: AuthManager
+    private let navigationManager: AppNavigationManager
+    private let tabBarManager: TabBarManager
     
-    init(authManager: AuthManager) {
+    init(authManager: AuthManager,
+         navigationManager: AppNavigationManager = .shared,
+         tabBarManager: TabBarManager) {
         self.authManager = authManager
+        self.navigationManager = navigationManager
+        self.tabBarManager = tabBarManager
     }
     
     func clearCache() {
-        // 实现清除缓存的逻辑
         cacheSize = "0M"
     }
     
     func checkUpdate() {
-        // 实现检查更新的逻辑
     }
     
+    @MainActor
     func logout() {
-        authManager.signOut()
-        navigateToLogin()
-    }
-    
-    func deleteAccount() {
-        // 删除账户的 API
-        authManager.signOut()
-        navigateToLogin()
-    }
-    
-    private func navigateToLogin() {
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            window.rootViewController = UIHostingController(
-                rootView: HomeLoginView()
+        do {
+            // 首先调用 Firebase 登出
+            try authManager.signOut()
+            
+            // 重置所有状态
+            authManager.updateStateOnMain()
+            navigationManager.resetNavigation()
+            tabBarManager.resetNavigationState()
+            
+            // 重置窗口根视图
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                let contentView = ContentView()
                     .environmentObject(authManager)
-                    .environmentObject(TabBarManager())
-            )
-            window.makeKeyAndVisible()
+                    .environmentObject(tabBarManager)
+                    .environmentObject(navigationManager)
+                    .environmentObject(LocationManager.shared)
+                
+                window.rootViewController = UIHostingController(rootView: contentView)
+                window.makeKeyAndVisible()
+            }
+        } catch {
+            print("Logout error: \(error.localizedDescription)")
         }
     }
+    
+    @MainActor
+        func deleteAccount() {
+            // 这里可以添加删除账户的具体逻辑
+            do {
+                // 如果有特定的删除账户 API，先调用它
+                // try await deleteUserAccount()
+                
+                // 然后执行登出操作
+                logout()
+            } catch {
+                print("Account deletion error: \(error.localizedDescription)")
+            }
+        }
 }
 
 // MARK: - 设置项组件
@@ -88,16 +111,19 @@ struct PersonSettingRow<Content: View>: View {
 struct PersonSettingsView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var navigationManager: AppNavigationManager
+    @EnvironmentObject var tabBarManager: TabBarManager
     @StateObject private var settingsState: PersonSettingsState
     @State private var showLogoutConfirmation = false
     @State private var showDeleteAccountConfirmation = false
     
-    
-       init(authManager: AuthManager? = nil) {
-           // 使用传入的 authManager 或创建一个新的
-           let manager = authManager ?? AuthManager()
-           _settingsState = StateObject(wrappedValue: PersonSettingsState(authManager: manager))
-       }
+    init() {
+        _settingsState = StateObject(wrappedValue: PersonSettingsState(
+            authManager: AuthManager(),
+            navigationManager: .shared,
+            tabBarManager: TabBarManager()
+        ))
+    }
     
     var body: some View {
         VStack {
@@ -116,7 +142,11 @@ struct PersonSettingsView: View {
             isPresented: $showLogoutConfirmation,
             titleVisibility: .visible
         ) {
-            Button("退出登录", role: .destructive, action: settingsState.logout)
+            Button("退出登录", role: .destructive) {
+                Task { @MainActor in
+                    settingsState.logout()
+                }
+            }
             Button("取消", role: .cancel) {}
         } message: {
             Text("确定要退出登录吗？")
@@ -126,12 +156,15 @@ struct PersonSettingsView: View {
             isPresented: $showDeleteAccountConfirmation,
             titleVisibility: .visible
         ) {
-            Button("注销账户", role: .destructive, action: settingsState.deleteAccount)
+            Button("注销账户", role: .destructive) {
+                Task { @MainActor in
+                    settingsState.deleteAccount()
+                }
+            }
             Button("取消", role: .cancel) {}
         } message: {
             Text("注销账户后将无法恢复，确定要继续吗？")
         }
-       
     }
     
     private var generalSettingsSection: some View {
@@ -196,6 +229,8 @@ struct SettingsView_Previews: PreviewProvider {
             PersonSettingsView()
                 .environmentObject(AuthManager())
                 .environmentObject(TabBarManager())
+                .environmentObject(AppNavigationManager.shared)
+                .environmentObject(LocationManager.shared)
         }
     }
 }

@@ -10,6 +10,9 @@
 		6891CD1D2CD0B053007B5FB1 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6891CD1C2CD0B053007B5FB1 /* MapItemPicker */; };
 		6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6893160D2CC6A7CA00FCD327 /* MapItemPicker */; };
 		68B64D012CDC6A6A00E41464 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 68B64D002CDC6A6A00E41464 /* MapItemPicker */; };
+		68B64D132CE07C4000E41464 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 68B64D122CE07C4000E41464 /* GoogleService-Info.plist */; };
+		68B64D162CE07D3900E41464 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 68B64D152CE07D3900E41464 /* FirebaseAnalytics */; };
+		68B64D182CE07D3900E41464 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 68B64D172CE07D3900E41464 /* FirebaseAuth */; };
 		68D87A1D2CD0AEB200AB9996 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 68D87A1C2CD0AEB200AB9996 /* MapItemPicker */; };
 		8821892D25BEC29B00820A7E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8821892C25BEC29B00820A7E /* Assets.xcassets */; };
 		8821893025BEC29B00820A7E /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8821892F25BEC29B00820A7E /* Preview Assets.xcassets */; };
@@ -41,6 +44,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		68B64D122CE07C4000E41464 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		8821892525BEC29900820A7E /* food.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = food.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		8821892C25BEC29B00820A7E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8821892F25BEC29B00820A7E /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
@@ -72,8 +76,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				68B64D012CDC6A6A00E41464 /* MapItemPicker in Frameworks */,
+				68B64D182CE07D3900E41464 /* FirebaseAuth in Frameworks */,
 				68D87A1D2CD0AEB200AB9996 /* MapItemPicker in Frameworks */,
 				6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */,
+				68B64D162CE07D3900E41464 /* FirebaseAnalytics in Frameworks */,
 				6891CD1D2CD0B053007B5FB1 /* MapItemPicker in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -125,6 +131,7 @@
 				6891D13A2CD797CC007B5FB1 /* Application */,
 				8821895F25BEC8EE00820A7E /* fonts */,
 				8821892C25BEC29B00820A7E /* Assets.xcassets */,
+				68B64D122CE07C4000E41464 /* GoogleService-Info.plist */,
 				8821893125BEC29B00820A7E /* Info.plist */,
 				8821892E25BEC29B00820A7E /* Preview Content */,
 			);
@@ -265,6 +272,7 @@
 			mainGroup = 8821891C25BEC29900820A7E;
 			packageReferences = (
 				68B64CFF2CDC6A6A00E41464 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */,
+				68B64D142CE07D3900E41464 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			productRefGroup = 8821892625BEC29900820A7E /* Products */;
 			projectDirPath = "";
@@ -284,6 +292,7 @@
 			files = (
 				8821896725BEC93500820A7E /* Hellix-Bold.ttf in Resources */,
 				884FDFB625C403E500B05042 /* gif.gif in Resources */,
+				68B64D132CE07C4000E41464 /* GoogleService-Info.plist in Resources */,
 				8821893025BEC29B00820A7E /* Preview Assets.xcassets in Resources */,
 				8821896625BEC93500820A7E /* Hellix-Thin.ttf in Resources */,
 				8821896925BEC93500820A7E /* Hellix-SemiBold.ttf in Resources */,
@@ -647,6 +656,14 @@
 				kind = branch;
 			};
 		};
+		68B64D142CE07D3900E41464 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.4.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -663,6 +680,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 68B64CFF2CDC6A6A00E41464 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */;
 			productName = MapItemPicker;
+		};
+		68B64D152CE07D3900E41464 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68B64D142CE07D3900E41464 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		68B64D172CE07D3900E41464 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 68B64D142CE07D3900E41464 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
 		};
 		68D87A1C2CD0AEB200AB9996 /* MapItemPicker */ = {
 			isa = XCSwiftPackageProductDependency;

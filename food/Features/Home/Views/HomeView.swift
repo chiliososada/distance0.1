@@ -8,7 +8,7 @@ import CoreLocation
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject var tabBarManager: TabBarManager
-    @EnvironmentObject private var navigationManager: AppNavigationManager
+    @EnvironmentObject var navigationManager: AppNavigationManager
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     var body: some View {
          Group {
@@ -19,6 +19,7 @@ struct HomeView: View {
              }
          }
      }
+ 
     private var mainNavigationView: some View {
         NavigationView {
             ZStack {
@@ -107,15 +108,11 @@ struct HomeView: View {
               }
               .accentColor(.black)
               .edgesIgnoringSafeArea(.bottom)
-              .toolbar(
-                              (!tabBarManager.isNavigatingInTab && !tabBarManager.isViewTabBarHidden) ? .visible : .hidden,
-                              for: .tabBar
-                          )
           }
       }
     
     private var homeTab: some View {
-         NavigationStack(path: $navigationManager.navigationPath) {
+        NavigationStack(path: $navigationManager.navigationPath) {
              VStack(spacing: 0) {
                  SearchAndFilterView(search: $viewModel.search)
                      .padding(.bottom, 10)
@@ -127,10 +124,14 @@ struct HomeView: View {
                  ) {
                      HomeTabContentView()
                          .navigationBarHidden(viewModel.isNavigationBarHidden)
-                         .navigationBarItems(
-                             leading: leadingNavBarItem,
-                             trailing: trailingNavBarItem
-                         )
+                         .toolbar {
+                             ToolbarItem(placement: .navigationBarLeading) {
+                                 leadingNavBarItem
+                             }
+                             ToolbarItem(placement: .navigationBarTrailing) {
+                                 trailingNavBarItem
+                             }
+                         }
                  }
              }
              .navigationDestination(for: AppRoute.self) { route in
@@ -155,13 +156,12 @@ struct HomeView: View {
                      sheetView(for: route)
                  }
              }
-         }
-        // HomeView中的TabBar控制
-        .toolbar(
+         }.toolbar(
             (viewModel.tabState == .hidden || tabBarManager.isViewTabBarHidden || tabBarManager.isNavigatingInTab) ? .hidden : .visible,
             for: .tabBar
         )
          .animation(.easeInOut(duration: 0.2), value: viewModel.tabState == .hidden)
+   
      }
     
     
@@ -238,7 +238,9 @@ struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
             .environmentObject(TabBarManager())
-            .environmentObject(AppNavigationManager.shared)
+                      .environmentObject(AuthManager())
+                      .environmentObject(AppNavigationManager.shared)
+                      .environmentObject(LocationManager.shared)
     }
 }
 

@@ -21,5 +21,5 @@ class TabBarManager: ObservableObject {
     func resetNavigationState() {
             isNavigatingInTab = false
             isViewTabBarHidden = false
-        }
+    }
 }

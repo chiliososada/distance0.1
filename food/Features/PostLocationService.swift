@@ -69,7 +69,7 @@ class PostLocationService: ObservableObject {
             locationName: "東京都 葛飾区 立石",
             latitude: 35.681236,
             longitude: 139.767125,
-            imageNames: ["sample1", "reco_2", "reco_3"],
+            imageNames: ["4_5", "sample1", "sample3", "sample4"],
             avatarImage: "sample2",
             tags: ["娱乐", "运动", "篮球"],
             participantsCount: 99,

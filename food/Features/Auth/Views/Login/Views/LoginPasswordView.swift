@@ -76,68 +76,52 @@ struct LoginPasswordView: View {
             placeholder: "密码"
         )
     }
-    
-//    private var loginSection: some View {
-//        Button {
-//            Task {
-//                await viewModel.login()
-//                if case .success = viewModel.authState {
-//                    viewModel.updateRootView(tabBarManager: tabBarManager)
-//                }
-//            }
-//        } label: {
-//            Text("登录")
-//                .font(.system(size: 18, weight: .medium))
-//                .frame(maxWidth: .infinity)
-//                .padding()
-//                .foregroundColor(.white)
-//                .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
-//                .cornerRadius(25)
-//        }
-//        .disabled(!viewModel.isLoginEnabled)
-//        .padding(.horizontal)
-//    }
     private var loginSection: some View {
-          Button(action: handleLogin) {
-              Text("登录")
-                  .font(.system(size: 18, weight: .medium))
-                  .frame(maxWidth: .infinity)
-                  .padding()
-                  .foregroundColor(.white)
-                  .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
-                  .cornerRadius(25)
-          }
-          .disabled(!viewModel.isLoginEnabled)
-          .padding(.horizontal)
-      }
+            Button(action: handleLogin) {
+                ZStack {
+                    Text("登录")
+                        .font(.system(size: 18, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .foregroundColor(.white)
+                        .background(viewModel.isLoginEnabled ? Color.black : Color.gray)
+                        .cornerRadius(25)
+                    
+                    if viewModel.isLoading {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                    }
+                }
+            }
+            .disabled(!viewModel.isLoginEnabled || viewModel.isLoading)
+            .padding(.horizontal)
+            .alert("错误", isPresented: $viewModel.showError) {
+                Button("确定", role: .cancel) { }
+            } message: {
+                Text(viewModel.errorMessage)
+            }
+        }
     
     private func handleLogin() {
-//            Task {
-//                viewModel.isLoading = true
+        Task {
+            if await viewModel.login() {
+                // 重置导航状态
+                navigationManager.resetNavigation()
                 
-               
-                 //   let success = try await viewModel.login()
+                // 切换到主页
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                   let window = windowScene.windows.first {
+                    let homeView = HomeView()
+                        .environmentObject(tabBarManager)
+                        .environmentObject(navigationManager)
+                        .environmentObject(AuthManager())
                     
-                   
-                        // 重置导航状态
-                        navigationManager.resetNavigation()
-                        
-                        // 切换到主页
-                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let window = windowScene.windows.first {
-                            
-                            let homeView = HomeView()
-                                .environmentObject(tabBarManager)
-                                .environmentObject(navigationManager)
-                            
-                            window.rootViewController = UIHostingController(rootView: homeView)
-                            window.makeKeyAndVisible()
-                        }
-                    
-                
-                viewModel.isLoading = false
-//            }
+                    window.rootViewController = UIHostingController(rootView: homeView)
+                    window.makeKeyAndVisible()
+                }
+            }
         }
+    }
     private var forgotPasswordButton: some View {
         Button(action: {
                  navigationManager.navigate(to: .forgetPassword)

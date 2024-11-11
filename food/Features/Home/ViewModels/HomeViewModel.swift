@@ -12,15 +12,16 @@ final class HomeViewModel: ObservableObject {
     @Published var selectedTab = 0
     @Published var isShowingPostInputView = false
     @Published var isViewTabBarHidden = false
-    @Published var tabState: Visibility = .visible
+   // @Published var tabState: Visibility = .visible
     @Published var showMenu = false
     @Published var offset: CGFloat = 0
     @Published var lastStoredOffset: CGFloat = 0
     @Published var search: String = ""
-    @Published var isNavigationBarHidden = false
+    //@Published var isNavigationBarHidden = false
     @Published var userLocationText = ""
     @Published var locationManager = LocationManager.shared
-    
+    @Published var isNavigationBarHidden: Bool = false // 明确设置初始值
+    @Published var tabState: Visibility = .visible  // 明确设置初始值
     private var isInteracting = false
     private var previousLocation: CLLocation?
     
@@ -30,6 +31,11 @@ final class HomeViewModel: ObservableObject {
           selectedTab == 0
       }
     
+    init() {
+           // 确保初始状态正确
+           isNavigationBarHidden = false
+           tabState = .visible
+       }
     // MARK: - Menu Control Methods
     func closeMenu() {
         guard !isInteracting else { return }

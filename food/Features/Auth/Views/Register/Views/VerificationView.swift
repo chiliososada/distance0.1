@@ -1,79 +1,150 @@
 import SwiftUI
-
-// 验证码管理状态
-final class VerificationState: ObservableObject {
-    @Published var code: [String] = Array(repeating: "", count: 6)
-    
-    var isComplete: Bool {
-        code.joined().count == 6
-    }
-    
-    func shouldAdvanceToNextField(at index: Int) -> Bool {
-        code[index].count == 1 && index < 5
-    }
-}
+import FirebaseAuth
 
 struct VerificationView: View {
     @Environment(\.presentationMode) var presentationMode
-    @StateObject private var verificationState = VerificationState()
-    @FocusState private var focusedField: Int?
+    @StateObject private var viewModel: VerificationViewModel
     @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var tabBarManager: TabBarManager
-    
-    let emailPlaceholder: String = "chiliososada@gmail.com"
-    
-    var body: some View {
-        VStack(spacing: 30) {
-            headerSection
-            codeInputSection
-            Spacer()
-            submitButton
+    @EnvironmentObject var authManager: AuthManager
+    let email: String
+        
+        init(email: String?) {
+            let currentUser = Auth.auth().currentUser
+            let userEmail = email ?? currentUser?.email ?? ""
+            
+            print("VerificationView init with userID: \(currentUser?.uid ?? "none")")
+            
+            self._viewModel = StateObject(wrappedValue: VerificationViewModel(
+                user: currentUser,
+                email: userEmail
+            ))
+            self.email = userEmail
         }
-        .navigationBarBackButtonHidden(true)
-        .navigationBarItems(leading: backButton)
+    
+    
+    // MARK: - Body
+    var body: some View {
+        ZStack {
+            VStack(spacing: 30) {
+                headerSection
+                emailInstructionsSection
+                resendSection
+                Spacer()
+                verifyButton
+            }
+            .padding(.horizontal)
+            .navigationBarBackButtonHidden(true)
+            .navigationBarItems(leading: backButton)
+            
+            if viewModel.isLoading {
+                loadingView
+            }
+        }
+        .alert("验证提示", isPresented: $viewModel.showError) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text(viewModel.errorMessage)
+        }
     }
     
+    // MARK: - UI Components
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("我们向你发送了一个代码")
+            Text("验证你的邮箱")
                 .font(.system(size: 28, weight: .bold))
                 .foregroundColor(.black)
             
-            Text("在下面输入以验证\(emailPlaceholder)")
+            Text("我们已发送验证邮件到：")
                 .font(.system(size: 16))
                 .foregroundColor(.gray)
+            
+            Text(email)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.black)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal)
         .padding(.top, 30)
     }
     
-    private var codeInputSection: some View {
-        HStack(spacing: 10) {
-            ForEach(0..<6, id: \.self) { index in
-                CodeInputBox(text: $verificationState.code[index])
-                    .focused($focusedField, equals: index)
-                    .onChange(of: verificationState.code[index]) {
-                        if verificationState.shouldAdvanceToNextField(at: index) {
-                            focusedField = index + 1
-                        }
-                    }
+    private var emailInstructionsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("请按以下步骤完成验证：")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(.black)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .top, spacing: 8) {
+                    Text("•").foregroundColor(.gray)
+                    Text("查看你的邮箱")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                }
+                
+                HStack(alignment: .top, spacing: 8) {
+                    Text("•").foregroundColor(.gray)
+                    Text("找到主题为验证你的邮箱的邮件")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                }
+                
+                HStack(alignment: .top, spacing: 8) {
+                    Text("•").foregroundColor(.gray)
+                    Text("点击邮件中的验证链接")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                }
+                
+                HStack(alignment: .top, spacing: 8) {
+                    Text("•").foregroundColor(.gray)
+                    Text("完成验证后点击下方验证按钮")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                }
             }
+            .padding(.leading)
+        }
+        .padding(.vertical)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    
+    private var resendSection: some View {
+        HStack {
+            Spacer()
+            if viewModel.showResendButton {
+                Button("重新发送验证邮件") {
+                    Task {
+                        await viewModel.resendVerificationEmail()
+                    }
+                }
+                .foregroundColor(.blue)
+                if viewModel.remainingAttempts < 5 {
+                    Text("(剩余\(viewModel.remainingAttempts)次)")
+                        .foregroundColor(.gray)
+                        .font(.caption)
+                }
+            } else {
+                Text("\(viewModel.countdown)秒后可重新发送")
+                    .foregroundColor(.gray)
+            }
+            Spacer()
         }
     }
     
-    private var submitButton: some View {
-        Button(action: handleVerificationSubmit) {
-            Text("完成")
+    var verifyButton: some View {
+        Button(action: {
+            print("Verify button tapped - Current user: \(Auth.auth().currentUser?.uid ?? "none")")
+            handleVerificationSubmit()
+        }) {
+            Text("验证")
                 .font(.system(size: 18, weight: .medium))
                 .frame(maxWidth: .infinity)
                 .padding()
                 .foregroundColor(.white)
-                .background(verificationState.isComplete ? Color.black : Color.gray)
+                .background(Color.black)
                 .cornerRadius(25)
         }
-        .disabled(!verificationState.isComplete)
-        .padding(.horizontal)
+        .disabled(viewModel.isLoading)
         .padding(.bottom, 10)
     }
     
@@ -84,54 +155,66 @@ struct VerificationView: View {
                 .foregroundColor(.black)
         }
     }
-    private func handleVerificationSubmit() {
-           Task {
-               // 开始加载状态（如果需要）
-               do {
-                   //let success = await verifyCode()
-                   if true {
-                       // 重置导航状态并切换到主页
-                       navigationManager.resetNavigation()
-                       
-                       // 切换根视图到 HomeView
-                       if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                          let window = windowScene.windows.first {
-                           window.rootViewController = UIHostingController(
-                               rootView: HomeView()
-                                   .environmentObject(navigationManager)
-                                   .environmentObject(tabBarManager)
-                           )
-                           window.makeKeyAndVisible()
-                       }
-                   } else {
-                       // 处理验证失败
-                       // 可以显示一个 alert 或其他错误提示
-                   }
-               } catch {
-                   // 处理错误
-                   print("Verification error: \(error)")
-               }
-           }
-       }
     
-    private func goToHomeView() {
-        guard verificationState.isComplete,
-              let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-              let window = windowScene.windows.first else { return }
-        
-        window.rootViewController = UIHostingController(
-            rootView: HomeView().environmentObject(tabBarManager)
-        )
-        window.makeKeyAndVisible()
+    private var loadingView: some View {
+        ZStack {
+            Color.black.opacity(0.4)
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(1.5)
+        }
+        .ignoresSafeArea()
+    }
+    
+    private func handleVerificationSubmit() {
+        Task {
+            do {
+                // 尝试先刷新 AuthManager 状态
+                await authManager.refreshUserStatus()
+                
+                print("Verification button tapped")
+                print("Current auth user: \(Auth.auth().currentUser?.uid ?? "none")")
+                
+                let success = try await viewModel.verifyEmail()
+                if success {
+                    // 确保认证状态更新
+                    await authManager.checkEmailVerification()
+                    
+                    if authManager.isEmailVerified {
+                        await MainActor.run {
+                            print("Navigation to home view")
+                            navigationManager.resetNavigation()
+                            
+                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                               let window = windowScene.windows.first {
+                                let homeView = HomeView()
+                                    .environmentObject(navigationManager)
+                                    .environmentObject(tabBarManager)
+                                    .environmentObject(authManager)
+                                
+                                window.rootViewController = UIHostingController(rootView: homeView)
+                                window.makeKeyAndVisible()
+                            }
+                        }
+                    }
+                }
+            } catch {
+                print("Verification error: \(error)")
+                viewModel.errorMessage = error.localizedDescription
+                viewModel.showError = true
+            }
+        }
     }
 }
 
-// MARK: - Previews
+// MARK: - Preview
 struct VerificationView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
-            VerificationView()
+            VerificationView(email: "example@example.com")
                 .environmentObject(TabBarManager())
+                .environmentObject(AppNavigationManager.shared)
+                .environmentObject(AuthManager())
         }
     }
 }

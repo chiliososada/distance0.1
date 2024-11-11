@@ -79,7 +79,7 @@ struct HomeLoginView: View {
             VStack(spacing: Layout.spacing * 2) {
                 AnimationSection()
                 TitleSection()
-                ButtonSection(navigationManager: navigationManager)
+                ButtonSection()
                 MarqueeSection()
             }
     }
@@ -102,7 +102,7 @@ private struct TitleSection: View {
 }
 
 struct ButtonSection: View {
-    let navigationManager: AppNavigationManager
+    @EnvironmentObject var navigationManager: AppNavigationManager
     
     var body: some View {
         HStack(spacing: Layout.spacing) {

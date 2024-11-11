@@ -1,13 +1,15 @@
 import SwiftUI
+import FirebaseAuth
+
 
 // MARK: - CreateAccountView
 struct CreateAccountView: View {
     // MARK: - Properties
-    @StateObject private var viewModel: CreateAccountViewModel
-    @Environment(\.presentationMode) var presentationMode
-    @EnvironmentObject var tabBarManager: TabBarManager
-    @FocusState private var focusedField: Field?
-    @EnvironmentObject var navigationManager: AppNavigationManager
+       @StateObject private var viewModel: CreateAccountViewModel
+       @Environment(\.presentationMode) var presentationMode
+       @EnvironmentObject var tabBarManager: TabBarManager
+       @FocusState private var focusedField: Field?
+       @EnvironmentObject var navigationManager: AppNavigationManager
     
     // MARK: - Focus Fields
     enum Field: Hashable {
@@ -26,10 +28,11 @@ struct CreateAccountView: View {
     }
  
     
+ 
     // MARK: - Initialization
-    init(emailOrPhone: String) {
-        _viewModel = StateObject(wrappedValue: CreateAccountViewModel(emailOrPhone: emailOrPhone))
-    }
+        init(emailOrPhone: String) {
+            _viewModel = StateObject(wrappedValue: CreateAccountViewModel(emailOrPhone: emailOrPhone))
+        }
     
     // MARK: - Body
     var body: some View {
@@ -54,17 +57,16 @@ struct CreateAccountView: View {
         }
         .navigationBarItems(leading: backButton, trailing: nextButton)
         .navigationBarBackButtonHidden(true)
-//        .navigationDestination(isPresented: $viewModel.navigateToVerification) {
-//            VerificationView()
-//        }
         .alert("提示", isPresented: $viewModel.showAlert) {
             Button("确定", role: .cancel) {}
         } message: {
             Text(viewModel.alertMessage)
         }
-        .onAppear {
-            viewModel.setupKeyboardObservers()
-        }
+        .overlay {
+                   if viewModel.isLoading {
+                       loadingView
+                   }
+               }
     }
     
     // MARK: - View Components
@@ -206,21 +208,60 @@ struct CreateAccountView: View {
     }
     
     private var nextButton: some View {
-        /*Button(action: { viewModel.createAccount() })*/
-        Button(action: handleNextButtonTap) {
+        Button {
+            Task {
+                await handleNextButtonTap()
+            }
+        } label: {
             Text("下一步")
                 .font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)
                 .foregroundColor(.white)
                 .background(viewModel.formData.isValid ? Color.black : Color.gray)
-                .cornerRadius(Layout.cornerRadius)
+                .cornerRadius(25)
         }
-        .disabled(!viewModel.formData.isValid)
+        .disabled(!viewModel.formData.isValid || viewModel.isLoading)
     }
-    private func handleNextButtonTap() {
-        viewModel.createAccount()
-        navigationManager.navigate(to: .verification)
+    
+    private var loadingView: some View {
+           ZStack {
+               Color.black.opacity(0.4)
+               ProgressView()
+                   .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                   .scaleEffect(1.5)
+           }
+           .edgesIgnoringSafeArea(.all)
+       }
+    
+    
+    private func handleNextButtonTap() async {
+        do {
+            try await viewModel.createAccount()
+            
+            // 确保在主线程执行导航
+            await MainActor.run {
+                print("Registration completed: \(viewModel.registrationComplete)")
+                if viewModel.registrationComplete {
+                    // 获取当前用户
+                    if let user = Auth.auth().currentUser {
+                        print("User exists before navigation: \(user.uid)")
+                        // 等待一小段时间确保 Firebase 状态已同步
+                        Task {
+                            try? await Task.sleep(nanoseconds: 1_000_000_000)
+                            print("Navigating to verification for email: \(viewModel.formData.emailOrPhone)")
+                            navigationManager.navigate(to: .verification(email: viewModel.formData.emailOrPhone))
+                        }
+                    } else {
+                        print("No user found before navigation")
+                        viewModel.alertMessage = "用户状态无效，请重试"
+                        viewModel.showAlert = true
+                    }
+                }
+            }
+        } catch {
+            print("Account creation error: \(error.localizedDescription)")
+        }
     }
 
 }
