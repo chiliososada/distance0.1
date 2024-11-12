@@ -266,36 +266,7 @@ struct ProfileEditorView: View {
     }
     
     private func handleSave() {
-//           // guard let userProfile = authManager.userProfile else { return }
-//
-//            // 创建新的Settings
-//            let newSettings = UserProfile.Settings(
-//                nickname: profileState.nickname,
-//                bio: profileState.bio,
-//                idNumber: profileState.idNumber,
-//                gender: profileState.selectedGender,
-//                birthDate: profileState.birthDate,
-//                notificationsEnabled: userProfile.settings.notificationsEnabled,
-//                privacySettings: userProfile.settings.privacySettings
-//            )
-//            
-//            // 更新用户配置文件
-//            var updatedProfile = userProfile
-//            updatedProfile.settings = newSettings
-//            updatedProfile.lastUpdated = Date()
-//            
-//            // 如果有新的头像图片，这里应该先上传图片
-//            // 然后更新avatarUrl
-//            if let newImage = profileState.selectedImage {
-//                // 处理图片上传
-//                // uploadImage(newImage) { url in
-//                //     updatedProfile.avatarUrl = url
-//                //     updateProfile(updatedProfile)
-//                // }
-//            }
-            
-            // 调用AuthManager更新用户配置
-            // authManager.updateProfile(updatedProfile)
+
             
             // 关闭编辑视图
             presentationMode.wrappedValue.dismiss()

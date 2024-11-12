@@ -8,7 +8,7 @@ final class AuthManager: ObservableObject {
     // MARK: - Published Properties
     @Published private(set) var isLoggedIn: Bool = false
     @Published private(set) var isEmailVerified: Bool = false  // 添加邮箱验证状态
-   // private var shouldAutoLogin = true  // 添加控制标志
+    // private var shouldAutoLogin = true  // 添加控制标志
     @Published private(set) var userProfile: UserProfile?
     @Published private(set) var authenticationState: AuthenticationState = .idle
     @Published private(set) var isLoading: Bool = false
@@ -41,11 +41,111 @@ final class AuthManager: ObservableObject {
         if auth.currentUser == nil {
             clearAuthState()
         }
-        
-        //setupAuthStateListener()
         loadUserProfile()
     }
     
+    
+    
+    /// 删除当前用户账户
+    @MainActor
+    func deleteAccount(password: String) async throws {
+        setLoading(true)
+        defer { setLoading(false) }
+        
+        guard let user = Auth.auth().currentUser else {
+            throw AuthError.noUserFound
+        }
+        
+        do {
+            // 1. 先重新验证用户
+            try await reauthenticateUser(with: password)
+            
+            // 2. 删除账户
+            try await user.delete()
+            
+            // 3. 使用与 signOut 相同的状态更新方法
+            updateStateOnMain()
+            
+            // 4. 通知其他组件账户已被删除
+            NotificationCenter.default.post(
+                name: NSNotification.Name("UserAccountDeleted"),
+                object: nil
+            )
+            
+        } catch let error as NSError {
+            switch error.code {
+            case AuthErrorCode.wrongPassword.rawValue:
+                throw AuthError.invalidPassword
+            case AuthErrorCode.networkError.rawValue:
+                throw AuthError.networkError
+            case AuthErrorCode.requiresRecentLogin.rawValue:
+                throw AuthError.unknown("需要重新登录后再试")
+            default:
+                handleAuthError(error)
+                throw error
+            }
+        }
+    }
+
+    
+    
+    @MainActor
+    func reauthenticateUser(with password: String) async throws {
+        setLoading(true)
+        defer { setLoading(false) }
+        
+        guard let user = Auth.auth().currentUser,
+              let email = user.email else {
+            throw AuthError.noUserFound
+        }
+        
+        do {
+            let credential = EmailAuthProvider.credential(
+                withEmail: email,
+                password: password
+            )
+            try await user.reauthenticate(with: credential)
+        } catch let error as NSError {
+            switch error.code {
+            case AuthErrorCode.wrongPassword.rawValue:
+                throw AuthError.invalidPassword
+            case AuthErrorCode.tooManyRequests.rawValue:
+                throw AuthError.tooManyRequests
+            case AuthErrorCode.networkError.rawValue:
+                throw AuthError.networkError
+            default:
+                handleAuthError(error)
+                throw AuthError.unknown(error.localizedDescription)
+            }
+        }
+    }
+    
+    /// 更新密码（包含重新验证）
+    @MainActor
+    func updatePassword(currentPassword: String, newPassword: String) async throws {
+        setLoading(true)
+        defer { setLoading(false) }
+        
+        guard let user = Auth.auth().currentUser else {
+            throw AuthError.noUserFound
+        }
+        
+        do {
+            // 1. 先重新验证用户
+            try await reauthenticateUser(with: currentPassword)
+            
+            // 2. 验证成功后更新密码
+            try await user.updatePassword(to: newPassword)
+        } catch let error as NSError {
+            switch error.code {
+            case AuthErrorCode.weakPassword.rawValue:
+                throw AuthError.weakPassword
+            default:
+                handleAuthError(error)
+                throw error
+            }
+        }
+    }
     // MARK: - Public Methods
     
     @MainActor
@@ -162,90 +262,55 @@ final class AuthManager: ObservableObject {
         
     }
     
-//    func resetPassword(for email: String) async throws {
-//        await MainActor.run { setLoading(true) }
-//        do {
-//            try await auth.sendPasswordReset(withEmail: email)
-//            await MainActor.run { setLoading(false) }
-//        } catch {
-//            await MainActor.run { [weak self] in
-//                self?.handleAuthError(error)
-//            }
-//            throw error
-//        }
-//    }
     @MainActor
-      func resetPassword(for email: String) async throws {
-          setLoading(true)
-          defer { setLoading(false) }
-          
-          do {
-              try await Auth.auth().sendPasswordReset(withEmail: email)
-          } catch {
-              handleAuthError(error)
-              throw error
-          }
-      }
-    
-    @MainActor
-     func signOut() throws {
-         setLoading(true)
-         defer { setLoading(false) }
-         
-         do {
-             try auth.signOut()
-             updateStateOnMain()
-         } catch {
-             handleAuthError(error)
-             throw error
-         }
-     }
-    
-    @MainActor
-        func refreshUserStatus() async {
-            print("Refreshing user status")
-            if let user = Auth.auth().currentUser {
-                do {
-                    print("Reloading user: \(user.uid)")
-                    try await user.reload()
-                    isLoggedIn = true
-                    isEmailVerified = user.isEmailVerified
-                } catch {
-                    print("Error reloading user: \(error)")
-                    clearAuthState()
-                }
-            } else {
-                print("No current user found")
-                clearAuthState()
-            }
-        }
-    
-    func updateProfile(_ profile: UserProfile) {
-        DispatchQueue.main.async { [weak self] in
-            self?.userProfile = profile
-            if let encoded = try? JSONEncoder().encode(profile) {
-                self?.userDefaults.set(encoded, forKey: Constants.userProfileKey)
-                self?.userDefaults.synchronize()
-            }
+    func resetPassword(for email: String) async throws {
+        setLoading(true)
+        defer { setLoading(false) }
+        
+        do {
+            try await Auth.auth().sendPasswordReset(withEmail: email)
+        } catch {
+            handleAuthError(error)
+            throw error
         }
     }
     
     @MainActor
-    func ensureUserAuthenticated() async -> Bool {
-        print("Checking user authentication")
+    func signOut() throws {
+        setLoading(true)
+        defer { setLoading(false) }
+        
+        do {
+            try auth.signOut()
+            updateStateOnMain()
+        } catch {
+            handleAuthError(error)
+            throw error
+        }
+    }
+    
+    @MainActor
+    func refreshUserStatus() async {
+        print("Refreshing user status")
         if let user = Auth.auth().currentUser {
             do {
                 print("Reloading user: \(user.uid)")
                 try await user.reload()
-                return Auth.auth().currentUser != nil
+                isLoggedIn = true
+                isEmailVerified = user.isEmailVerified
             } catch {
                 print("Error reloading user: \(error)")
-                return false
+                clearAuthState()
             }
+        } else {
+            print("No current user found")
+            clearAuthState()
         }
-        print("No user found in Auth")
-        return false
     }
+    
+    
+    
+    
     // 添加检查邮箱验证状态的方法
     @MainActor
     func checkEmailVerification() async {
@@ -278,103 +343,81 @@ final class AuthManager: ObservableObject {
         do {
             if let user = auth.currentUser {
                 try await user.reload()
+                // 检查用户是否存在
+                if user.uid.isEmpty {
+                    clearAuthState()
+                    return
+                }
                 isLoggedIn = true
                 isEmailVerified = user.isEmailVerified
-                
-                if !user.isEmailVerified {
-                    // 如果邮箱未验证，保持登录状态但标记邮箱未验证
-                    print("User logged in but email not verified")
-                }
             } else {
                 clearAuthState()
             }
         } catch {
-            try? auth.signOut()
             clearAuthState()
         }
     }
- 
-//    // MARK: - Private Methods
-//    private func setupAuthStateListener() {
-//        auth.addStateDidChangeListener { [weak self] _, user in
-//            DispatchQueue.main.async {
-//                self?.isLoggedIn = user != nil
-//                if user == nil {
-//                    self?.clearAuthState()
-//                }
-//            }
-//        }
-//    }
-    private func setupAuthStateListener() {
-         auth.addStateDidChangeListener { [weak self] _, user in
-             DispatchQueue.main.async {
-                 self?.isLoggedIn = user != nil
-                 self?.isEmailVerified = user?.isEmailVerified ?? false
-                 
-                 if user == nil {
-                     self?.clearAuthState()
-                 }
-             }
-         }
-     }
+    
+    
+    
     /// 更新推送令牌
-        @MainActor
-        func updatePushToken(_ token: String) async throws {
-            guard let user = auth.currentUser else {
-                throw AuthError.noUserFound
-            }
+    @MainActor
+    func updatePushToken(_ token: String) async throws {
+        guard let user = auth.currentUser else {
+            throw AuthError.noUserFound
+        }
+        
+        do {
+            // 保存令牌到 UserDefaults
+            userDefaults.set(token, forKey: AppConstants.UserDefaultsKeys.pushToken)
+            userDefaults.synchronize()
             
-            do {
-                // 保存令牌到 UserDefaults
-                userDefaults.set(token, forKey: AppConstants.UserDefaultsKeys.pushToken)
-                userDefaults.synchronize()
-                
-                // 这里可以添加将令牌更新到你的后端服务器的代码
-                /*
-                Example:
-                let data = ["pushToken": token]
-                try await updateUserData(userId: user.uid, data: data)
-                */
-                
-                print("Push token updated successfully: \(token)")
-            } catch {
-                print("Failed to update push token: \(error.localizedDescription)")
-                throw AuthError.unknown("Failed to update push token")
-            }
+            // 这里可以添加将令牌更新到你的后端服务器的代码
+            /*
+             Example:
+             let data = ["pushToken": token]
+             try await updateUserData(userId: user.uid, data: data)
+             */
+            
+            print("Push token updated successfully: \(token)")
+        } catch {
+            print("Failed to update push token: \(error.localizedDescription)")
+            throw AuthError.unknown("Failed to update push token")
         }
-        
-        /// 获取当前保存的推送令牌
-        func getCurrentPushToken() -> String? {
-            return userDefaults.string(forKey: AppConstants.UserDefaultsKeys.pushToken)
-        }
-        
-        /// 清除推送令牌
-        @MainActor
-        func clearPushToken() {
+    }
+    
+    /// 获取当前保存的推送令牌
+    func getCurrentPushToken() -> String? {
+        return userDefaults.string(forKey: AppConstants.UserDefaultsKeys.pushToken)
+    }
+    
+    /// 清除推送令牌
+    @MainActor
+    func clearPushToken() {
+        userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.pushToken)
+        userDefaults.synchronize()
+    }
+    
+    // 在 clearAuthState 方法中添加清除推送令牌的操作
+    func updateStateOnMain() {
+        if Thread.isMainThread {
+            isLoggedIn = false
+            isEmailVerified = false
+            userProfile = nil
+            authenticationState = .loggedOut
+            
+            // 清除所有存储的数据
+            userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.isLoggedIn)
+            userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.userProfile)
+            userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.authToken)
             userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.pushToken)
             userDefaults.synchronize()
-        }
-        
-        // 在 clearAuthState 方法中添加清除推送令牌的操作
-         func updateStateOnMain() {
-            if Thread.isMainThread {
-                isLoggedIn = false
-                isEmailVerified = false
-                userProfile = nil
-                authenticationState = .loggedOut
-                
-                // 清除所有存储的数据
-                userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.isLoggedIn)
-                userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.userProfile)
-                userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.authToken)
-                userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.pushToken)
-                userDefaults.synchronize()
-            } else {
-                DispatchQueue.main.async { [weak self] in
-                    self?.updateStateOnMain()
-                }
+        } else {
+            DispatchQueue.main.async { [weak self] in
+                self?.updateStateOnMain()
             }
         }
+    }
     private func clearAuthState() {
         if Thread.isMainThread {
             updateStateOnMain()
@@ -385,17 +428,6 @@ final class AuthManager: ObservableObject {
         }
     }
     
-//    func clearAuthState() {
-//           DispatchQueue.main.async { [weak self] in
-//               self?.isLoggedIn = false
-//               self?.isEmailVerified = false
-//               self?.userProfile = nil
-//               self?.userDefaults.removeObject(forKey: Constants.isLoggedInKey)
-//               self?.userDefaults.removeObject(forKey: Constants.userProfileKey)
-//               self?.userDefaults.removeObject(forKey: Constants.tokenKey)
-//               self?.userDefaults.synchronize()
-//           }
-//       }
     
     private func handleAuthError(_ error: Error) {
         DispatchQueue.main.async { [weak self] in
@@ -404,7 +436,7 @@ final class AuthManager: ObservableObject {
             self?.authenticationState = .failed(authError)
         }
     }
-
+    
     
     
     private func setLoading(_ loading: Bool) {

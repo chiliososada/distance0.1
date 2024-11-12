@@ -17,26 +17,27 @@ struct ContentView: View {
                     if authManager.isEmailVerified {
                         HomeView()
                             .onAppear {
-                                navigationManager.resetNavigation()
-                                tabBarManager.resetNavigationState()
-                              
-                                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                   let window = windowScene.windows.first {
-                                    // 使用已有的环境对象，而不是创建新的
-                                    let homeView = HomeView()
-                                        .environmentObject(tabBarManager)
-                                        .environmentObject(navigationManager)
-                                        .environmentObject(authManager)
-                                        .environmentObject(locationManager)
-                                    
-                                    window.rootViewController = UIHostingController(rootView: homeView)
-                                    window.makeKeyAndVisible()
+                                Task {
+                                    await authManager.checkAuthState()
+                                    // 只有在用户仍然登录且邮箱验证的情况下才执行重置操作
+                                    if authManager.isLoggedIn && authManager.isEmailVerified {
+                                        navigationManager.resetNavigation()
+                                        tabBarManager.resetNavigationState()
+                                        
+                                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                                           let window = windowScene.windows.first {
+                                            let homeView = HomeView()
+                                                .environmentObject(tabBarManager)
+                                                .environmentObject(navigationManager)
+                                                .environmentObject(authManager)
+                                                .environmentObject(locationManager)
+                                            
+                                            window.rootViewController = UIHostingController(rootView: homeView)
+                                            window.makeKeyAndVisible()
+                                        }
+                                    }
                                 }
                             }
-                        //                                     .environmentObject(TabBarManager())
-                        //                                     .environmentObject(AuthManager())
-                        //                                     .environmentObject(AppNavigationManager.shared)
-                        //                                     .environmentObject(LocationManager.shared)
                     } else {
                         VerificationView(email: Auth.auth().currentUser?.email)
                     }

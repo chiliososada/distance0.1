@@ -6,6 +6,9 @@ final class PasswordChangeState: ObservableObject {
     @Published var newPassword: String = ""
     @Published var confirmPassword: String = ""
     @Published var isPasswordVisible: Bool = false
+    @Published var isLoading: Bool = false
+    @Published var showAlert: Bool = false
+    @Published var alertMessage: String = ""
     
     var isValid: Bool {
         !currentPassword.isEmpty &&
@@ -13,6 +16,12 @@ final class PasswordChangeState: ObservableObject {
         !confirmPassword.isEmpty &&
         newPassword.count >= 8 &&
         newPassword == confirmPassword
+    }
+    
+    func clearFields() {
+        currentPassword = ""
+        newPassword = ""
+        confirmPassword = ""
     }
 }
 
@@ -52,6 +61,7 @@ struct PasswordField: View {
 struct PasswordChangeView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var passwordState = PasswordChangeState()
+    @StateObject private var authManager = AuthManager()
     
     var body: some View {
         VStack {
@@ -73,22 +83,32 @@ struct PasswordChangeView: View {
             trailing: submitButton
         )
         .navigationBarBackButtonHidden(true)
+        .alert("提示", isPresented: $passwordState.showAlert) {
+            Button("确定") {
+                if !passwordState.alertMessage.contains("错误") {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            }
+        } message: {
+            Text(passwordState.alertMessage)
+        }
+        .overlay {
+            if passwordState.isLoading {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .overlay {
+                        ProgressView()
+                            .tint(.white)
+                    }
+            }
+        }
     }
     
     private var currentPasswordField: some View {
         PasswordField(
             title: "当前密码",
             placeholder: "请输入当前密码",
-            text: $passwordState.currentPassword,
-            trailingContent: {
-                AnyView(
-                    Button(action: handleForgotPassword) {
-                        Text("忘记密码?")
-                            .font(.caption)
-                            .foregroundColor(.blue)
-                    }
-                )
-            }
+            text: $passwordState.currentPassword
         )
     }
     
@@ -126,18 +146,37 @@ struct PasswordChangeView: View {
                 .background(passwordState.isValid ? Color.black : Color.gray)
                 .cornerRadius(25)
         }
-        .disabled(!passwordState.isValid)
-    }
-    
-    private func handleForgotPassword() {
-        // 处理忘记密码逻辑
+        .disabled(!passwordState.isValid || passwordState.isLoading)
     }
     
     private func handleSubmit() {
-        // 处理密码更新提交逻辑
+        Task {
+            passwordState.isLoading = true
+            
+            do {
+                try await authManager.updatePassword(
+                    currentPassword: passwordState.currentPassword,
+                    newPassword: passwordState.newPassword
+                )
+                
+                await MainActor.run {
+                    passwordState.alertMessage = "密码更新成功"
+                    passwordState.showAlert = true
+                    passwordState.clearFields()
+                }
+            } catch {
+                await MainActor.run {
+                    passwordState.alertMessage = error.localizedDescription
+                    passwordState.showAlert = true
+                }
+            }
+            
+            await MainActor.run {
+                passwordState.isLoading = false
+            }
+        }
     }
 }
-
 // MARK: - Previews
 struct UpdatePasswordView_Previews: PreviewProvider {
     static var previews: some View {
