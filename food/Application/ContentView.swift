@@ -10,18 +10,25 @@ struct ContentView: View {
     @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var locationManager: LocationManager
     @State private var isFirstLaunch = true  // 用于追踪当前会话的首次加载
+    @State private var isCheckingAuth = true  // 添加加载状态
    @AppStorage("hasCompletedInitialLaunch") private var hasCompletedInitialLaunch = false
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {
             Group {
-                if authManager.isLoggedIn {
-                    if authManager.isEmailVerified {
-                        HomeView()
-                    } else {
-                        VerificationView(email: Auth.auth().currentUser?.email)
-                    }
+                if isCheckingAuth {
+                // 显示加载视图
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle())
                 } else {
-                    HomeLoginView()
+                    if authManager.isLoggedIn {
+                        if authManager.isEmailVerified {
+                            HomeView()
+                        } else {
+                            VerificationView(email: Auth.auth().currentUser?.email)
+                        }
+                    } else {
+                        HomeLoginView()
+                    }
                 }
             }
             .navigationDestination(for: AppRoute.self) { route in
@@ -76,7 +83,8 @@ struct ContentView: View {
                 // 只在当前会话的首次启动时执行一次
                 guard isFirstLaunch else { return }
                 isFirstLaunch = false
-                
+                // 开始检查认证状态
+                 isCheckingAuth = true
                 if !hasCompletedInitialLaunch {
                     print("First time app launch, performing full setup")
                     await performInitialSetup()
@@ -85,6 +93,7 @@ struct ContentView: View {
                     print("Checking auth state on subsequent launch")
                     await verifyAuthState()
                 }
+                isCheckingAuth = false
             }
         }
     }
