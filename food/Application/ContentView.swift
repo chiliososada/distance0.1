@@ -11,7 +11,8 @@ struct ContentView: View {
     @EnvironmentObject var locationManager: LocationManager
     @State private var isFirstLaunch = true  // 用于追踪当前会话的首次加载
     @State private var isCheckingAuth = true  // 添加加载状态
-   @AppStorage("hasCompletedInitialLaunch") private var hasCompletedInitialLaunch = false
+    @AppStorage("hasCompletedInitialLaunch") private var hasCompletedInitialLaunch = false
+    @Environment(\.scenePhase) private var scenePhase
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {
             Group {
@@ -94,7 +95,21 @@ struct ContentView: View {
                     await verifyAuthState()
                 }
                 isCheckingAuth = false
-            }
+            }// 后加的减少不必要的网络请求
+            .onChange(of: scenePhase) { oldPhase, newPhase in
+                        if newPhase == .active {
+                            // 只在特定条件下验证认证状态
+                            if authManager.isLoggedIn {
+                                Task {
+                                    // 检查是否需要刷新认证状态
+                                    if await shouldRefreshAuth() {
+                                        print("Refreshing auth state after background")
+                                        await verifyAuthState()
+                                    }
+                                }
+                            }
+                        }
+                    }
         }
     }
     // 完整的初始化流程，只在首次启动时执行
@@ -114,12 +129,22 @@ struct ContentView: View {
                 }
             }
         }
-        
+    // 判断是否需要刷新认证状态
+      private func shouldRefreshAuth() async -> Bool {
+          // 检查上次验证时间
+          if let lastVerification = UserDefaults.standard.object(forKey: "lastAuthVerification") as? Date {
+              let timeInterval = Date().timeIntervalSince(lastVerification)
+              // 如果距离上次验证超过30分钟，才需要重新验证
+              return timeInterval > 1800 // 30分钟
+          }
+          return true
+      }
         // 简单的认证状态验证，用于后续启动
         private func verifyAuthState() async {
             print("Verifying auth state")
             await authManager.checkAuthState()
-            
+            // 记录验证时间
+           UserDefaults.standard.set(Date(), forKey: "lastAuthVerification")
             if authManager.isLoggedIn && authManager.isEmailVerified {
                 print("User is verified, updating view")
                 await MainActor.run {
