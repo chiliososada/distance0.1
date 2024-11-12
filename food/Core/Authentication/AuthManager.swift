@@ -66,11 +66,11 @@ final class AuthManager: ObservableObject {
             // 3. 使用与 signOut 相同的状态更新方法
             updateStateOnMain()
             
-            // 4. 通知其他组件账户已被删除
-            NotificationCenter.default.post(
-                name: NSNotification.Name("UserAccountDeleted"),
-                object: nil
-            )
+//            // 4. 通知其他组件账户已被删除
+//            NotificationCenter.default.post(
+//                name: NSNotification.Name("UserAccountDeleted"),
+//                object: nil
+//            )
             
         } catch let error as NSError {
             switch error.code {
@@ -411,6 +411,7 @@ final class AuthManager: ObservableObject {
             userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.userProfile)
             userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.authToken)
             userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.pushToken)
+            userDefaults.removeObject(forKey: "hasCompletedInitialLaunch")
             userDefaults.synchronize()
         } else {
             DispatchQueue.main.async { [weak self] in

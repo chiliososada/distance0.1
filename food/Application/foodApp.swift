@@ -1,10 +1,3 @@
-//
-//  foodApp.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/10.
-//
-
 import SwiftUI
 import MapKit
 import CoreLocation
@@ -28,11 +21,8 @@ struct foodApp: App {
                 .environmentObject(authManager)
                 .environmentObject(navigationManager)
                 .environmentObject(locationManager)
-                .onChange(of: scenePhase) { oldPhase, newPhase in
+                .onChange(of: scenePhase) { _, newPhase in
                     handleScenePhase(newPhase)
-                }
-                .task {
-                    await authManager.checkAuthState()
                 }
         }
     }
@@ -40,10 +30,7 @@ struct foodApp: App {
     private func handleScenePhase(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            Task {
-                await authManager.refreshUserStatus()
-                locationManager.requestLocationPermissionIfNeeded()
-            }
+            locationManager.requestLocationPermissionIfNeeded()
         case .inactive:
             UserDefaults.standard.synchronize()
         case .background:
@@ -54,32 +41,6 @@ struct foodApp: App {
     }
 }
 
-// MARK: - Scene Phase Handlers
-private extension foodApp {
-    /// 处理应用程序进入活动状态
-    func handleActivePhase() {
-        Task {
-            // 刷新用户状态
-            await authManager.refreshUserStatus()
-            // 请求位置权限（如果需要）
-            locationManager.requestLocationPermissionIfNeeded()
-        }
-    }
-    
-    /// 处理应用程序进入非活动状态
-    func handleInactivePhase() {
-        // 同步用户默认设置
-        UserDefaults.standard.synchronize()
-    }
-    
-    /// 处理应用程序进入后台状态
-    func handleBackgroundPhase() {
-        // 停止位置更新
-        locationManager.stopUpdatingLocation()
-    }
-}
-
-// MARK: - Preview Provider
 #if DEBUG
 struct foodApp_Previews: PreviewProvider {
     static var previews: some View {

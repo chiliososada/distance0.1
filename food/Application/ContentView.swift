@@ -9,35 +9,14 @@ struct ContentView: View {
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var locationManager: LocationManager
-    
+    @State private var isFirstLaunch = true  // 用于追踪当前会话的首次加载
+   @AppStorage("hasCompletedInitialLaunch") private var hasCompletedInitialLaunch = false
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {
             Group {
                 if authManager.isLoggedIn {
                     if authManager.isEmailVerified {
                         HomeView()
-                            .onAppear {
-                                Task {
-                                    await authManager.checkAuthState()
-                                    // 只有在用户仍然登录且邮箱验证的情况下才执行重置操作
-                                    if authManager.isLoggedIn && authManager.isEmailVerified {
-                                        navigationManager.resetNavigation()
-                                        tabBarManager.resetNavigationState()
-                                        
-                                        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                                           let window = windowScene.windows.first {
-                                            let homeView = HomeView()
-                                                .environmentObject(tabBarManager)
-                                                .environmentObject(navigationManager)
-                                                .environmentObject(authManager)
-                                                .environmentObject(locationManager)
-                                            
-                                            window.rootViewController = UIHostingController(rootView: homeView)
-                                            window.makeKeyAndVisible()
-                                        }
-                                    }
-                                }
-                            }
                     } else {
                         VerificationView(email: Auth.auth().currentUser?.email)
                     }
@@ -63,12 +42,6 @@ struct ContentView: View {
                     PasswordChangedView()
                 case .forgetPassword:
                     ForgetPasswordView()
-                    //                case .foundEmail(let email):
-                    //                    FoundEmailView(email: email)
-                    //                case .forgetCode(let email):
-                    //                    ForgetCodeInputView(email: email)
-                    //                case .getNewPassword:
-                    //                    GetNewPasswordView()
                 case .profileEditor:
                     ProfileEditorView()
                 case .settings:
@@ -99,16 +72,70 @@ struct ContentView: View {
                         EmptyView()
                     }
                 }
-            }
-            .task {
-                // 在视图加载时检查认证状态
-                await authManager.checkAuthState()
-                if authManager.isLoggedIn {
-                    await authManager.checkEmailVerification()
+            } .task {
+                // 只在当前会话的首次启动时执行一次
+                guard isFirstLaunch else { return }
+                isFirstLaunch = false
+                
+                if !hasCompletedInitialLaunch {
+                    print("First time app launch, performing full setup")
+                    await performInitialSetup()
+                    hasCompletedInitialLaunch = true
+                } else {
+                    print("Checking auth state on subsequent launch")
+                    await verifyAuthState()
                 }
             }
         }
     }
+    // 完整的初始化流程，只在首次启动时执行
+        private func performInitialSetup() async {
+            print("Performing initial setup")
+            await authManager.checkAuthState()
+            
+            if authManager.isLoggedIn {
+                print("User is logged in, checking email verification")
+                await authManager.checkEmailVerification()
+                
+                if authManager.isLoggedIn && authManager.isEmailVerified {
+                    print("User is verified, setting up HomeView")
+                    await MainActor.run {
+                        setupHomeView()
+                    }
+                }
+            }
+        }
+        
+        // 简单的认证状态验证，用于后续启动
+        private func verifyAuthState() async {
+            print("Verifying auth state")
+            await authManager.checkAuthState()
+            
+            if authManager.isLoggedIn && authManager.isEmailVerified {
+                print("User is verified, updating view")
+                await MainActor.run {
+                    setupHomeView()
+                }
+            }
+        }
+        
+        private func setupHomeView() {
+            print("Setting up HomeView")
+            navigationManager.resetNavigation()
+            tabBarManager.resetNavigationState()
+            
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first {
+                let homeView = HomeView()
+                    .environmentObject(tabBarManager)
+                    .environmentObject(navigationManager)
+                    .environmentObject(authManager)
+                    .environmentObject(locationManager)
+                
+                window.rootViewController = UIHostingController(rootView: homeView)
+                window.makeKeyAndVisible()
+            }
+        }
 }
 
 // MARK: - Preview Provider
