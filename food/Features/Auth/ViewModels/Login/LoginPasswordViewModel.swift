@@ -40,6 +40,7 @@ final class LoginPasswordViewModel: ObservableObject {
     /// - Returns: 登录是否成功
     @MainActor
     func login() async -> Bool {
+        print("login")
         // 验证密码不为空
         guard !authData.password.isEmpty else {
             errorMessage = "请输入密码"

@@ -25,7 +25,7 @@ struct PostInputView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 ScrollView {
                     VStack(spacing: Layout.spacing) {
@@ -75,15 +75,17 @@ struct PostInputView: View {
                 }
             }
             .navigationBarItems(
-                leading: DismissButton(
-                    dismiss: dismiss,
-                    selectedTab: .home,
-                    isPresented: $isPresented,
-                    viewModel: viewModel
-                ),
-                trailing: PublishButton(showSecondView: $viewModel.showSecondView)
-            )
-         
+                           leading: DismissButton(
+                               dismiss: dismiss,
+                               selectedTab: .home,
+                               isPresented: $isPresented,
+                               viewModel: viewModel
+                           ),
+                           trailing: NextStepButton(viewModel: viewModel)
+                       )
+            .navigationDestination(isPresented: $viewModel.showSecondView) {
+                           PublishBlogView(viewModel: viewModel)
+                       }
             .onChange(of: focusedField) { oldValue, newValue in
                 viewModel.focusedField = newValue
             }
@@ -124,7 +126,24 @@ struct ImageGridSection: View {
         }
     }
 }
-
+// 新的下一步按钮组件
+struct NextStepButton: View {
+    @ObservedObject var viewModel: PostInputViewModel
+    
+    var body: some View {
+        Button(action: {
+            viewModel.showSecondView = true
+        }) {
+            Text("下一步")
+                .font(.system(size: 12, weight: .medium))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 6)
+                .foregroundColor(.white)
+                .background(Color.black)
+                .cornerRadius(25)
+        }
+    }
+}
 struct TitleInputSection: View {
     @Binding var title: String
     @FocusState.Binding var focusedField: PostInputViewModel.FocusField?
@@ -353,36 +372,13 @@ struct ToolbarButton: View {
         }
     }
 }
-//// MARK: - Navigation Bar Components
-//struct DismissButton: View {
-//    let dismiss: DismissAction
-//    let selectedTab: TabRoute  // Change to TabRoute type
-//    @Binding var isPresented: Bool
-//    
-//    var body: some View {
-//        Button(action: handleDismiss) {
-//            Image(systemName: "xmark")
-//                .font(.title2)
-//                .foregroundColor(.black)
-//        }
-//    }
-//    
-//    private func handleDismiss() {
-//        withAnimation {
-//            AppNavigationManager.shared.switchTab(to: selectedTab) // Use the navigation manager to switch tabs
-//            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-//                isPresented = false
-//                dismiss()
-//            }
-//        }
-//    }
-//}
+
 struct PublishButton: View {
     @Binding var showSecondView: Bool
     
     var body: some View {
         Button(action: { showSecondView = true }) {
-            Text("发布")
+            Text("下一步")
                 .font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 6)

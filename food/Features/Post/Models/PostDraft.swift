@@ -6,10 +6,14 @@
 //
 import Foundation
 
-struct PostDraft: Codable {
-    let title: String
-    let content: String
-    let location: String
-    let tags: [String]
-    let imageNames: [String]  // 仅存储图片名称/标识符
-}
+// 更新草稿结构
+  struct BlogDraft: Codable {
+      let title: String
+      let content: String
+      let location: String
+      let tags: [String]
+      let imageNames: [String]
+      let selectedDuration: String
+      let chatRoomEnabled: Bool
+      let announcement: String
+  }

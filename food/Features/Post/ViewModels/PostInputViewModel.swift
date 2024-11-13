@@ -63,6 +63,21 @@ final class PostInputViewModel: ObservableObject {
         
 
     
+    
+    // 添加发布设置相关状态
+       @Published var selectedDuration: String = "1 Month"
+       @Published var chatRoomEnabled: Bool = false
+       @Published var announcement: String = ""
+       @Published var showingDurationInfo = false
+       @Published var showingChatInfo = false
+       
+       //添加发布状态
+       @Published var isPublishing: Bool = false
+       @Published var showPublishSuccess: Bool = false
+       @Published var showPublishError: Bool = false
+    
+    
+    
     private var tagDeleteObserver: NSObjectProtocol?
     
     // 添加焦点追踪
@@ -270,63 +285,86 @@ final class PostInputViewModel: ObservableObject {
           }
           
           // 2. 创建 PostDraft 对象
-          let draft = PostDraft(
-              title: title,
-              content: content,
-              location: userLocationText,
-              tags: selectedTags,
-              imageNames: imageIdentifiers  // 使用保存后的图片标识符
-          )
+        // 创建包含所有数据的草稿
+             let draft = BlogDraft(
+                 title: title,
+                 content: content,
+                 location: userLocationText,
+                 tags: selectedTags,
+                 imageNames: imageIdentifiers,
+                 selectedDuration: selectedDuration,
+                 chatRoomEnabled: chatRoomEnabled,
+                 announcement: announcement
+             )
           
           // 3. 将草稿数据保存到 UserDefaults
           if let encoded = try? JSONEncoder().encode(draft) {
-              UserDefaults.standard.set(encoded, forKey: "post_draft")
+              UserDefaults.standard.set(encoded, forKey: "blog_draft")
           }
       }
         
         // 加载草稿
-     func loadDraft() {
-           // 1. 从 UserDefaults 加载草稿数据
-           guard let data = UserDefaults.standard.data(forKey: "post_draft"),
-                 let draft = try? JSONDecoder().decode(PostDraft.self, from: data) else {
-               return
-           }
-           
-           // 2. 设置基本数据
-           title = draft.title
-           content = draft.content
-           userLocationText = draft.location
-           selectedTags = draft.tags
-           
-           // 3. 加载图片
-           selectedImages = draft.imageNames.compactMap { identifier in
-               DraftImageManager.shared.loadImage(identifier: identifier)
-           }
-       }
+    func loadDraft() {
+          guard let data = UserDefaults.standard.data(forKey: "blog_draft"),
+                let draft = try? JSONDecoder().decode(BlogDraft.self, from: data) else {
+              return
+          }
+          
+          // 加载所有数据
+          title = draft.title
+          content = draft.content
+          userLocationText = draft.location
+          selectedTags = draft.tags
+          selectedDuration = draft.selectedDuration
+          chatRoomEnabled = draft.chatRoomEnabled
+          announcement = draft.announcement
+          
+          // 加载图片
+          selectedImages = draft.imageNames.compactMap { identifier in
+              DraftImageManager.shared.loadImage(identifier: identifier)
+          }
+      }
         
         // 清除草稿
     func clearDraft() {
-         // 1. 清除 UserDefaults 中的数据
-         UserDefaults.standard.removeObject(forKey: "post_draft")
-         
-         // 2. 清除所有保存的图片
-         DraftImageManager.shared.clearAllDraftImages()
-         
-         // 3. 重置视图模型的状态
-         title = ""
-         content = ""
-         userLocationText = ""
-         selectedTags = []
-         selectedImages = []
-     }
+           UserDefaults.standard.removeObject(forKey: "blog_draft")
+           DraftImageManager.shared.clearAllDraftImages()
+           
+           // 重置所有状态
+           title = ""
+           content = ""
+           userLocationText = ""
+           selectedTags = []
+           selectedImages = []
+           selectedDuration = "1 Month"
+           chatRoomEnabled = false
+           announcement = ""
+       }
     // 检查是否存在草稿
       func hasDraft() -> Bool {
-          return UserDefaults.standard.data(forKey: "post_draft") != nil
+          return UserDefaults.standard.data(forKey: "blog_draft") != nil
       }
     // 初始化时检查并加载草稿
     func checkAndLoadDraft() {
            if hasDraft() {
                loadDraft()
+           }
+       }
+    
+    
+    // 发布相关方法
+       func publishBlog(completion: @escaping (Bool) -> Void) {
+           isPublishing = true
+           
+           // 这里添加实际的发布逻辑
+           // 模拟网络请求
+           DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+               self.isPublishing = false
+               self.showPublishSuccess = true
+               completion(true)
+               
+               // 发布成功后清除草稿
+               self.clearDraft()
            }
        }
 }
