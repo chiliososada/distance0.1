@@ -294,8 +294,9 @@ final class AuthManager: ObservableObject {
         print("Refreshing user status")
         if let user = Auth.auth().currentUser {
             do {
-                print("Reloading user: \(user.uid)")
+               
                 try await user.reload()
+                print("Reloading user: \(user.uid)")
                 isLoggedIn = true
                 isEmailVerified = user.isEmailVerified
             } catch {
@@ -322,9 +323,9 @@ final class AuthManager: ObservableObject {
         }
         
         do {
-            print("Reloading user: \(user.uid)")
+           
             try await user.reload()
-            
+            print("Reloading user: \(user.uid)")
             if let updatedUser = Auth.auth().currentUser {
                 isEmailVerified = updatedUser.isEmailVerified
                 print("Updated verification status: \(isEmailVerified)")

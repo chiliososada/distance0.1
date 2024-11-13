@@ -12,7 +12,7 @@ import MapItemPicker
 
 // MARK: - Main View
 struct PostInputView: View {
-    @StateObject private var viewModel = PostInputViewModel()
+       @StateObject private var viewModel = PostInputViewModel()
        @Environment(\.dismiss) private var dismiss
        @Binding var isPresented: Bool
        @Binding var selectedTab: TabRoute  // Change from Int to TabRoute
