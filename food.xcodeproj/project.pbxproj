@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		6891CD1D2CD0B053007B5FB1 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6891CD1C2CD0B053007B5FB1 /* MapItemPicker */; };
 		6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 6893160D2CC6A7CA00FCD327 /* MapItemPicker */; };
+		689DE0AA2CE4E24800474E52 /* KeychainAccess in Frameworks */ = {isa = PBXBuildFile; productRef = 689DE0A92CE4E24800474E52 /* KeychainAccess */; };
 		68B64D012CDC6A6A00E41464 /* MapItemPicker in Frameworks */ = {isa = PBXBuildFile; productRef = 68B64D002CDC6A6A00E41464 /* MapItemPicker */; };
 		68B64D132CE07C4000E41464 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 68B64D122CE07C4000E41464 /* GoogleService-Info.plist */; };
 		68B64D162CE07D3900E41464 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 68B64D152CE07D3900E41464 /* FirebaseAnalytics */; };
@@ -77,6 +78,7 @@
 			files = (
 				68B64D012CDC6A6A00E41464 /* MapItemPicker in Frameworks */,
 				68B64D182CE07D3900E41464 /* FirebaseAuth in Frameworks */,
+				689DE0AA2CE4E24800474E52 /* KeychainAccess in Frameworks */,
 				68D87A1D2CD0AEB200AB9996 /* MapItemPicker in Frameworks */,
 				6893160E2CC6A7CA00FCD327 /* MapItemPicker in Frameworks */,
 				68B64D162CE07D3900E41464 /* FirebaseAnalytics in Frameworks */,
@@ -273,6 +275,7 @@
 			packageReferences = (
 				68B64CFF2CDC6A6A00E41464 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */,
 				68B64D142CE07D3900E41464 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				689DE0A82CE4E24800474E52 /* XCRemoteSwiftPackageReference "KeychainAccess" */,
 			);
 			productRefGroup = 8821892625BEC29900820A7E /* Products */;
 			projectDirPath = "";
@@ -648,6 +651,14 @@
 				minimumVersion = 2.0.0;
 			};
 		};
+		689DE0A82CE4E24800474E52 /* XCRemoteSwiftPackageReference "KeychainAccess" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kishikawakatsumi/KeychainAccess";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
 		68B64CFF2CDC6A6A00E41464 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/chiliososada/swiftui-map-item-picker.git";
@@ -675,6 +686,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 6893160C2CC6A7CA00FCD327 /* XCRemoteSwiftPackageReference "swiftui-map-item-picker" */;
 			productName = MapItemPicker;
+		};
+		689DE0A92CE4E24800474E52 /* KeychainAccess */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 689DE0A82CE4E24800474E52 /* XCRemoteSwiftPackageReference "KeychainAccess" */;
+			productName = KeychainAccess;
 		};
 		68B64D002CDC6A6A00E41464 /* MapItemPicker */ = {
 			isa = XCSwiftPackageProductDependency;

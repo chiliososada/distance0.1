@@ -2,6 +2,7 @@ import SwiftUI
 import FirebaseAuth
 import Combine
 
+@MainActor
 final class VerificationViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var isLoading = false
@@ -32,51 +33,50 @@ final class VerificationViewModel: ObservableObject {
     }
     
     // MARK: - Public Methods
-    @MainActor
+   
     func verifyEmail() async throws -> Bool {
-        print("Starting verification process...")
-        print("Stored userID: \(userID ?? "none")")
-        
-        // 直接使用 currentUser
-        guard let user = Auth.auth().currentUser else {
-            print("No user found in verifyEmail")
-            errorMessage = "用户未登录"
-            showError = true
-            return false
-        }
-        
-        isLoading = true
-        defer { isLoading = false }
-        
-        do {
-            // 多次尝试验证
-            for attempt in 1...3 {
-                print("Verification attempt \(attempt) for user: \(user.uid)")
-                
-                try await user.reload()
-                
-                // 重新获取用户状态
-                if let freshUser = Auth.auth().currentUser, freshUser.isEmailVerified {
-                    print("Email verified successfully for user: \(freshUser.uid)")
-                    userID = freshUser.uid  // 更新存储的用户ID
-                    return true
-                }
-                
-                if attempt < 3 {
-                    try await Task.sleep(nanoseconds: 2_000_000_000)
-                }
+            print("Starting verification process...")
+            print("Stored userID: \(userID ?? "none")")
+            
+            guard let user = Auth.auth().currentUser else {
+                print("No user found in verifyEmail")
+                errorMessage = "用户未登录"
+                showError = true
+                return false
             }
             
-            errorMessage = "邮箱尚未验证，请查看邮箱并点击验证链接"
-            showError = true
-            return false
+            isLoading = true
+            defer { isLoading = false }
             
-        } catch {
-            print("Verification error: \(error)")
-            handleError(error)
-            return false
+            do {
+                // 多次尝试验证
+                for attempt in 1...3 {
+                    print("Verification attempt \(attempt) for user: \(user.uid)")
+                    
+                    try await user.reload()
+                    
+                    // 重新获取用户状态
+                    if let freshUser = Auth.auth().currentUser, freshUser.isEmailVerified {
+                        print("Email verified successfully for user: \(freshUser.uid)")
+                        userID = freshUser.uid
+                        return true
+                    }
+                    
+                    if attempt < 3 {
+                        try await Task.sleep(nanoseconds: 2_000_000_000)
+                    }
+                }
+                
+                errorMessage = "邮箱尚未验证，请查看邮箱并点击验证链接"
+                showError = true
+                return false
+                
+            } catch {
+                print("Verification error: \(error)")
+                handleError(error)
+                return false
+            }
         }
-    }
     
     @MainActor
     func resendVerificationEmail() async {

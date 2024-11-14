@@ -1,23 +1,16 @@
-//
-//  AppDelegate.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/10.
-//
-
 import SwiftUI
 import UserNotifications
-import CoreLocation
 import FirebaseCore
+
 /// 应用程序委托类，负责处理应用程序级别的事件和设置
 /// - 管理应用程序生命周期
 /// - 处理远程通知
-/// - 配置应用程序设置
+/// - 配置全局服务（Firebase、日志、网络监控等）
 class AppDelegate: NSObject, UIApplicationDelegate {
     
     // MARK: - Application Lifecycle
     
-    /// 应用程序启动时调用
+    /// 应用程序启动时调用，负责初始化核心服务
     /// - Parameters:
     ///   - application: UIApplication实例
     ///   - launchOptions: 启动选项字典
@@ -26,7 +19,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // 初始化 Firebase，添加在 setupApp() 之前
+        // 初始化 Firebase
         FirebaseApp.configure()
         setupApp()
         return true
@@ -63,15 +56,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         // 保存推送令牌到UserDefaults
         UserDefaults.standard.set(token, forKey: AppConstants.UserDefaultsKeys.pushToken)
-        
-        // 更新服务器端的推送令牌
-        Task {
-            do {
-                try await AuthManager().updatePushToken(token)
-            } catch {
-                print("Failed to update push token: \(error.localizedDescription)")
-            }
-        }
+        UserDefaults.standard.synchronize()
     }
     
     /// 注册远程通知失败时调用
@@ -103,26 +88,25 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 private extension AppDelegate {
     /// 设置应用程序的各项配置
     func setupApp() {
-        configureNotifications()
-        setupNetworkMonitoring()
-        setupLogging()
-        registerDefaultsSettings()
+        configureNotifications()  // 配置通知
+        setupNetworkMonitoring()  // 设置网络监控
+        setupLogging()           // 设置日志系统
+        registerDefaultsSettings() // 注册默认设置
     }
     
     /// 配置通知设置
+    /// - 请求通知权限
+    /// - 设置通知代理
+    /// - 注册远程通知
     func configureNotifications() {
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         
-        // 请求通知权限
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
                 DispatchQueue.main.async {
                     UIApplication.shared.registerForRemoteNotifications()
                 }
-            }
-            if let error = error {
-                print("Notification authorization error: \(error.localizedDescription)")
             }
         }
     }
@@ -133,27 +117,19 @@ private extension AppDelegate {
     }
     
     /// 配置日志系统
+    /// 根据编译模式设置不同的日志级别
     func setupLogging() {
         #if DEBUG
-        Logger.shared.setLogLevel(.debug)
+        Logger.shared.setLogLevel(.debug)  // 调试模式：显示所有日志
         #else
-        Logger.shared.setLogLevel(.error)
+        Logger.shared.setLogLevel(.error)  // 发布模式：只显示错误日志
         #endif
     }
-    // 添加 Firebase 配置方法
-      private func setupFirebase() {
-          #if DEBUG
-          // 在调试模式下可以启用 Firebase 调试日志
-          // FirebaseConfiguration.shared.setLoggerLevel(.debug)
-          print("Firebase 已初始化")
-          #endif
-      }
-    /// 注册默认设置
+    
+    /// 注册应用程序默认设置
     func registerDefaultsSettings() {
         let defaultSettings: [String: Any] = [
-            "isDarkModeEnabled": false,
-            "notificationsEnabled": true,
-            "locationTrackingEnabled": true
+            "isDarkModeEnabled": false
         ]
         UserDefaults.standard.register(defaults: defaultSettings)
     }
@@ -191,51 +167,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     /// 处理通知响应
     /// - Parameter userInfo: 通知内容
     private func handleNotificationResponse(_ userInfo: [AnyHashable: Any]) {
-        guard let type = userInfo["type"] as? String else { return }
-        
-        DispatchQueue.main.async {
-            switch type {
-            case "chat":
-                // 处理聊天通知
-                if let chatIdString = userInfo["chatId"] as? String,
-                   let chatId = UUID(uuidString: chatIdString) {
-                    let chatRoom = ChatRoom(
-                        id: chatId,
-                        name: "Loading...",
-                        type: .individual,
-                        avatar: "default_avatar"
-                    )
-                    AppNavigationManager.shared.navigate(to: .chatDetail(chatRoom: chatRoom))
-                }
-            case "post":
-                // 处理帖子通知
-                if let postId = userInfo["postId"] as? String {
-                    let post = LocationPost(
-                        title: "Loading...",
-                        content: "",
-                        authorName: "",
-                        locationName: "",
-                        latitude: 0,
-                        longitude: 0,
-                        imageNames: [],
-                        avatarImage: "",
-                        tags: [],
-                        participantsCount: 0,
-                        postedTime: "",
-                        remainingDays: "",
-                        publishDate: "",
-                        joinedCount: "",
-                        cachedDistance: 0
-                    )
-                    AppNavigationManager.shared.navigate(to: .postDetail(post: post))
-                }
-            case "profile":
-                // 处理个人资料通知
-                AppNavigationManager.shared.navigate(to: .profileEditor)
-            default:
-                break
-            }
-        }
+        // 处理通知响应
     }
 }
 
@@ -256,7 +188,6 @@ private extension AppDelegate {
         
         switch type {
         case "content_refresh":
-            // 处理内容刷新推送
             Task {
                 do {
                     try await refreshContent()
@@ -265,10 +196,6 @@ private extension AppDelegate {
                     completionHandler(.failed)
                 }
             }
-        case "location_update":
-            // 处理位置更新推送
-            LocationManager.shared.startUpdatingLocation()
-            completionHandler(.newData)
         default:
             completionHandler(.noData)
         }
@@ -278,7 +205,6 @@ private extension AppDelegate {
     /// - Throws: 可能抛出网络错误
     func refreshContent() async throws {
         // 实现内容刷新逻辑
-        // 通常包括从服务器获取新数据
     }
 }
 
@@ -327,6 +253,5 @@ class NetworkMonitor {
     /// 开始网络监控
     func startMonitoring() {
         // 实现网络监控逻辑
-        // 通常使用NWPathMonitor监控网络连接状态
     }
 }

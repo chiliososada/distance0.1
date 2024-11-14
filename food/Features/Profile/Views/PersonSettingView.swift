@@ -1,19 +1,19 @@
 import SwiftUI
 // MARK: - 主视图
 struct PersonSettingsView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var tabBarManager: TabBarManager
     @StateObject private var settingsState: PersonSettingsViewModel
     @State private var showLogoutConfirmation = false
-   
     
     init() {
+        // 使用环境对象，所以不需要在这里创建新实例
         _settingsState = StateObject(wrappedValue: PersonSettingsViewModel(
-            authManager: AuthManager(),
+            authManager: .init(),
             navigationManager: .shared,
-            tabBarManager: TabBarManager()
+            tabBarManager: .init()
         ))
     }
     
@@ -36,12 +36,27 @@ struct PersonSettingsView: View {
         ) {
             Button("退出登录", role: .destructive) {
                 Task { @MainActor in
-                    settingsState.logout()
+                    await settingsState.logout()
                 }
             }
             Button("取消", role: .cancel) {}
         } message: {
             Text("确定要退出登录吗？")
+        }
+        .alert("提示", isPresented: $settingsState.showAlert) {
+            Button("确定", role: .cancel) { }
+        } message: {
+            Text(settingsState.alertMessage)
+        }
+        .overlay {
+            if settingsState.isLoading {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .overlay {
+                        ProgressView()
+                            .tint(.white)
+                    }
+            }
         }
     }
     
@@ -55,15 +70,15 @@ struct PersonSettingsView: View {
             
             PersonSettingRow(
                 title: "清除缓存",
-                action: settingsState.clearCache
+                action: { Task { await settingsState.clearCache() } }
             ) {
                 Text(settingsState.cacheSize)
                     .foregroundColor(.gray)
             }
             
             PersonSettingRow(
-                title: "检测更新",
-                action: settingsState.checkUpdate
+                title: "检查更新",
+                action: { Task { await settingsState.checkUpdate() } }
             ) {
                 Text(settingsState.appVersion)
                     .foregroundColor(.gray)
@@ -89,7 +104,7 @@ struct PersonSettingsView: View {
     }
     
     private var backButton: some View {
-        Button(action: { presentationMode.wrappedValue.dismiss() }) {
+        Button(action: { dismiss() }) {
             Image(systemName: "arrow.left")
                 .font(.system(size: 20, weight: .medium))
                 .foregroundColor(.black)

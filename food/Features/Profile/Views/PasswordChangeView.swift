@@ -1,6 +1,6 @@
 import SwiftUI
 
-// 密码更新状态管理
+// MARK: - Password Change State
 final class PasswordChangeState: ObservableObject {
     @Published var currentPassword: String = ""
     @Published var newPassword: String = ""
@@ -14,7 +14,7 @@ final class PasswordChangeState: ObservableObject {
         !currentPassword.isEmpty &&
         !newPassword.isEmpty &&
         !confirmPassword.isEmpty &&
-        newPassword.count >= 8 &&
+        newPassword.count >= AppConstants.Validation.minPasswordLength &&
         newPassword == confirmPassword
     }
     
@@ -25,7 +25,6 @@ final class PasswordChangeState: ObservableObject {
     }
 }
 
-// 自定义密码输入字段组件
 struct PasswordField: View {
     let title: String
     let placeholder: String
@@ -59,9 +58,10 @@ struct PasswordField: View {
 }
 
 struct PasswordChangeView: View {
-    @Environment(\.presentationMode) var presentationMode
-    @StateObject private var passwordState = PasswordChangeState()
-    @StateObject private var authManager = AuthManager()
+    @Environment(\.dismiss) private var dismiss
+     @EnvironmentObject var navigationManager: AppNavigationManager
+     @EnvironmentObject var authManager: AuthManager
+     @StateObject private var passwordState = PasswordChangeState()
     
     var body: some View {
         VStack {
@@ -84,22 +84,24 @@ struct PasswordChangeView: View {
         )
         .navigationBarBackButtonHidden(true)
         .alert("提示", isPresented: $passwordState.showAlert) {
-            Button("确定") {
-                if !passwordState.alertMessage.contains("错误") {
-                    presentationMode.wrappedValue.dismiss()
-                }
-            }
-        } message: {
+                 Button("确定") {
+                     if !passwordState.alertMessage.contains("错误") {
+                         // 密码修改成功
+                         dismiss() // 关闭当前视图
+                         
+                         // 重置导航并导航到登录页面
+                         DispatchQueue.main.async {
+                             navigationManager.resetNavigation()
+                             navigationManager.navigate(to: .login(showBackButton: true))
+                         }
+                     }
+                 }
+             } message: {
             Text(passwordState.alertMessage)
         }
         .overlay {
             if passwordState.isLoading {
-                Color.black.opacity(0.3)
-                    .ignoresSafeArea()
-                    .overlay {
-                        ProgressView()
-                            .tint(.white)
-                    }
+                loadingOverlay
             }
         }
     }
@@ -129,12 +131,12 @@ struct PasswordChangeView: View {
     }
     
     private var backButton: some View {
-        Button(action: { presentationMode.wrappedValue.dismiss() }) {
-            Image(systemName: "arrow.left")
-                .font(.system(size: 20, weight: .medium))
-                .foregroundColor(.black)
-        }
-    }
+          Button(action: { dismiss() }) {
+              Image(systemName: "arrow.left")
+                  .font(.system(size: 20, weight: .medium))
+                  .foregroundColor(.black)
+          }
+      }
     
     private var submitButton: some View {
         Button(action: handleSubmit) {
@@ -147,6 +149,15 @@ struct PasswordChangeView: View {
                 .cornerRadius(25)
         }
         .disabled(!passwordState.isValid || passwordState.isLoading)
+    }
+    
+    private var loadingOverlay: some View {
+        Color.black.opacity(0.3)
+            .ignoresSafeArea()
+            .overlay {
+                ProgressView()
+                    .tint(.white)
+            }
     }
     
     private func handleSubmit() {
@@ -177,11 +188,13 @@ struct PasswordChangeView: View {
         }
     }
 }
-// MARK: - Previews
-struct UpdatePasswordView_Previews: PreviewProvider {
+
+// MARK: - Preview
+struct PasswordChangeView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             PasswordChangeView()
+                .environmentObject(AuthManager())
         }
     }
 }

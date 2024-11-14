@@ -5,11 +5,13 @@ import FirebaseAuth
 // MARK: - CreateAccountView
 struct CreateAccountView: View {
     // MARK: - Properties
+       @Environment(\.dismiss) private var dismiss
        @StateObject private var viewModel: CreateAccountViewModel
        @Environment(\.presentationMode) var presentationMode
        @EnvironmentObject var tabBarManager: TabBarManager
        @FocusState private var focusedField: Field?
        @EnvironmentObject var navigationManager: AppNavigationManager
+       @EnvironmentObject var authManager: AuthManager
     
     // MARK: - Focus Fields
     enum Field: Hashable {
@@ -30,10 +32,14 @@ struct CreateAccountView: View {
     
  
     // MARK: - Initialization
-        init(emailOrPhone: String) {
-            _viewModel = StateObject(wrappedValue: CreateAccountViewModel(emailOrPhone: emailOrPhone))
-        }
-    
+    init(emailOrPhone: String) {
+         
+           _viewModel = StateObject(wrappedValue: CreateAccountViewModel(
+               emailOrPhone: emailOrPhone,
+               authManager: AuthManager()
+           ))
+       }
+       
     // MARK: - Body
     var body: some View {
         ScrollViewReader { proxy in
@@ -236,33 +242,25 @@ struct CreateAccountView: View {
     
     
     private func handleNextButtonTap() async {
-        do {
-            try await viewModel.createAccount()
-            
-            // 确保在主线程执行导航
-            await MainActor.run {
-                print("Registration completed: \(viewModel.registrationComplete)")
-                if viewModel.registrationComplete {
-                    // 获取当前用户
-                    if let user = Auth.auth().currentUser {
-                        print("User exists before navigation: \(user.uid)")
-                        // 等待一小段时间确保 Firebase 状态已同步
-                        Task {
-                            try? await Task.sleep(nanoseconds: 1_000_000_000)
-                            print("Navigating to verification for email: \(viewModel.formData.emailOrPhone)")
-                            navigationManager.navigate(to: .verification(email: viewModel.formData.emailOrPhone))
-                        }
+            do {
+                try await viewModel.createAccount()
+                
+                await MainActor.run {
+                    if let email = viewModel.registrationEmail {
+                        print("Successfully registered, navigating to verification for: \(email)")
+                        navigationManager.navigate(to: .verification(email: email))
+                    } else if case .emailUnverified(let email) = authManager.state {
+                        print("Using state email for verification: \(email)")
+                        navigationManager.navigate(to: .verification(email: email))
                     } else {
-                        print("No user found before navigation")
-                        viewModel.alertMessage = "用户状态无效，请重试"
-                        viewModel.showAlert = true
+                        print("No email available for verification, current state: \(authManager.state)")
                     }
                 }
+            } catch {
+                print("Registration flow error: \(error.localizedDescription)")
+                // 错误已在 ViewModel 中处理
             }
-        } catch {
-            print("Account creation error: \(error.localizedDescription)")
         }
-    }
 
 }
 

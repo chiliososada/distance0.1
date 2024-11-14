@@ -35,10 +35,10 @@ struct AuthInputData {
 
 
 
-// MARK: - Auth State
-enum AuthState {
-    case idle
-    case loading
-    case success
-    case failure(AuthError)
-}
+//// MARK: - Auth State
+//enum AuthState {
+//    case idle
+//    case loading
+//    case success
+//    case failure(AuthError)
+//}

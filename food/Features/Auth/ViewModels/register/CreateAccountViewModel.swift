@@ -1,142 +1,160 @@
-//
-//  CreateAccountViewModel.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/04.
-//
-
 import Foundation
 import SwiftUI
 
+@MainActor
 final class CreateAccountViewModel: ObservableObject {
     // MARK: - Published Properties
+    @Published var keyboardHeight: CGFloat = 0
     @Published var formData: RegistrationFormData
-       @Published var keyboardHeight: CGFloat = 0
-       @Published var showAlert = false
-       @Published var alertMessage = ""
-       @Published var isLoading = false
-       @Published var registrationComplete = false
-    
-    // MARK: - Form Data Structure
-    struct RegistrationFormData {
-           var name = ""
-           var emailOrPhone: String
-           var birthday = Date()
-           var selectedGender = "男"
-           var password = ""
-           var confirmPassword = ""
-           var isPasswordVisible = false
-           
-           let genders = ["男", "女", "其他"]
-           
-           init(emailOrPhone: String) {
-               self.emailOrPhone = emailOrPhone
-           }
-           
-           var isValid: Bool {
-               !name.isEmpty &&
-               !password.isEmpty &&
-               password == confirmPassword &&
-               password.count >= 8
-           }
-       }
-    
+    @Published var showAlert = false
+    @Published var alertMessage = ""
+    @Published var isLoading = false
+    //@Published var registrationComplete = false
+    @Published var registrationEmail: String?  // 添加这个来跟踪注册邮箱
     // MARK: - Dependencies
     private let authManager: AuthManager
+    // MARK: - Form Data Structure
+    struct RegistrationFormData {
+        var name = ""
+        var emailOrPhone: String
+        var birthday = Date()
+        var selectedGender = "男"
+        var password = ""
+        var confirmPassword = ""
+        var isPasswordVisible = false
+        
+        let genders = ["男", "女", "その他"]
+        
+        init(emailOrPhone: String) {
+            self.emailOrPhone = emailOrPhone
+        }
+        
+        var isValid: Bool {
+            !name.isEmpty &&
+            !password.isEmpty &&
+            password == confirmPassword &&
+            password.count >= AppConstants.Validation.minPasswordLength &&
+            isEmailValid
+        }
+        
+        private var isEmailValid: Bool {
+            let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+            let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+            return emailPredicate.evaluate(with: emailOrPhone)
+        }
+    }
+    
+    // MARK: - Dependencies
+
     
     // MARK: - Initialization
-    init(emailOrPhone: String, authManager: AuthManager = AuthManager()) {
-        self.authManager = authManager
-        self.formData = RegistrationFormData(emailOrPhone: emailOrPhone)
-    }
+    init(emailOrPhone: String, authManager: AuthManager) {
+         self.formData = RegistrationFormData(emailOrPhone: emailOrPhone)
+         self.authManager = authManager
+     }
     
     // MARK: - Public Methods
     @MainActor
-       func createAccount() async throws {
-           guard formData.isValid else {
-               showValidationError()
-               return
-           }
-           
-           isLoading = true
-           print("Starting signup process with email: \(formData.emailOrPhone)")
-           
-           do {
-               try await authManager.signUp(
-                   email: formData.emailOrPhone,
-                   password: formData.password,
-                   name: formData.name
-               )
-               print("Signup successful")
-               isLoading = false
-               registrationComplete = true
-           } catch let error as AuthError {
-               print("Signup failed with AuthError: \(error.localizedDescription)")
-               isLoading = false
-               alertMessage = error.localizedDescription
-               showAlert = true
-               throw error
-           } catch {
-               print("Signup failed with unknown error: \(error)")
-               isLoading = false
-               alertMessage = "注册失败：\(error.localizedDescription)"
-               showAlert = true
-               throw error
-           }
-       }
+    func createAccount() async throws {
+            guard validateForm() else { return }
+            isLoading = true
+            
+            do {
+                print("Starting account creation for: \(formData.emailOrPhone)")
+                
+                let registrationData = RegistrationData(
+                    email: formData.emailOrPhone,
+                    password: formData.password,
+                    name: formData.name
+                )
+                
+                // 执行注册
+                try await authManager.signUp(with: registrationData)
+                
+                // 给状态一点时间更新
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                
+                // 检查最终状态
+                switch authManager.state {
+                case .emailUnverified(let email):
+                    print("Registration successful, email: \(email) needs verification")
+                    self.registrationEmail = email
+                    
+                case .error(let error):
+                    print("Auth error state: \(error)")
+                    throw error
+                    
+                case .loading:
+                    print("Still in loading state")
+                    throw AuthError.unknown("Registration state still loading")
+                    
+                case .authenticated:
+                    print("Unexpectedly authenticated")
+                    throw AuthError.unknown("Unexpected authenticated state")
+                    
+                case .initial, .unauthenticated:
+                    print("Unexpected state: \(authManager.state)")
+                    throw AuthError.unknown("Unexpected auth state: \(authManager.state)")
+                }
+                
+            } catch let error as AuthError {
+                print("Auth error occurred: \(error.localizedDescription)")
+                handleAuthError(error)
+                throw error
+            } catch {
+                print("Unexpected error: \(error.localizedDescription)")
+                handleError(error)
+                throw error
+            }
+            
+            isLoading = false
+        }
+        
+        private func handleAuthError(_ error: AuthError) {
+            alertMessage = error.errorDescription ?? "注册失败"
+            showAlert = true
+        }
+        
+        private func handleError(_ error: Error) {
+            alertMessage = error.localizedDescription
+            showAlert = true
+        }
     
-    // MARK: - Private Methods
-    private func showValidationError() {
-         if formData.name.isEmpty {
-             showError("请输入名字")
-         } else if formData.password.count < 8 {
-             showError("密码长度必须至少为8位")
-         } else if formData.password != formData.confirmPassword {
-             showError("两次输入的密码不一致")
-         }
-     }
+    // MARK: - Form Validation Methods
+    private func validateForm() -> Bool {
+        guard !formData.name.isEmpty else {
+            showError("请输入姓名")
+            return false
+        }
+        
+        guard formData.password.count >= AppConstants.Validation.minPasswordLength else {
+            showError("密码长度必须至少为\(AppConstants.Validation.minPasswordLength)位")
+            return false
+        }
+        
+        guard formData.password == formData.confirmPassword else {
+            showError("两次输入的密码不一致")
+            return false
+        }
+        
+        guard isEmailValid(formData.emailOrPhone) else {
+            showError("请输入有效的电子邮箱地址")
+            return false
+        }
+        
+        return true
+    }
     
-    private func handleError(_ error: AuthError) {
-           switch error {
-           case .duplicateEmail:
-               alertMessage = "该邮箱已被注册"
-           case .weakPassword:
-               alertMessage = "密码强度不够，至少需要6个字符"
-           default:
-               alertMessage = error.errorDescription ?? "注册失败"
-           }
-           showAlert = true
-       }
-       
-       private func showError(_ message: String) {
-           alertMessage = message
-           showAlert = true
-       }
-    
-    
-//    // MARK: - Keyboard Management
-//    func setupKeyboardObservers() {
-//            NotificationCenter.default.addObserver(
-//                forName: UIResponder.keyboardWillShowNotification,
-//                object: nil,
-//                queue: .main
-//            ) { [weak self] notification in
-//                guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-//                self?.keyboardHeight = keyboardFrame.height
-//            }
-//            
-//            NotificationCenter.default.addObserver(
-//                forName: UIResponder.keyboardWillHideNotification,
-//                object: nil,
-//                queue: .main
-//            ) { [weak self] _ in
-//                self?.keyboardHeight = 0
-//            }
-//        }
-//    
-//    deinit {
-//        NotificationCenter.default.removeObserver(self)
-//    }
+    private func isEmailValid(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        let emailPredicate = NSPredicate(format: "SELF MATCHES %@", emailRegex)
+        return emailPredicate.evaluate(with: email)
+    }
+
+    private func showError(_ message: String) {
+        alertMessage = message
+        showAlert = true
+    }
 }
 
 // MARK: - Computed Properties
@@ -161,3 +179,5 @@ extension CreateAccountViewModel {
         set { formData.isPasswordVisible = newValue }
     }
 }
+
+

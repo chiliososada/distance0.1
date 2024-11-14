@@ -1,537 +1,295 @@
+//
+//  AuthManagers.swift
+//  food
+//
+//  Created by toyousoft on 2024/11/13.
+//
 import SwiftUI
-import Combine
 import FirebaseAuth
-import FirebaseCore
-
-// MARK: - Auth Manager
+import Combine
+// MARK: - Core Auth Manager
 final class AuthManager: ObservableObject {
-    // MARK: - Published Properties
-    @Published private(set) var isLoggedIn: Bool = false
-    @Published private(set) var isEmailVerified: Bool = false  // 添加邮箱验证状态
-    // private var shouldAutoLogin = true  // 添加控制标志
-    @Published private(set) var userProfile: UserProfile?
-    @Published private(set) var authenticationState: AuthenticationState = .idle
-    @Published private(set) var isLoading: Bool = false
+    // MARK: - Published State
+    @Published private(set) var state: AuthState = .initial
     
-    // MARK: - Private Properties
+    // MARK: - Dependencies
     private let userDefaults: UserDefaults
-    private var cancellables = Set<AnyCancellable>()
     private let auth = Auth.auth()
-    
-    // MARK: - Constants
-    private enum Constants {
-        static let isLoggedInKey = "isLoggedIn"
-        static let userProfileKey = "userProfile"
-        static let tokenKey = "authToken"
-    }
-    
-    // MARK: - Authentication State
-    enum AuthenticationState {
-        case idle
-        case authenticating
-        case authenticated
-        case failed(Error)
-        case loggedOut
-    }
+    private let sessionManager: SessionManager
+   
     
     // MARK: - Initialization
-    init(userDefaults: UserDefaults = .standard) {
+    init(
+        userDefaults: UserDefaults = .standard,
+        sessionManager: SessionManager = .shared
+       
+    ) {
         self.userDefaults = userDefaults
+        self.sessionManager = sessionManager
+       
         
-        if auth.currentUser == nil {
-            clearAuthState()
-        }
-        loadUserProfile()
+        // 初始状态检查
+        checkInitialState()
     }
     
-    
-    
-    /// 删除当前用户账户
-    @MainActor
-    func deleteAccount(password: String) async throws {
-        setLoading(true)
-        defer { setLoading(false) }
-        
-        guard let user = Auth.auth().currentUser else {
-            throw AuthError.noUserFound
-        }
-        
-        do {
-            // 1. 先重新验证用户
-            try await reauthenticateUser(with: password)
-            
-            // 2. 删除账户
-            try await user.delete()
-            
-            // 3. 使用与 signOut 相同的状态更新方法
-            updateStateOnMain()
-            
-//            // 4. 通知其他组件账户已被删除
-//            NotificationCenter.default.post(
-//                name: NSNotification.Name("UserAccountDeleted"),
-//                object: nil
-//            )
-            
-        } catch let error as NSError {
-            switch error.code {
-            case AuthErrorCode.wrongPassword.rawValue:
-                throw AuthError.invalidPassword
-            case AuthErrorCode.networkError.rawValue:
-                throw AuthError.networkError
-            case AuthErrorCode.requiresRecentLogin.rawValue:
-                throw AuthError.unknown("需要重新登录后再试")
-            default:
-                handleAuthError(error)
-                throw error
-            }
-        }
-    }
-
-    
-    
-    @MainActor
-    func reauthenticateUser(with password: String) async throws {
-        setLoading(true)
-        defer { setLoading(false) }
-        
-        guard let user = Auth.auth().currentUser,
-              let email = user.email else {
-            throw AuthError.noUserFound
-        }
-        
-        do {
-            let credential = EmailAuthProvider.credential(
-                withEmail: email,
-                password: password
-            )
-            try await user.reauthenticate(with: credential)
-        } catch let error as NSError {
-            switch error.code {
-            case AuthErrorCode.wrongPassword.rawValue:
-                throw AuthError.invalidPassword
-            case AuthErrorCode.tooManyRequests.rawValue:
-                throw AuthError.tooManyRequests
-            case AuthErrorCode.networkError.rawValue:
-                throw AuthError.networkError
-            default:
-                handleAuthError(error)
-                throw AuthError.unknown(error.localizedDescription)
-            }
-        }
-    }
-    
-    /// 更新密码（包含重新验证）
-    @MainActor
-    func updatePassword(currentPassword: String, newPassword: String) async throws {
-        setLoading(true)
-        defer { setLoading(false) }
-        
-        guard let user = Auth.auth().currentUser else {
-            throw AuthError.noUserFound
-        }
-        
-        do {
-            // 1. 先重新验证用户
-            try await reauthenticateUser(with: currentPassword)
-            
-            // 2. 验证成功后更新密码
-            try await user.updatePassword(to: newPassword)
-        } catch let error as NSError {
-            switch error.code {
-            case AuthErrorCode.weakPassword.rawValue:
-                throw AuthError.weakPassword
-            default:
-                handleAuthError(error)
-                throw error
-            }
-        }
-    }
     // MARK: - Public Methods
     
+    /// 登录方法
     @MainActor
-    func signIn(email: String, password: String) async throws {
-        setLoading(true)
-        authenticationState = .authenticating
+    func signIn(with credentials: AuthCredentials) async throws {
+        print("AuthManager: Starting sign in for \(credentials.email)")
+        setState(.loading)
         
         do {
-            let result = try await auth.signIn(withEmail: email, password: password)
+            print("AuthManager: Attempting Firebase sign in")
+            let result = try await auth.signIn(withEmail: credentials.email, password: credentials.password)
+            print("AuthManager: Firebase sign in successful")
             
-            let profile = UserProfile(
-                id: result.user.uid,
-                userName: result.user.displayName ?? email.components(separatedBy: "@").first ?? "User",
-                email: email,
-                createdAt: result.user.metadata.creationDate ?? Date(),
-                lastUpdated: Date(),
-                settings: UserProfile.Settings(
-                    nickname: result.user.displayName ?? "New User",
-                    bio: "",
-                    idNumber: result.user.uid,
-                    gender: .preferNotToSay,
-                    birthDate: Date(),
-                    notificationsEnabled: true,
-                    privacySettings: UserProfile.Settings.PrivacySettings(
-                        isProfilePublic: true,
-                        showLocation: true,
-                        showOnlineStatus: true
-                    )
-                ),
-                stats: UserProfile.UserStats(
-                    participantsCount: 0,
-                    viewedTopicsCount: 0,
-                    postsCount: 0,
-                    followersCount: 0,
-                    followingCount: 0
-                )
-            )
+            let profile = try await createUserProfile(from: result.user)
+            print("AuthManager: User profile created")
             
-            await MainActor.run { [weak self] in
-                guard let self = self else { return }
-                self.userProfile = profile
-                self.isLoggedIn = true
-                self.saveUserState()
-                self.authenticationState = .authenticated
+            if result.user.isEmailVerified {
+                print("AuthManager: Email is verified, completing authentication")
+                await completeAuthentication(with: profile)
+                print("AuthManager: Authentication completed, final state: \(state)")
+            } else {
+                print("AuthManager: Email is not verified")
+                setState(.emailUnverified(credentials.email))
             }
-            
         } catch {
-            await MainActor.run { [weak self] in
-                self?.handleAuthError(error)
-            }
-            throw error
+            print("AuthManager: Sign in error - \(error.localizedDescription)")
+            let authError = AuthError.fromFirebaseError(error)
+            setState(.error(authError))
+            throw authError
         }
-        
-        setLoading(false)
     }
     
+    /// 注册方法
     @MainActor
-    func signUp(email: String, password: String, name: String) async throws {
-        setLoading(true)
-        authenticationState = .authenticating
+    func signUp(with data: RegistrationData) async throws {
+        setState(.loading)
         
         do {
-            let result = try await auth.createUser(withEmail: email, password: password)
+            print("Starting user registration for email: \(data.email)")
             
-            let changeRequest = result.user.createProfileChangeRequest()
-            changeRequest.displayName = name
-            try await changeRequest.commitChanges()
+            // 创建用户
+            let result = try await auth.createUser(withEmail: data.email, password: data.password)
+            print("User created successfully: \(result.user.uid)")
             
+            // 更新用户资料
+            try await updateUserProfile(result.user, name: data.name)
+            print("User profile updated")
+            
+            // 发送验证邮件
             try await result.user.sendEmailVerification()
+            print("Verification email sent")
             
-            let profile = UserProfile(
-                id: result.user.uid,
-                userName: name,
-                email: email,
-                createdAt: Date(),
-                lastUpdated: Date(),
-                settings: UserProfile.Settings(
-                    nickname: name,
-                    bio: "",
-                    idNumber: result.user.uid,
-                    gender: .preferNotToSay,
-                    birthDate: Date(),
-                    notificationsEnabled: true,
-                    privacySettings: UserProfile.Settings.PrivacySettings(
-                        isProfilePublic: true,
-                        showLocation: true,
-                        showOnlineStatus: true
-                    )
-                ),
-                stats: UserProfile.UserStats(
-                    participantsCount: 0,
-                    viewedTopicsCount: 0,
-                    postsCount: 0,
-                    followersCount: 0,
-                    followingCount: 0
-                )
-            )
+            // 创建用户配置文件
+            let profile = try await createUserProfile(from: result.user)
+            print("User profile created")
             
-            await MainActor.run { [weak self] in
-                guard let self = self else { return }
-                self.userProfile = profile
-                self.isLoggedIn = true
-                self.saveUserState()
-                self.authenticationState = .authenticated
-            }
+            // 更新会话
+            await sessionManager.updateSession(user: profile)
+            print("Session updated")
+            
+            // 设置状态为待验证，并确保不会被覆盖
+            setState(.emailUnverified(data.email))
+            print("Final state set to emailUnverified")
             
         } catch {
-            await MainActor.run { [weak self] in
-                self?.handleAuthError(error)
-            }
-            throw error
-        }
-        setLoading(false)
-        
-    }
-    
-    @MainActor
-    func resetPassword(for email: String) async throws {
-        setLoading(true)
-        defer { setLoading(false) }
-        
-        do {
-            try await Auth.auth().sendPasswordReset(withEmail: email)
-        } catch {
-            handleAuthError(error)
-            throw error
+            print("Registration error: \(error.localizedDescription)")
+            let authError = AuthError.fromFirebaseError(error)
+            setState(.error(authError))
+            throw authError
         }
     }
     
+    /// 退出登录
     @MainActor
-    func signOut() throws {
-        setLoading(true)
-        defer { setLoading(false) }
+    func signOut() async throws {
+        setState(.loading)
         
         do {
             try auth.signOut()
-            updateStateOnMain()
+            await sessionManager.clearSession()
+            setState(.unauthenticated)
         } catch {
-            handleAuthError(error)
-            throw error
+            let authError = AuthError.fromFirebaseError(error)
+            setState(.error(authError))
+            throw authError
         }
     }
     
     @MainActor
-    func refreshUserStatus() async {
-        print("Refreshing user status")
-        if let user = Auth.auth().currentUser {
-            do {
-               
-                try await user.reload()
-                print("Reloading user: \(user.uid)")
-                isLoggedIn = true
-                isEmailVerified = user.isEmailVerified
-            } catch {
-                print("Error reloading user: \(error)")
-                clearAuthState()
-            }
-        } else {
-            print("No current user found")
-            clearAuthState()
-        }
-    }
-    
-    
-    
-    
-    // 添加检查邮箱验证状态的方法
-    @MainActor
-    func checkEmailVerification() async {
-        print("Checking email verification status")
-        guard let user = Auth.auth().currentUser else {
-            print("No user found in Auth")
-            isEmailVerified = false
-            return
-        }
+    func updatePassword(currentPassword: String, newPassword: String) async throws {
+        setState(.loading)
         
         do {
-           
+            guard let user = auth.currentUser else {
+                throw AuthError.userNotFound
+            }
+            
+            // 重新认证用户
+            let credential = EmailAuthProvider.credential(
+                withEmail: user.email ?? "",
+                password: currentPassword
+            )
+            try await user.reauthenticate(with: credential)
+            
+            // 更新密码
+            try await user.updatePassword(to: newPassword)
+            
+            // 清除当前会话
+            await sessionManager.clearSession()
+            
+            // 注销当前用户
+            try auth.signOut()
+            
+            // 将状态设置为未认证
+            setState(.unauthenticated)
+            
+        } catch {
+            let authError = AuthError.fromFirebaseError(error)
+            setState(.error(authError))
+            throw authError
+        }
+    }
+    /// 删除账户
+    @MainActor
+    func deleteAccount(password: String) async throws {
+        setState(.loading)
+        
+        do {
+            guard let user = auth.currentUser else {
+                throw AuthError.userNotFound
+            }
+            
+            // 重新验证
+            try await reauthenticateUser(user, with: password)
+            
+            // 删除账户
+            try await user.delete()
+            await sessionManager.clearSession()
+            setState(.unauthenticated)
+        } catch {
+            let authError = AuthError.fromFirebaseError(error)
+            setState(.error(authError))
+            throw authError
+        }
+    }
+    
+    /// 检查邮箱验证状态
+    @MainActor
+    func checkEmailVerification() async throws {
+        guard case .emailUnverified(let email) = state else { return }
+        
+        do {
+            guard let user = auth.currentUser else {
+                throw AuthError.userNotFound
+            }
+            
             try await user.reload()
-            print("Reloading user: \(user.uid)")
-            if let updatedUser = Auth.auth().currentUser {
-                isEmailVerified = updatedUser.isEmailVerified
-                print("Updated verification status: \(isEmailVerified)")
-            } else {
-                print("User not found after reload")
-                isEmailVerified = false
+            
+            if user.isEmailVerified {
+                let profile = try await createUserProfile(from: user)
+                await completeAuthentication(with: profile)
             }
         } catch {
-            print("Failed to check email verification: \(error)")
-            isEmailVerified = false
+            let authError = AuthError.fromFirebaseError(error)
+            setState(.error(authError))
+            throw authError
         }
     }
     
-    @MainActor
-    func checkAuthState() async {
-        do {
-            if let user = auth.currentUser {
-                try await user.reload()
-                // 检查用户是否存在
-                if user.uid.isEmpty {
-                    clearAuthState()
-                    return
+    // MARK: - Private Methods
+    
+    private func setState(_ newState: AuthState) {
+        DispatchQueue.main.async { [weak self] in
+            self?.state = newState
+        }
+    }
+    
+    private func checkInitialState() {
+        if let user = auth.currentUser {
+            Task { @MainActor in
+                do {
+                    try await user.reload()
+                    let profile = try await createUserProfile(from: user)
+                    
+                    if user.isEmailVerified {
+                        await completeAuthentication(with: profile)
+                    } else {
+                        setState(.emailUnverified(user.email ?? ""))
+                    }
+                } catch {
+                    setState(.unauthenticated)
                 }
-                isLoggedIn = true
-                isEmailVerified = user.isEmailVerified
-            } else {
-                clearAuthState()
             }
-        } catch {
-            clearAuthState()
+        } else {
+            setState(.unauthenticated)
         }
     }
     
+    private func createUserProfile(from user: User) async throws -> UserProfile {
+        // 从 Firestore 获取用户数据或创建新的配置文件
+        return UserProfile(
+            id: user.uid,
+            userName: user.displayName ?? user.email?.components(separatedBy: "@").first ?? "User",
+            email: user.email,
+            createdAt: user.metadata.creationDate ?? Date(),
+            lastUpdated: Date(),
+            settings: UserProfile.Settings(
+                nickname: user.displayName ?? "New User",
+                bio: "",
+                idNumber: user.uid,
+                gender: .preferNotToSay,
+                birthDate: Date(),
+                notificationsEnabled: true,
+                privacySettings: .init(
+                    isProfilePublic: true,
+                    showLocation: true,
+                    showOnlineStatus: true
+                )
+            ),
+            stats: .init(
+                participantsCount: 0,
+                viewedTopicsCount: 0,
+                postsCount: 0,
+                followersCount: 0,
+                followingCount: 0
+            )
+        )
+    }
     
-    
-    /// 更新推送令牌
     @MainActor
-    func updatePushToken(_ token: String) async throws {
-        guard let user = auth.currentUser else {
-            throw AuthError.noUserFound
+    private func completeAuthentication(with profile: UserProfile) async {
+        print("Starting complete authentication")
+        await sessionManager.updateSession(user: profile)
+        print("Session updated")
+        setState(.authenticated(profile))
+        print("State set to authenticated")
+    }
+    
+    private func updateUserProfile(_ user: User, name: String) async throws {
+        let changeRequest = user.createProfileChangeRequest()
+        changeRequest.displayName = name
+        try await changeRequest.commitChanges()
+    }
+    
+    private func reauthenticateUser(_ user: User, with password: String) async throws {
+        guard let email = user.email else {
+            throw AuthError.userNotFound
         }
         
-        do {
-            // 保存令牌到 UserDefaults
-            userDefaults.set(token, forKey: AppConstants.UserDefaultsKeys.pushToken)
-            userDefaults.synchronize()
-            
-            // 这里可以添加将令牌更新到你的后端服务器的代码
-            /*
-             Example:
-             let data = ["pushToken": token]
-             try await updateUserData(userId: user.uid, data: data)
-             */
-            
-            print("Push token updated successfully: \(token)")
-        } catch {
-            print("Failed to update push token: \(error.localizedDescription)")
-            throw AuthError.unknown("Failed to update push token")
+        let credential = EmailAuthProvider.credential(withEmail: email, password: password)
+        try await user.reauthenticate(with: credential)
+    }
+    private func handleError(_ error: Error) throws -> Never {
+            let authError = AuthError.fromFirebaseError(error)
+            setState(.error(authError))
+            throw authError
         }
-    }
-    
-    /// 获取当前保存的推送令牌
-    func getCurrentPushToken() -> String? {
-        return userDefaults.string(forKey: AppConstants.UserDefaultsKeys.pushToken)
-    }
-    
-    /// 清除推送令牌
-    @MainActor
-    func clearPushToken() {
-        userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.pushToken)
-        userDefaults.synchronize()
-    }
-    
-    // 在 clearAuthState 方法中添加清除推送令牌的操作
-    func updateStateOnMain() {
-        if Thread.isMainThread {
-            isLoggedIn = false
-            isEmailVerified = false
-            userProfile = nil
-            authenticationState = .loggedOut
-            
-            // 清除所有存储的数据
-            userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.isLoggedIn)
-            userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.userProfile)
-            userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.authToken)
-            userDefaults.removeObject(forKey: AppConstants.UserDefaultsKeys.pushToken)
-            userDefaults.removeObject(forKey: "hasCompletedInitialLaunch")
-            userDefaults.synchronize()
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateStateOnMain()
-            }
-        }
-    }
-    private func clearAuthState() {
-        if Thread.isMainThread {
-            updateStateOnMain()
-        } else {
-            DispatchQueue.main.async { [weak self] in
-                self?.updateStateOnMain()
-            }
-        }
-    }
-    
-    
-    private func handleAuthError(_ error: Error) {
-        DispatchQueue.main.async { [weak self] in
-            self?.setLoading(false)
-            let authError: AuthError = self?.handleFirebaseError(error) as? AuthError ?? .unknown("Unknown error occurred")
-            self?.authenticationState = .failed(authError)
-        }
-    }
-    
-    
-    
-    private func setLoading(_ loading: Bool) {
-        DispatchQueue.main.async { [weak self] in
-            self?.isLoading = loading
-        }
-    }
-    
-    private func saveUserState() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self else { return }
-            self.userDefaults.set(true, forKey: AppConstants.UserDefaultsKeys.isLoggedIn)
-            if let encoded = try? JSONEncoder().encode(self.userProfile) {
-                self.userDefaults.set(encoded, forKey: AppConstants.UserDefaultsKeys.userProfile)
-            }
-            self.userDefaults.synchronize()
-        }
-    }
-    
-    private func loadUserProfile() {
-        if let userData = userDefaults.data(forKey: AppConstants.UserDefaultsKeys.userProfile),
-           let profile = try? JSONDecoder().decode(UserProfile.self, from: userData) {
-            DispatchQueue.main.async { [weak self] in
-                self?.userProfile = profile
-            }
-        }
-    }
-    
-    private func handleFirebaseError(_ error: Error) -> AuthError {
-        let nsError = error as NSError
-        print("Firebase error code: \(nsError.code), description: \(error.localizedDescription)")
-        
-        switch nsError.code {
-        case AuthErrorCode.invalidEmail.rawValue:
-            return .invalidEmail
-        case AuthErrorCode.wrongPassword.rawValue:
-            return .invalidPassword
-        case AuthErrorCode.userNotFound.rawValue:
-            return .noUserFound
-        case AuthErrorCode.emailAlreadyInUse.rawValue:
-            return .duplicateEmail
-        case AuthErrorCode.weakPassword.rawValue:
-            return .weakPassword
-        case AuthErrorCode.networkError.rawValue:
-            return .networkError
-        case AuthErrorCode.tooManyRequests.rawValue:
-            return .tooManyRequests
-        default:
-            return .unknown(error.localizedDescription)
-        }
-    }
 }
 
-// MARK: - Custom Auth Errors
-enum AuthError: LocalizedError {
-    case invalidEmail
-    case invalidPassword
-    case noUserFound
-    case duplicateEmail
-    case weakPassword
-    case networkError
-    case tooManyRequests
-    case unknown(String)
-    
-    var errorDescription: String? {
-        switch self {
-        case .invalidEmail:
-            return "邮箱格式无效"
-        case .invalidPassword:
-            return "密码错误"
-        case .noUserFound:
-            return "用户不存在"
-        case .duplicateEmail:
-            return "该邮箱已被注册"
-        case .weakPassword:
-            return "密码强度不够，至少需要6个字符"
-        case .networkError:
-            return "网络连接错误，请检查网络后重试"
-        case .tooManyRequests:
-            return "请求过于频繁，请稍后再试"
-        case .unknown(let message):
-            return "错误: \(message)"
-        }
-    }
-}
 
-// MARK: - Preview Helper
-#if DEBUG
-extension AuthManager {
-    static var preview: AuthManager {
-        let manager = AuthManager(userDefaults: .standard)
-        manager.userProfile = UserProfile.sample
-        return manager
-    }
-}
-#endif
+
