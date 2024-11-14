@@ -38,7 +38,7 @@ class ForgetPasswordViewModel: ObservableObject {
         
         isLoading = true
         showError = false
-        
+        defer { isLoading = false }
         do {
             try await Auth.auth().sendPasswordReset(withEmail: email)
             isResetEmailSent = true

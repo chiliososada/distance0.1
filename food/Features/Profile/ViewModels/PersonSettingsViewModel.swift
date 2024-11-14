@@ -36,7 +36,7 @@ final class PersonSettingsViewModel: ObservableObject {
     /// 清除缓存
     func clearCache() async {
         isLoading = true
-        
+        defer { isLoading = false }
         // 模拟清除缓存操作
         try? await Task.sleep(nanoseconds: 1_000_000_000)
         
@@ -51,7 +51,7 @@ final class PersonSettingsViewModel: ObservableObject {
     /// 检查更新
     func checkUpdate() async {
         isLoading = true
-        
+        defer { isLoading = false }
         // 模拟检查更新操作
         try? await Task.sleep(nanoseconds: 1_000_000_000)
         
@@ -65,7 +65,7 @@ final class PersonSettingsViewModel: ObservableObject {
     /// 退出登录
     func logout() async {
           isLoading = true
-          
+        defer { isLoading = false }
           do {
               try await authManager.signOut()
               await resetUI()

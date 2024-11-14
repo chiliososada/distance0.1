@@ -160,7 +160,7 @@ struct DeleteAccountView: View {
     
     private func handleDeleteAccount() async {
         accountState.isLoading = true
-        
+       
         do {
             try await authManager.deleteAccount(password: accountState.password)
             

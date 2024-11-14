@@ -82,7 +82,7 @@ final class AuthManager: ObservableObject {
           error = nil
           
           defer {
-              isLoading = false  // defer 块中的代码会在函数结束时执行
+              isLoading = false
           }
           
           do {

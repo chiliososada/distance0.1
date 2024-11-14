@@ -33,6 +33,7 @@ final class LoginPasswordViewModel: ObservableObject {
             guard validateInput() else { return }
             
             isLoading = true
+            defer { isLoading = false }
             print("Starting login process for email: \(authData.email)")
             
             do {
