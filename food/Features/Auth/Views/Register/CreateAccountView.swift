@@ -242,25 +242,24 @@ struct CreateAccountView: View {
     
     
     private func handleNextButtonTap() async {
-            do {
-                try await viewModel.createAccount()
-                
-                await MainActor.run {
-                    if let email = viewModel.registrationEmail {
-                        print("Successfully registered, navigating to verification for: \(email)")
-                        navigationManager.navigate(to: .verification(email: email))
-                    } else if case .emailUnverified(let email) = authManager.state {
-                        print("Using state email for verification: \(email)")
-                        navigationManager.navigate(to: .verification(email: email))
-                    } else {
-                        print("No email available for verification, current state: \(authManager.state)")
-                    }
-                }
-            } catch {
-                print("Registration flow error: \(error.localizedDescription)")
-                // 错误已在 ViewModel 中处理
-            }
-        }
+         do {
+             try await viewModel.createAccount()
+             
+             await MainActor.run {
+                 if let email = viewModel.registrationEmail {
+                     print("Successfully registered, navigating to verification for: \(email)")
+                     navigationManager.navigate(to: .verification(email: email))
+                 } else if let user = authManager.currentUser, !user.isEmailVerified {
+                     print("Using current user email for verification: \(user.email ?? "")")
+                     navigationManager.navigate(to: .verification(email: user.email ?? ""))
+                 } else {
+                     print("No email available for verification")
+                 }
+             }
+         } catch {
+             print("Registration flow error: \(error.localizedDescription)")
+         }
+     }
 
 }
 

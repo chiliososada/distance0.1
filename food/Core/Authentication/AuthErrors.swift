@@ -42,30 +42,13 @@ enum AuthError: LocalizedError, Equatable {
         }
     }
     
-    // 实现 Equatable 协议
-    static func == (lhs: AuthError, rhs: AuthError) -> Bool {
-        switch (lhs, rhs) {
-        case (.invalidEmail, .invalidEmail),
-             (.invalidPassword, .invalidPassword),
-             (.invalidCredentials, .invalidCredentials),
-             (.weakPassword, .weakPassword),
-             (.emailAlreadyInUse, .emailAlreadyInUse),
-             (.userNotFound, .userNotFound),
-             (.requiresRecentLogin, .requiresRecentLogin),
-             (.networkError, .networkError),
-             (.emailNotVerified, .emailNotVerified),
-             (.tooManyRequests, .tooManyRequests):
-            return true
-        case (.unknown(let lhsMessage), .unknown(let rhsMessage)):
-            return lhsMessage == rhsMessage
-        default:
-            return false
-        }
-    }
-
-    
-    // 从 Firebase 错误映射到 AuthError
+    // MARK: - Firebase Error Mapping
     static func fromFirebaseError(_ error: Error) -> AuthError {
+        // 如果已经是 AuthError 类型，直接返回
+        if let authError = error as? AuthError {
+            return authError
+        }
+        
         let nsError = error as NSError
         
         switch nsError.code {
@@ -93,31 +76,23 @@ enum AuthError: LocalizedError, Equatable {
     }
 }
 
-// MARK: - Auth State
-enum AuthState: Equatable {
-    case initial
-    case loading
-    case authenticated(UserProfile)
-    case emailUnverified(String)
-    case unauthenticated
-    case error(AuthError)
-    
-    static func == (lhs: AuthState, rhs: AuthState) -> Bool {
+// MARK: - Equatable Conformance
+extension AuthError {
+    static func == (lhs: AuthError, rhs: AuthError) -> Bool {
         switch (lhs, rhs) {
-        case (.initial, .initial),
-             (.loading, .loading),
-             (.unauthenticated, .unauthenticated):
+        case (.invalidEmail, .invalidEmail),
+             (.invalidPassword, .invalidPassword),
+             (.invalidCredentials, .invalidCredentials),
+             (.weakPassword, .weakPassword),
+             (.emailAlreadyInUse, .emailAlreadyInUse),
+             (.userNotFound, .userNotFound),
+             (.requiresRecentLogin, .requiresRecentLogin),
+             (.networkError, .networkError),
+             (.emailNotVerified, .emailNotVerified),
+             (.tooManyRequests, .tooManyRequests):
             return true
-            
-        case (.authenticated(let lhsProfile), .authenticated(let rhsProfile)):
-            return lhsProfile.id == rhsProfile.id
-            
-        case (.emailUnverified(let lhsEmail), .emailUnverified(let rhsEmail)):
-            return lhsEmail == rhsEmail
-            
-        case (.error(let lhsError), .error(let rhsError)):
-            return lhsError.localizedDescription == rhsError.localizedDescription
-            
+        case (.unknown(let lhsMessage), .unknown(let rhsMessage)):
+            return lhsMessage == rhsMessage
         default:
             return false
         }

@@ -145,7 +145,7 @@ struct LoginPasswordView: View {
             if viewModel.loginSuccess {
                 // 重置导航状态
                 navigationManager.resetNavigation()
-                
+                tabBarManager.resetNavigationState()
                 // 更新窗口根视图
                 if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                    let window = windowScene.windows.first {

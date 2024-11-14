@@ -158,49 +158,41 @@ struct VerificationView: View {
     }
     
     // MARK: - Methods
+    // MARK: - Methods
     private func handleVerification() {
-            Task {
-                do {
-                    let success = try await viewModel.verifyEmail()
-                    if success {
-                        print("Email verification successful, setting up home view")
-                        // 确保认证状态更新
-                        try await authManager.checkEmailVerification()
+        Task {
+            do {
+                if try await viewModel.verifyEmail() {
+                    print("Email verification successful")
+                    
+                    // 验证成功后重置导航状态
+                    navigationManager.resetNavigation()
+                    tabBarManager.resetNavigationState()
+                    
+                    // 更新窗口根视图
+                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                       let window = windowScene.windows.first {
+                        let homeView = HomeView()
+                            .environmentObject(tabBarManager)
+                            .environmentObject(navigationManager)
+                            .environmentObject(authManager)
+                            .environmentObject(LocationManager.shared)
                         
-                        await MainActor.run {
-                            print("Resetting navigation state")
-                            // 重置导航状态
-                            navigationManager.resetNavigation()
-                            tabBarManager.resetNavigationState()
-                            
-                            print("Updating root view")
-                            // 更新窗口根视图
-                            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                               let window = windowScene.windows.first {
-                                print("Setting up HomeView")
-                                let homeView = HomeView()
-                                    .environmentObject(navigationManager)
-                                    .environmentObject(tabBarManager)
-                                    .environmentObject(authManager)
-                                    .environmentObject(LocationManager.shared)
-                                
-                                window.rootViewController = UIHostingController(rootView: homeView)
-                                window.makeKeyAndVisible()
-                                print("HomeView setup complete")
-                            } else {
-                                print("Failed to get window scene")
-                            }
-                        }
-                    } else {
-                        print("Email verification failed")
+                        window.rootViewController = UIHostingController(rootView: homeView)
+                        window.makeKeyAndVisible()
                     }
-                } catch {
-                    print("Verification error: \(error)")
-                    viewModel.errorMessage = error.localizedDescription
+                } else {
+                    print("Email verification failed")
                     viewModel.showError = true
+                    viewModel.errorMessage = "邮箱验证失败，请确保已点击验证链接"
                 }
+            } catch {
+                print("Verification error: \(error)")
+                viewModel.errorMessage = error.localizedDescription
+                viewModel.showError = true
             }
         }
+    }
 }
 
 // MARK: - Preview

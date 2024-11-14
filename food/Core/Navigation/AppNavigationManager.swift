@@ -17,9 +17,6 @@ enum AppRoute: Hashable {
    // case verification
     case passwordChanged
     case forgetPassword
-//    case foundEmail(email: String)
-//    case forgetCode(email: String)
-//    case getNewPassword
     
     // Main Flow
     case chatDetail(chatRoom: ChatRoom)
@@ -44,22 +41,8 @@ enum TabRoute: Int {
     case profile
 }
 
-// MARK: - Navigation State
 final class AppNavigationManager: ObservableObject {
-    // MARK: - Singleton Instance
-    static let shared: AppNavigationManager = .init()
-    @Published var navigationPath = NavigationPath()
-    // MARK: - Published Properties
-    @Published var selectedTab: TabRoute = .home
-   
-    @Published var presentedSheet: AppRoute?
-    @Published var isPresentingSheet = false
-    @Published var chatNavigationSource: ChatNavigationSource = .normal
-    @Published var pendingChatRoom: ChatRoom?
-    @Published var isNavigationBarHidden = false
-    @Published var isTabBarHidden = false
-    
-    // MARK: - Navigation Source Types
+    // MARK: - Nested Types
     enum ChatNavigationSource: Equatable {
         case normal
         case fromRecipe(RecipeInfo)
@@ -71,11 +54,24 @@ final class AppNavigationManager: ObservableObject {
         }
     }
     
-  
+    // MARK: - Singleton Instance
+    static let shared: AppNavigationManager = .init()
+    
+    // MARK: - Published Properties
+    @Published var navigationPath = NavigationPath()
+    @Published var selectedTab: TabRoute = .home
+    @Published var presentedSheet: AppRoute?
+    @Published var isPresentingSheet = false
+    @Published var chatNavigationSource: ChatNavigationSource = .normal
+    @Published var pendingChatRoom: ChatRoom?
+    @Published var isNavigationBarHidden = false
+    @Published var isTabBarHidden = false
+    
     private init() {}
     
     // MARK: - Core Navigation Methods
     func navigate(to route: AppRoute) {
+        print("Navigating to route: \(route)")
         navigationPath.append(route)
     }
     
@@ -90,7 +86,7 @@ final class AppNavigationManager: ObservableObject {
     }
     
     func popToRoot() {
-        navigationPath.removeLast(navigationPath.count)
+        navigationPath = NavigationPath()
     }
     
     func goBack() {
@@ -98,40 +94,27 @@ final class AppNavigationManager: ObservableObject {
             navigationPath.removeLast()
         }
     }
+    
     func navigateToTab(_ tab: TabRoute) {
-            selectedTab = tab
-        }
-    // MARK: - Tab Navigation
+        selectedTab = tab
+    }
+    
     func switchTab(to tab: TabRoute) {
         selectedTab = tab
     }
-
     
     func clearNavigationPath() {
-            // 移除导航路径中的所有项目
-            while !navigationPath.isEmpty {
-                navigationPath.removeLast()
-            }
-        }
-    
+        navigationPath = NavigationPath()
+    }
     
     func resetNavigation() {
-        chatNavigationSource = .normal
+        print("Resetting navigation state")
+        navigationPath = NavigationPath()
+        chatNavigationSource = ChatNavigationSource.normal  // 明确指定类型
         selectedTab = .home
-        isNavigationBarHidden = false  // 确保导航栏显示
+        isNavigationBarHidden = false
         pendingChatRoom = nil
-        navigationPath.removeLast(navigationPath.count)
         isPresentingSheet = false
         presentedSheet = nil
     }
-
-  
-    
- 
-   
-    
-    
-    
-    
 }
-

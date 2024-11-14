@@ -29,75 +29,53 @@ final class LoginPasswordViewModel: ObservableObject {
     }
     
     /// 执行登录操作
-    func login() async {
-        guard validateInput() else { return }
-        
-        isLoading = true
-        print("Starting login process for email: \(authData.email)")
-        
-        do {
-            let credentials = AuthCredentials(
-                email: authData.email,
-                password: authData.password
-            )
+        func login() async {
+            guard validateInput() else { return }
             
-            print("Attempting to sign in...")
-            try await authManager.signIn(with: credentials)
+            isLoading = true
+            print("Starting login process for email: \(authData.email)")
             
-            // 给状态一点时间更新
-            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5秒
-            print("Sign in completed, current state: \(authManager.state)")
-            
-            // 根据认证状态处理结果
-            switch authManager.state {
-            case .authenticated:
-                print("Login successful, state is authenticated")
-                await MainActor.run {
-                    loginSuccess = true
-                }
+            do {
+                let credentials = AuthCredentials(
+                    email: authData.email,
+                    password: authData.password
+                )
                 
-            case .emailUnverified:
-                print("Email not verified for user")
-                errorMessage = "请先验证您的邮箱"
-                showError = true
+                print("Attempting to sign in...")
+                try await authManager.signIn(with: credentials)
                 
-            case .error(let authError):
-                print("Auth error received: \(authError.localizedDescription)")
-                errorMessage = authError.errorDescription ?? "登录失败"
-                showError = true
+                // 给Firebase一点时间更新状态
+                try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5秒
                 
-            case .loading:
-                print("State is still loading, waiting...")
-                // 再次等待并检查状态
-                try? await Task.sleep(nanoseconds: 500_000_000)
-                if case .authenticated = authManager.state {
-                    print("State is now authenticated after waiting")
-                    await MainActor.run {
-                        loginSuccess = true
+                // 验证登录结果
+                if let user = authManager.currentUser {
+                    if user.isEmailVerified {
+                        print("Login successful, user is verified")
+                        await MainActor.run {
+                            loginSuccess = true
+                        }
+                    } else {
+                        print("Email not verified")
+                        errorMessage = "请先验证您的邮箱"
+                        showError = true
                     }
                 } else {
-                    print("Final state is still not authenticated: \(authManager.state)")
-                    errorMessage = "登录状态异常，请重试"
+                    print("No user found after sign in")
+                    errorMessage = "登录失败，请稍后重试"
                     showError = true
                 }
                 
-            case .initial, .unauthenticated:
-                print("Unexpected auth state: \(authManager.state)")
-                errorMessage = "登录失败，请稍后重试"
+            } catch let error as AuthError {
+                print("Auth error caught: \(error.localizedDescription)")
+                handleAuthError(error)
+            } catch {
+                print("Unexpected error: \(error.localizedDescription)")
+                errorMessage = "登录失败：\(error.localizedDescription)"
                 showError = true
             }
             
-        } catch let error as AuthError {
-            print("Auth error caught: \(error.localizedDescription)")
-            handleAuthError(error)
-        } catch {
-            print("Unexpected error: \(error.localizedDescription)")
-            errorMessage = "登录失败：\(error.localizedDescription)"
-            showError = true
+            isLoading = false
         }
-        
-        isLoading = false
-    }
     
     // MARK: - Private Methods
     

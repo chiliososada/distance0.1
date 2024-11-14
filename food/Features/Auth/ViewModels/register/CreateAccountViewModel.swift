@@ -54,10 +54,15 @@ final class CreateAccountViewModel: ObservableObject {
      }
     
     // MARK: - Public Methods
+   
     @MainActor
-    func createAccount() async throws {
+        func createAccount() async throws {
             guard validateForm() else { return }
             isLoading = true
+            defer {
+                        isLoading = false
+            }
+                    
             
             do {
                 print("Starting account creation for: \(formData.emailOrPhone)")
@@ -70,32 +75,9 @@ final class CreateAccountViewModel: ObservableObject {
                 
                 // 执行注册
                 try await authManager.signUp(with: registrationData)
-                
-                // 给状态一点时间更新
-                try? await Task.sleep(nanoseconds: 1_000_000_000)
-                
-                // 检查最终状态
-                switch authManager.state {
-                case .emailUnverified(let email):
-                    print("Registration successful, email: \(email) needs verification")
-                    self.registrationEmail = email
-                    
-                case .error(let error):
-                    print("Auth error state: \(error)")
-                    throw error
-                    
-                case .loading:
-                    print("Still in loading state")
-                    throw AuthError.unknown("Registration state still loading")
-                    
-                case .authenticated:
-                    print("Unexpectedly authenticated")
-                    throw AuthError.unknown("Unexpected authenticated state")
-                    
-                case .initial, .unauthenticated:
-                    print("Unexpected state: \(authManager.state)")
-                    throw AuthError.unknown("Unexpected auth state: \(authManager.state)")
-                }
+                try? await Task.sleep(nanoseconds: 1_000_000_000)// 给状态一点时间更新
+                // 注册成功后，记录邮箱用于后续验证
+                self.registrationEmail = formData.emailOrPhone
                 
             } catch let error as AuthError {
                 print("Auth error occurred: \(error.localizedDescription)")

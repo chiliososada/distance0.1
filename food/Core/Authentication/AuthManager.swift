@@ -1,237 +1,192 @@
-//
-//  AuthManagers.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/13.
-//
 import SwiftUI
 import FirebaseAuth
 import Combine
-// MARK: - Core Auth Manager
+
 final class AuthManager: ObservableObject {
-    // MARK: - Published State
-    @Published private(set) var state: AuthState = .initial
+    // MARK: - Published Properties
+    @Published private(set) var currentUser: User?
+    @Published private(set) var userProfile: UserProfile?
+    @Published private(set) var isLoading = false
+    @Published private(set) var error: AuthError?
     
     // MARK: - Dependencies
-    private let userDefaults: UserDefaults
     private let auth = Auth.auth()
     private let sessionManager: SessionManager
-   
+    private var stateListener: AuthStateDidChangeListenerHandle?
     
     // MARK: - Initialization
-    init(
-        userDefaults: UserDefaults = .standard,
-        sessionManager: SessionManager = .shared
-       
-    ) {
-        self.userDefaults = userDefaults
+    init(sessionManager: SessionManager = .shared) {
         self.sessionManager = sessionManager
-       
+        setupAuthStateListener()
+    }
+   
+    
+    @MainActor
+    func validateCurrentSession() async throws -> Bool {
+        guard let user = currentUser else {
+            return false
+        }
         
-        // 初始状态检查
-        checkInitialState()
+        do {
+            // 尝试刷新用户状态
+            try await user.reload()
+            
+            // 验证邮箱
+            if !user.isEmailVerified {
+                throw AuthError.emailNotVerified
+            }
+            
+            // 尝试获取新token，这会自动验证会话
+            _ = try await user.getIDToken()
+            
+            // 更新用户档案
+            let profile = try await createUserProfile(from: user)
+            self.userProfile = profile
+            await sessionManager.updateSession(user: profile)
+            
+            return true
+        } catch {
+            self.error = AuthError.fromFirebaseError(error)
+            return false
+        }
+    }
+    
+    private func setupAuthStateListener() {
+        stateListener = auth.addStateDidChangeListener { [weak self] _, user in
+            Task { @MainActor in
+                self?.currentUser = user
+                if let user = user {
+                    // 用户已登录，创建或获取用户档案
+                    if user.isEmailVerified {
+                        do {
+                            let profile = try await self?.createUserProfile(from: user)
+                            self?.userProfile = profile
+                            await self?.sessionManager.updateSession(user: profile)
+                        } catch {
+                            self?.error = AuthError.fromFirebaseError(error)
+                        }
+                    }
+                } else {
+                    // 用户已登出
+                    self?.userProfile = nil
+                    await self?.sessionManager.clearSession()
+                }
+            }
+        }
     }
     
     // MARK: - Public Methods
-    
-    /// 登录方法
     @MainActor
-    func signIn(with credentials: AuthCredentials) async throws {
-        print("AuthManager: Starting sign in for \(credentials.email)")
-        setState(.loading)
-        
-        do {
-            print("AuthManager: Attempting Firebase sign in")
-            let result = try await auth.signIn(withEmail: credentials.email, password: credentials.password)
-            print("AuthManager: Firebase sign in successful")
-            
-            let profile = try await createUserProfile(from: result.user)
-            print("AuthManager: User profile created")
-            
-            if result.user.isEmailVerified {
-                print("AuthManager: Email is verified, completing authentication")
-                await completeAuthentication(with: profile)
-                print("AuthManager: Authentication completed, final state: \(state)")
-            } else {
-                print("AuthManager: Email is not verified")
-                setState(.emailUnverified(credentials.email))
-            }
-        } catch {
-            print("AuthManager: Sign in error - \(error.localizedDescription)")
-            let authError = AuthError.fromFirebaseError(error)
-            setState(.error(authError))
-            throw authError
-        }
-    }
-    
-    /// 注册方法
-    @MainActor
-    func signUp(with data: RegistrationData) async throws {
-        setState(.loading)
-        
-        do {
-            print("Starting user registration for email: \(data.email)")
-            
-            // 创建用户
-            let result = try await auth.createUser(withEmail: data.email, password: data.password)
-            print("User created successfully: \(result.user.uid)")
-            
-            // 更新用户资料
-            try await updateUserProfile(result.user, name: data.name)
-            print("User profile updated")
-            
-            // 发送验证邮件
-            try await result.user.sendEmailVerification()
-            print("Verification email sent")
-            
-            // 创建用户配置文件
-            let profile = try await createUserProfile(from: result.user)
-            print("User profile created")
-            
-            // 更新会话
-            await sessionManager.updateSession(user: profile)
-            print("Session updated")
-            
-            // 设置状态为待验证，并确保不会被覆盖
-            setState(.emailUnverified(data.email))
-            print("Final state set to emailUnverified")
-            
-        } catch {
-            print("Registration error: \(error.localizedDescription)")
-            let authError = AuthError.fromFirebaseError(error)
-            setState(.error(authError))
-            throw authError
-        }
-    }
-    
-    /// 退出登录
-    @MainActor
-    func signOut() async throws {
-        setState(.loading)
-        
-        do {
-            try auth.signOut()
-            await sessionManager.clearSession()
-            setState(.unauthenticated)
-        } catch {
-            let authError = AuthError.fromFirebaseError(error)
-            setState(.error(authError))
-            throw authError
-        }
-    }
+      func signIn(with credentials: AuthCredentials) async throws {
+          isLoading = true
+          error = nil
+          
+          defer {
+              isLoading = false  // defer 块中的代码会在函数结束时执行
+          }
+          
+          do {
+              let result = try await auth.signIn(withEmail: credentials.email, password: credentials.password)
+              if !result.user.isEmailVerified {
+                  throw AuthError.emailNotVerified
+              }
+          } catch {
+              self.error = AuthError.fromFirebaseError(error)
+              throw self.error!
+          }
+      }
     
     @MainActor
-    func updatePassword(currentPassword: String, newPassword: String) async throws {
-        setState(.loading)
-        
-        do {
-            guard let user = auth.currentUser else {
-                throw AuthError.userNotFound
+        func signUp(with data: RegistrationData) async throws {
+            isLoading = true
+            error = nil
+            
+            defer {
+                isLoading = false
             }
             
-            // 重新认证用户
-            let credential = EmailAuthProvider.credential(
-                withEmail: user.email ?? "",
-                password: currentPassword
-            )
-            try await user.reauthenticate(with: credential)
-            
-            // 更新密码
-            try await user.updatePassword(to: newPassword)
-            
-            // 清除当前会话
-            await sessionManager.clearSession()
-            
-            // 注销当前用户
-            try auth.signOut()
-            
-            // 将状态设置为未认证
-            setState(.unauthenticated)
-            
-        } catch {
-            let authError = AuthError.fromFirebaseError(error)
-            setState(.error(authError))
-            throw authError
+            do {
+                let result = try await auth.createUser(withEmail: data.email, password: data.password)
+                try await updateUserProfile(result.user, name: data.name)
+                try await result.user.sendEmailVerification()
+            } catch {
+                self.error = AuthError.fromFirebaseError(error)
+                throw self.error!
+            }
         }
-    }
-    /// 删除账户
-    @MainActor
-    func deleteAccount(password: String) async throws {
-        setState(.loading)
         
-        do {
-            guard let user = auth.currentUser else {
-                throw AuthError.userNotFound
+        @MainActor
+        func signOut() async throws {
+            isLoading = true
+            error = nil
+            
+            defer {
+                isLoading = false
             }
             
-            // 重新验证
-            try await reauthenticateUser(user, with: password)
-            
-            // 删除账户
-            try await user.delete()
-            await sessionManager.clearSession()
-            setState(.unauthenticated)
-        } catch {
-            let authError = AuthError.fromFirebaseError(error)
-            setState(.error(authError))
-            throw authError
+            do {
+                try auth.signOut()
+                await sessionManager.clearSession()
+            } catch {
+                self.error = AuthError.fromFirebaseError(error)
+                throw self.error!
+            }
         }
-    }
-    
-    /// 检查邮箱验证状态
-    @MainActor
-    func checkEmailVerification() async throws {
-        guard case .emailUnverified(let email) = state else { return }
         
-        do {
-            guard let user = auth.currentUser else {
-                throw AuthError.userNotFound
+        @MainActor
+        func updatePassword(currentPassword: String, newPassword: String) async throws {
+            isLoading = true
+            error = nil
+            
+            defer {
+                isLoading = false
             }
             
-            try await user.reload()
-            
-            if user.isEmailVerified {
-                let profile = try await createUserProfile(from: user)
-                await completeAuthentication(with: profile)
-            }
-        } catch {
-            let authError = AuthError.fromFirebaseError(error)
-            setState(.error(authError))
-            throw authError
-        }
-    }
-    
-    // MARK: - Private Methods
-    
-    private func setState(_ newState: AuthState) {
-        DispatchQueue.main.async { [weak self] in
-            self?.state = newState
-        }
-    }
-    
-    private func checkInitialState() {
-        if let user = auth.currentUser {
-            Task { @MainActor in
-                do {
-                    try await user.reload()
-                    let profile = try await createUserProfile(from: user)
-                    
-                    if user.isEmailVerified {
-                        await completeAuthentication(with: profile)
-                    } else {
-                        setState(.emailUnverified(user.email ?? ""))
-                    }
-                } catch {
-                    setState(.unauthenticated)
+            do {
+                guard let user = auth.currentUser else {
+                    throw AuthError.userNotFound
                 }
+                
+                let credential = EmailAuthProvider.credential(
+                    withEmail: user.email ?? "",
+                    password: currentPassword
+                )
+                try await user.reauthenticate(with: credential)
+                try await user.updatePassword(to: newPassword)
+                
+                await sessionManager.clearSession()
+                try auth.signOut()
+            } catch {
+                self.error = AuthError.fromFirebaseError(error)
+                throw self.error!
             }
-        } else {
-            setState(.unauthenticated)
         }
-    }
+        
+        @MainActor
+        func deleteAccount(password: String) async throws {
+            isLoading = true
+            error = nil
+            
+            defer {
+                isLoading = false
+            }
+            
+            do {
+                guard let user = auth.currentUser else {
+                    throw AuthError.userNotFound
+                }
+                
+                try await reauthenticateUser(user, with: password)
+                try await user.delete()
+                await sessionManager.clearSession()
+            } catch {
+                self.error = AuthError.fromFirebaseError(error)
+                throw self.error!
+            }
+        }
     
+    // MARK: - Private Helper Methods
     private func createUserProfile(from user: User) async throws -> UserProfile {
-        // 从 Firestore 获取用户数据或创建新的配置文件
         return UserProfile(
             id: user.uid,
             userName: user.displayName ?? user.email?.components(separatedBy: "@").first ?? "User",
@@ -261,15 +216,6 @@ final class AuthManager: ObservableObject {
         )
     }
     
-    @MainActor
-    private func completeAuthentication(with profile: UserProfile) async {
-        print("Starting complete authentication")
-        await sessionManager.updateSession(user: profile)
-        print("Session updated")
-        setState(.authenticated(profile))
-        print("State set to authenticated")
-    }
-    
     private func updateUserProfile(_ user: User, name: String) async throws {
         let changeRequest = user.createProfileChangeRequest()
         changeRequest.displayName = name
@@ -280,16 +226,13 @@ final class AuthManager: ObservableObject {
         guard let email = user.email else {
             throw AuthError.userNotFound
         }
-        
         let credential = EmailAuthProvider.credential(withEmail: email, password: password)
         try await user.reauthenticate(with: credential)
     }
-    private func handleError(_ error: Error) throws -> Never {
-            let authError = AuthError.fromFirebaseError(error)
-            setState(.error(authError))
-            throw authError
+    
+    deinit {
+        if let listener = stateListener {
+            auth.removeStateDidChangeListener(listener)
         }
+    }
 }
-
-
-

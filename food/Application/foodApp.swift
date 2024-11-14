@@ -1,18 +1,23 @@
 import SwiftUI
 import MapKit
 import CoreLocation
+import FirebaseCore
 
 @main
-struct foodApp: App {
+struct FoodApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
     
-    // Initialize all managers as StateObjects
     @StateObject private var tabBarManager = TabBarManager()
-    @StateObject private var authManager = AuthManager()
-    @StateObject private var navigationManager: AppNavigationManager = .shared
-    @StateObject private var locationManager: LocationManager = .shared
+    @StateObject private var authManager: AuthManager
+    @StateObject private var navigationManager = AppNavigationManager.shared
+    @StateObject private var locationManager = LocationManager.shared
     
     @Environment(\.scenePhase) private var scenePhase
+    
+    init() {
+
+        _authManager = StateObject(wrappedValue: AuthManager())
+    }
     
     var body: some Scene {
         WindowGroup {
@@ -21,8 +26,8 @@ struct foodApp: App {
                 .environmentObject(authManager)
                 .environmentObject(navigationManager)
                 .environmentObject(locationManager)
-                .onChange(of: scenePhase) { _, newPhase in
-                    handleScenePhase(newPhase)
+                .onChange(of: scenePhase) { phase in
+                    handleScenePhase(phase)
                 }
         }
     }
@@ -31,10 +36,27 @@ struct foodApp: App {
         switch phase {
         case .active:
             locationManager.requestLocationPermissionIfNeeded()
+//            // 检查用户登录状态，但不阻塞UI
+//            if authManager.currentUser != nil {
+//                Task {
+//                    do {
+//                        if try await authManager.validateCurrentSession() {
+//                            print("Session validated successfully")
+//                        } else {
+//                            print("Session validation failed")
+//                        }
+//                    } catch {
+//                        print("Session validation error: \(error.localizedDescription)")
+//                    }
+//                }
+//            }
+            
         case .inactive:
             UserDefaults.standard.synchronize()
+            
         case .background:
             locationManager.stopUpdatingLocation()
+            
         @unknown default:
             break
         }
@@ -42,7 +64,7 @@ struct foodApp: App {
 }
 
 #if DEBUG
-struct foodApp_Previews: PreviewProvider {
+struct FoodApp_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
             .environmentObject(TabBarManager())
