@@ -122,11 +122,19 @@ extension View {
                 let width = proxy.size.width
                 Color.clear
                     .onAppear {
-                        DispatchQueue.main.async {
+                        // 使用 RunLoop 的下一个更新周期来设置宽度
+                        RunLoop.main.perform {
                             onChange(width)
                         }
-                    }.onChange(of: width) { oldWidth, newWidth in
-                        onChange(newWidth)
+                    }
+                    .onChange(of: width) { oldWidth, newWidth in
+                        // 只有当宽度真正改变时才触发更新
+                        if oldWidth != newWidth {
+                            // 使用 RunLoop 的下一个更新周期来设置宽度
+                            RunLoop.main.perform {
+                                onChange(newWidth)
+                            }
+                        }
                     }
             }
         }

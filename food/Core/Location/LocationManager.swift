@@ -1,10 +1,3 @@
-//
-//  LocationManager.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/10.
-//
-
 import Foundation
 import CoreLocation
 import MapKit
@@ -16,11 +9,8 @@ final class LocationManager: NSObject, ObservableObject {
     static let shared = LocationManager()
     
     // MARK: - Published Properties
-    /// 用户当前位置
     @Published var userLocation: CLLocation?
-    /// 位置授权状态
     @Published private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
-    /// 位置服务是否可用
     @Published private(set) var isLocationServicesEnabled = false
     
     // MARK: - Private Properties
@@ -29,11 +19,8 @@ final class LocationManager: NSObject, ObservableObject {
     private var searchCompleterDelegate: SearchCompleterDelegate?
     
     // MARK: - Callback Properties
-    /// 位置更新回调
     var locationUpdated: ((CLLocationCoordinate2D) -> Void)?
-    /// 搜索结果更新回调
     var searchResultsUpdated: (([MKLocalSearchCompletion]) -> Void)?
-    /// 搜索错误回调
     var searchError: ((Error) -> Void)?
     
     // MARK: - Initialization
@@ -50,8 +37,16 @@ final class LocationManager: NSObject, ObservableObject {
         locationManager.delegate = self
         locationManager.desiredAccuracy = kCLLocationAccuracyBest
         
-        // 检查位置服务是否启用
-        isLocationServicesEnabled = CLLocationManager.locationServicesEnabled()
+        // 在后台线程检查位置服务状态
+        DispatchQueue.global().async { [weak self] in
+            let servicesEnabled = CLLocationManager.locationServicesEnabled()
+            DispatchQueue.main.async {
+                self?.isLocationServicesEnabled = servicesEnabled
+            }
+        }
+        
+        // 获取当前授权状态
+        authorizationStatus = locationManager.authorizationStatus
     }
     
     private func setupSearchCompleter() {
@@ -66,13 +61,15 @@ final class LocationManager: NSObject, ObservableObject {
     }
     
     // MARK: - Public Methods
-    /// 请求位置权限（如果需要）
     func requestLocationPermissionIfNeeded() {
-        switch locationManager.authorizationStatus {
+        let currentStatus = locationManager.authorizationStatus
+        
+        switch currentStatus {
         case .notDetermined:
-            locationManager.requestWhenInUseAuthorization()
+            DispatchQueue.global().async {
+                self.locationManager.requestWhenInUseAuthorization()
+            }
         case .restricted, .denied:
-            // 用户已经拒绝或无法获取位置权限
             handleLocationPermissionDenied()
         case .authorizedWhenInUse, .authorizedAlways:
             startUpdatingLocation()
@@ -81,70 +78,109 @@ final class LocationManager: NSObject, ObservableObject {
         }
     }
     
-    /// 开始更新位置
+    // MARK: - Public Methods
     func startUpdatingLocation() {
-        guard CLLocationManager.locationServicesEnabled() else {
-            handleLocationServicesDisabled()
-            return
+        // 在后台线程检查位置服务状态
+        DispatchQueue.global().async { [weak self] in
+            let servicesEnabled = CLLocationManager.locationServicesEnabled()
+            
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                
+                self.isLocationServicesEnabled = servicesEnabled
+                guard servicesEnabled else {
+                    self.handleLocationServicesDisabled()
+                    return
+                }
+                
+                switch self.locationManager.authorizationStatus {
+                case .authorizedWhenInUse, .authorizedAlways:
+                    self.locationManager.startUpdatingLocation()
+                case .notDetermined:
+                    self.requestLocationPermissionIfNeeded()
+                case .restricted, .denied:
+                    self.handleLocationPermissionDenied()
+                @unknown default:
+                    break
+                }
+            }
         }
-        locationManager.startUpdatingLocation()
     }
     
-    /// 停止更新位置
     func stopUpdatingLocation() {
         locationManager.stopUpdatingLocation()
     }
     
-    /// 执行位置搜索
-    /// - Parameter query: 搜索关键词
     func searchLocation(query: String) {
         searchCompleter.queryFragment = query
     }
     
     // MARK: - Private Methods
     private func handleLocationPermissionDenied() {
-        // 处理位置权限被拒绝的情况
-        print("Location permission denied")
-        // TODO: 实现提示用户开启位置权限的逻辑
+        DispatchQueue.main.async {
+            self.isLocationServicesEnabled = false
+            // TODO: 实现提示用户开启位置权限的逻辑
+            print("Location permission denied")
+        }
     }
     
     private func handleLocationServicesDisabled() {
-        // 处理位置服务被禁用的情况
-        print("Location services are disabled")
-        // TODO: 实现提示用户开启位置服务的逻辑
+        DispatchQueue.main.async {
+            self.isLocationServicesEnabled = false
+            // TODO: 实现提示用户开启位置服务的逻辑
+            print("Location services are disabled")
+        }
     }
 }
 
 // MARK: - CLLocationManagerDelegate
 extension LocationManager: CLLocationManagerDelegate {
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
-        authorizationStatus = manager.authorizationStatus
-        
-        switch manager.authorizationStatus {
-        case .authorizedWhenInUse, .authorizedAlways:
-            startUpdatingLocation()
-        case .denied, .restricted:
-            handleLocationPermissionDenied()
-        case .notDetermined:
-            break
-        @unknown default:
-            break
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                
+                self.authorizationStatus = manager.authorizationStatus
+                
+                // 在授权状态变化时检查位置服务状态
+                DispatchQueue.global().async {
+                    let servicesEnabled = CLLocationManager.locationServicesEnabled()
+                    
+                    DispatchQueue.main.async {
+                        self.isLocationServicesEnabled = servicesEnabled
+                        
+                        if servicesEnabled {
+                            switch manager.authorizationStatus {
+                            case .authorizedWhenInUse, .authorizedAlways:
+                                self.startUpdatingLocation()
+                            case .denied, .restricted:
+                                self.handleLocationPermissionDenied()
+                            case .notDetermined:
+                                break
+                            @unknown default:
+                                break
+                            }
+                        } else {
+                            self.handleLocationServicesDisabled()
+                        }
+                    }
+                }
+            }
         }
-    }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.last else { return }
         
-        userLocation = location
-        locationUpdated?(location.coordinate)
-        
-        // 如果只需要获取一次位置，可以停止更新
-        // manager.stopUpdatingLocation()
+        DispatchQueue.main.async {
+            self.userLocation = location
+            self.locationUpdated?(location.coordinate)
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("Location update failed: \(error.localizedDescription)")
-        // TODO: 实现错误处理逻辑
+        DispatchQueue.main.async {
+            print("Location update failed: \(error.localizedDescription)")
+            // TODO: 实现错误处理逻辑
+        }
     }
 }
 
@@ -154,20 +190,20 @@ private final class SearchCompleterDelegate: NSObject, MKLocalSearchCompleterDel
     var didFailWithError: ((Error) -> Void)?
     
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
-        didUpdateResults?(completer.results)
+        DispatchQueue.main.async {
+            self.didUpdateResults?(completer.results)
+        }
     }
     
     func completer(_ completer: MKLocalSearchCompleter, didFailWithError error: Error) {
-        didFailWithError?(error)
+        DispatchQueue.main.async {
+            self.didFailWithError?(error)
+        }
     }
 }
 
 // MARK: - Location Search Extension
 extension LocationManager {
-    /// 执行详细的位置搜索
-    /// - Parameters:
-    ///   - searchText: 搜索关键词
-    ///   - completion: 搜索完成回调，返回位置结果数组
     func performLocationSearch(
         searchText: String,
         completion: @escaping ([MKMapItem]) -> Void
@@ -177,18 +213,16 @@ extension LocationManager {
         
         let search = MKLocalSearch(request: searchRequest)
         search.start { response, error in
-            guard let response = response, error == nil else {
-                completion([])
-                return
+            DispatchQueue.main.async {
+                guard let response = response, error == nil else {
+                    completion([])
+                    return
+                }
+                completion(response.mapItems)
             }
-            completion(response.mapItems)
         }
     }
     
-    /// 反向地理编码：从坐标获取地址
-    /// - Parameters:
-    ///   - coordinate: 需要解析的坐标
-    ///   - completion: 完成回调，返回地址信息
     func reverseGeocode(
         coordinate: CLLocationCoordinate2D,
         completion: @escaping (CLPlacemark?) -> Void
@@ -197,28 +231,23 @@ extension LocationManager {
         let location = CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
         
         geocoder.reverseGeocodeLocation(location) { placemarks, error in
-            guard error == nil else {
-                completion(nil)
-                return
+            DispatchQueue.main.async {
+                guard error == nil else {
+                    completion(nil)
+                    return
+                }
+                completion(placemarks?.first)
             }
-            completion(placemarks?.first)
         }
     }
 }
 
 // MARK: - Helper Methods
 extension LocationManager {
-    /// 获取两个位置之间的距离
-    /// - Parameters:
-    ///   - from: 起始位置
-    ///   - to: 目标位置
-    /// - Returns: 距离（米）
     func getDistance(from: CLLocation, to: CLLocation) -> CLLocationDistance {
         return from.distance(from: to)
     }
     
-    /// 检查app是否有位置权限
-    /// - Returns: 是否有位置权限
     func hasLocationPermission() -> Bool {
         let status = locationManager.authorizationStatus
         return status == .authorizedWhenInUse || status == .authorizedAlways
@@ -228,10 +257,9 @@ extension LocationManager {
 // MARK: - Preview Helper
 #if DEBUG
 extension LocationManager {
-    /// 创建测试用的位置管理器实例
     static func preview() -> LocationManager {
         let manager = LocationManager.shared
-        manager.userLocation = CLLocation(latitude: 37.3346, longitude: -122.0090) // Apple Park
+        manager.userLocation = CLLocation(latitude: 37.3346, longitude: -122.0090)
         return manager
     }
 }
