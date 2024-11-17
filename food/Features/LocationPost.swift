@@ -168,3 +168,123 @@ extension LocationPost {
     }
 }
 
+extension LocationPost {
+    struct Draft: Codable {
+        // 内嵌 DraftImage 定义
+               struct DraftImage: Codable, Identifiable {
+                   let id: String
+                   let localIdentifier: String
+                   var uploadStatus: UploadStatus
+                   var serverUrl: String?
+                   let createdAt: Date
+                   
+                   enum UploadStatus: String, Codable {
+                       case draft      // 草稿状态
+                       case uploading  // 上传中
+                       case uploaded  // 已上传到服务器
+                       case failed    // 上传失败
+                   }
+                   
+                   init(id: String = UUID().uuidString,
+                        localIdentifier: String,
+                        uploadStatus: UploadStatus = .draft,
+                        serverUrl: String? = nil,
+                        createdAt: Date = Date()) {
+                       self.id = id
+                       self.localIdentifier = localIdentifier
+                       self.uploadStatus = uploadStatus
+                       self.serverUrl = serverUrl
+                       self.createdAt = createdAt
+                   }
+               }
+        var title: String = ""
+        var content: String = ""
+        var location: LocationInfo = LocationInfo()
+        var draftImages: [DraftImage] = []  // 临时草稿图片
+        var imageUrls: [String] = []        // 已上传的图片URL
+        var tags: [String] = []
+        var selectedDuration: String = "1 Month"
+        var chatRoomEnabled: Bool = false
+        var announcement: String = ""
+        
+        // 获取当前所有图片URL（包括临时和已上传的）
+        var allImageUrls: [String] {
+            imageUrls + (draftImages.compactMap { $0.serverUrl })
+        }
+        
+        // 内部位置信息结构
+        struct LocationInfo: Codable {
+            var name: String
+            var address: String?
+            var latitude: Double
+            var longitude: Double
+            
+            init(name: String = "", address: String? = nil, latitude: Double = 0, longitude: Double = 0) {
+                self.name = name
+                self.address = address
+                self.latitude = latitude
+                self.longitude = longitude
+            }
+            
+            init(from placemark: MKPlacemark) {
+                self.name = placemark.name ?? ""
+                self.address = placemark.formattedAddress // 使用扩展方法获取格式化地址
+                self.latitude = placemark.coordinate.latitude
+                self.longitude = placemark.coordinate.longitude
+            }
+            
+            var coordinate: CLLocationCoordinate2D {
+                CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+            }
+        }
+    }
+    
+    // 更新 createFromDraft 方法以处理新的图片结构
+    static func createFromDraft(_ draft: Draft) -> LocationPost {
+        // 合并所有图片URL
+        let allImageUrls = draft.allImageUrls
+        
+        return LocationPost(
+            id: UUID().uuidString,
+            title: draft.title,
+            content: draft.content,
+            authorName: "当前用户", // 需要从用户系统获取
+            locationName: draft.location.name,
+            latitude: draft.location.latitude,
+            longitude: draft.location.longitude,
+            imageNames: allImageUrls, // 使用合并后的图片URLs
+            avatarImage: "default_avatar", // 需要从用户系统获取
+            tags: draft.tags,
+            participantsCount: 0,
+            postedTime: "刚创",
+            remainingDays: draft.selectedDuration,
+            publishDate: Date().formatted(),
+            joinedCount: "0",
+            isSponsored: false,
+            isLiked: false,
+            cachedDistance: nil,
+            sponsored: false
+        )
+    }
+}
+
+
+extension CLPlacemark {
+    // 添加一个扩展方法来获取格式化的地址
+    var formattedAddress: String {
+        var components: [String] = []
+        
+        // 添加地址组件
+        if let subLocality = self.subLocality {
+            components.append(subLocality)
+        }
+        if let locality = self.locality {
+            components.append(locality)
+        }
+        if let administrativeArea = self.administrativeArea {
+            components.append(administrativeArea)
+        }
+        
+        return components.joined(separator: ", ")
+    }
+}

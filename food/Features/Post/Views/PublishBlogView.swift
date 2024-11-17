@@ -4,17 +4,6 @@ struct PublishBlogView: View {
     @ObservedObject var viewModel: PostInputViewModel
     @Environment(\.dismiss) private var dismiss
     
-//    // 从上一个页面传递数据
-//    init(postTitle: String, postContent: String, postLocation: String, postTags: [String], postImages: [UIImage]) {
-//        let vm = PublishBlogViewModel()
-//        vm.postTitle = postTitle
-//        vm.postContent = postContent
-//        vm.postLocation = postLocation
-//        vm.postTags = postTags
-//        vm.postImages = postImages
-//        _viewModel = StateObject(wrappedValue: vm)
-//    }
-    
     private let spacing: CGFloat = 20
     
     var body: some View {
@@ -54,7 +43,7 @@ struct PublishBlogView: View {
                         ForEach(["1 Month", "1 Week", "1 Day"], id: \.self) { duration in
                             DurationButton(title: duration,
                                          icon: "clock",
-                                         selected: $viewModel.selectedDuration)
+                                         selected: $viewModel.draft.selectedDuration)
                         }
                     }
                 }
@@ -91,13 +80,13 @@ struct PublishBlogView: View {
                         }
                     }
                     
-                    PostToggleButton(isEnabled: $viewModel.chatRoomEnabled,
+                    PostToggleButton(isEnabled: $viewModel.draft.chatRoomEnabled,
                                    title: "开启群聊",
                                    selectedTitle: "开启群聊")
                 }
                 
                 // 只在开启群聊时显示群公告部分
-                if viewModel.chatRoomEnabled {
+                if viewModel.draft.chatRoomEnabled {
                     Divider()
                         .transition(.opacity)
                     
@@ -106,7 +95,7 @@ struct PublishBlogView: View {
                             .font(.system(size: 14))
                             .foregroundColor(.black)
                         
-                        TextEditor(text: $viewModel.announcement)
+                        TextEditor(text: $viewModel.draft.announcement)
                             .frame(height: 180)
                             .font(.system(size: 15))
                             .overlay(
@@ -114,12 +103,11 @@ struct PublishBlogView: View {
                                     .stroke(Color(.systemGray5), lineWidth: 1)
                             )
                     }
-                  
                 }
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 20)
-            .animation(.easeInOut(duration: 0.3), value: viewModel.chatRoomEnabled)
+            .animation(.easeInOut(duration: 0.3), value: viewModel.draft.chatRoomEnabled)
         }
         .navigationBarBackButtonHidden(true)
         .navigationBarTitleDisplayMode(.inline)
@@ -128,11 +116,16 @@ struct PublishBlogView: View {
             trailing: PublishConfirmButton(viewModel: viewModel)
         )
         .background(Color(.systemBackground))
-        .alert("发布成功", isPresented: $viewModel.showPublishSuccess) {
-            Button("确定") {
-                dismiss()
-            }
-        }
+        .alert("发布失败", isPresented: $viewModel.showPublishError) {
+                    Button("确定", role: .cancel) { }
+                } message: {
+                    Text(viewModel.errorMessage)
+                }
+                .alert("发布成功", isPresented: $viewModel.showPublishSuccess) {
+                    Button("确定") {
+                        dismiss()
+                    }
+                }
     }
 }
 
@@ -240,18 +233,3 @@ struct PostToggleButton: View {
         .foregroundColor(.primary)
     }
 }
-
-// 预览 Provider
-//struct PublishBlogView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        NavigationView {
-//            PublishBlogView(
-//                postTitle: "测试标题",
-//                postContent: "测试内容",
-//                postLocation: "测试位置",
-//                postTags: ["#测试"],
-//                postImages: []
-//            )
-//        }
-//    }
-//}

@@ -10,18 +10,18 @@ import PhotosUI
 import MapItemPicker
 
 
-// MARK: - Main View
 struct PostInputView: View {
-       @StateObject private var viewModel = PostInputViewModel()
-       @Environment(\.dismiss) private var dismiss
-       @Binding var isPresented: Bool
-       @Binding var selectedTab: TabRoute  // Change from Int to TabRoute
-       @FocusState private var focusedField: PostInputViewModel.FocusField?
+    @StateObject private var viewModel = PostInputViewModel()
+    @Environment(\.dismiss) private var dismiss
+    @Binding var isPresented: Bool
+    @Binding var selectedTab: TabRoute
+    @FocusState private var focusedField: PostInputViewModel.FocusField?
     
     private enum Layout {
         static let spacing: CGFloat = 16
         static let toolbarHeight: CGFloat = 44
-        static let titleTopPadding: CGFloat = 20  // 添加标题顶部间距常量
+        static let titleTopPadding: CGFloat = 20
+        static let maxImages = 6
     }
     
     var body: some View {
@@ -30,30 +30,28 @@ struct PostInputView: View {
                 ScrollView {
                     VStack(spacing: Layout.spacing) {
                         Spacer().frame(height: Layout.titleTopPadding)
+                        
                         if !viewModel.selectedImages.isEmpty {
-                            ImageGridSection(images: $viewModel.selectedImages)
+                            ImageGridSection(viewModel: viewModel)
                                 .padding(.top)
                         }
                         
                         TitleInputSection(
-                            title: $viewModel.title,
+                            title: $viewModel.draft.title,
                             focusedField: $focusedField
                         )
                         
                         Divider()
                             .padding(.horizontal)
                         
-                        LocationSection(
-                            locationText: viewModel.userLocationText,
-                            onLocationTap: viewModel.showLocationPicker
-                        )
+                        LocationSection(viewModel: viewModel)
                         
-                        PostInputTagsSection(tags: viewModel.selectedTags) { tag in
+                        PostInputTagsSection(tags: viewModel.draft.tags) { tag in
                             viewModel.removeTag(tag)
                         }
                         
                         ContentInputSection(
-                            content: $viewModel.content,
+                            content: $viewModel.draft.content,
                             selectedRange: $viewModel.contentSelectedRange,
                             focusedField: $viewModel.focusedField
                         )
@@ -75,24 +73,30 @@ struct PostInputView: View {
                 }
             }
             .navigationBarItems(
-                           leading: DismissButton(
-                               dismiss: dismiss,
-                               selectedTab: .home,
-                               isPresented: $isPresented,
-                               viewModel: viewModel
-                           ),
-                           trailing: NextStepButton(viewModel: viewModel)
-                       )
+                leading: DismissButton(
+                    dismiss: dismiss,
+                    selectedTab: .home,
+                    isPresented: $isPresented,
+                    viewModel: viewModel
+                ),
+                trailing: NextStepButton(viewModel: viewModel)
+            )
             .navigationDestination(isPresented: $viewModel.showSecondView) {
-                           PublishBlogView(viewModel: viewModel)
-                       }
+                PublishBlogView(viewModel: viewModel)
+            }
             .onChange(of: focusedField) { oldValue, newValue in
                 viewModel.focusedField = newValue
             }
-            
             .sheet(isPresented: $viewModel.isShowingImagePicker) {
-                MultiImagePicker(images: $viewModel.selectedImages)
-            }
+                            if viewModel.selectedImages.count < Layout.maxImages {
+                                MultiImagePicker(images: $viewModel.selectedImages) { newImages in
+                                    print("Picker returned \(newImages.count) images")
+                                    DispatchQueue.main.async {
+                                        viewModel.handleImageSelection(newImages)
+                                    }
+                                }
+                            }
+                        }
             .sheet(isPresented: $viewModel.isShowingEmojiPicker) {
                 EmojiPickerView(
                     onEmojiSelected: viewModel.insertEmoji,
@@ -101,28 +105,44 @@ struct PostInputView: View {
                 .presentationDetents([.height(350)])
             }
             .mapItemPicker(isPresented: $viewModel.showingPicker) { item in
-                if let name = item?.placemark.name {
-                    viewModel.userLocationText = name
-                }
+                viewModel.handleMapItemSelection(item)
             }
         }
     }
 }
 
+
 // MARK: - Supporting Views
 struct ImageGridSection: View {
-    @Binding var images: [UIImage] // 改为绑定，以便能够更新视图
+    @ObservedObject var viewModel: PostInputViewModel
+    private let maxImages = 6
     
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 10) {
-                ForEach(images.indices, id: \.self) { index in
-                    ImageTile(image: images[index]) {
-                        images.remove(at: index) // 删除选中的图像
+        VStack(spacing: 8) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(viewModel.selectedImages.indices, id: \.self) { index in
+                        ImageTile(
+                            image: viewModel.selectedImages[index],
+                            onDelete: {
+                                viewModel.removeImage(at: index)
+                            }
+                        )
                     }
                 }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
+            
+            // 添加图片数量提示
+            HStack {
+                Spacer()
+                Text("\(viewModel.selectedImages.count)/\(maxImages)")
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .padding(.trailing)
+            }
+            
+            ImageUploadProgressView(viewModel: viewModel)
         }
     }
 }
@@ -172,31 +192,35 @@ struct TitleInputSection: View {
 }
 
 struct LocationSection: View {
-    let locationText: String
-    let onLocationTap: () -> Void
+    @ObservedObject var viewModel: PostInputViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if !locationText.isEmpty {
-                HStack {
-                    Text("发送到这里:")
-                        .font(.system(size: 14))
-                        .foregroundColor(.gray)
-                    
-                    Button(action: onLocationTap) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "mappin.and.ellipse")
-                                .foregroundColor(.blue)
-                            Text(locationText)
-                                .font(.system(size: 14))
-                                .foregroundColor(.gray)
-                        }
+            HStack {
+                Text("发送到这里:")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+                
+                Button(action: viewModel.showLocationPicker) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "mappin.and.ellipse")
+                            .foregroundColor(.blue)
+                        Text(viewModel.draft.location.name.isEmpty ? "添加位置" : viewModel.draft.location.name)
+                            .font(.system(size: 14))
+                            .foregroundColor(.gray)
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    
-                    Spacer()
                 }
-                .padding(.horizontal)
+                .buttonStyle(PlainButtonStyle())
+                
+                Spacer()
+            }
+            .padding(.horizontal)
+            
+            if let address = viewModel.draft.location.address, !address.isEmpty {
+                Text(address)
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+                    .padding(.horizontal)
             }
         }
     }
@@ -266,6 +290,7 @@ struct ToolbarSection: View {
         static let spacing: CGFloat = 24
         static let iconPadding: CGFloat = 8
         static let toolbarHeight: CGFloat = 44
+        static let maxImages = 6
         
     }
     
@@ -294,12 +319,17 @@ struct ToolbarSection: View {
     }
     
     private var mediaButton: some View {
-        ToolbarButton(
-            iconName: "photo",
-            isSelected: false,
-            action: { viewModel.isShowingImagePicker = true }
-        )
-    }
+            ToolbarButton(
+                iconName: "photo",
+                isSelected: false,
+                isDisabled: viewModel.selectedImages.count >= Layout.maxImages,
+                action: {
+                    if viewModel.selectedImages.count < Layout.maxImages {
+                        viewModel.isShowingImagePicker = true
+                    }
+                }
+            )
+        }
     
     private var emojiButton: some View {
         ToolbarButton(
@@ -362,14 +392,15 @@ struct ToolbarSection: View {
 struct ToolbarButton: View {
     let iconName: String
     let isSelected: Bool
+    var isDisabled: Bool = false
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
             Image(systemName: iconName)
-                .foregroundColor(isSelected ? .blue : .black)
-                .frame(width: 24, height: 24) // Fixed size for consistency
+                .foregroundColor(isDisabled ? .gray : (isSelected ? .blue : .black))
         }
+        .disabled(isDisabled)
     }
 }
 
@@ -419,6 +450,27 @@ struct PostInputView_Previews: PreviewProvider {
                 isPresented: .constant(true),
                 selectedTab: .constant(.home)  // Use TabRoute.home
             )
+        }
+    }
+}
+
+
+struct ImageUploadProgressView: View {
+    @ObservedObject var viewModel: PostInputViewModel
+    
+    var body: some View {
+        if viewModel.isPublishing {
+            VStack(spacing: 8) {
+                ProgressView(value: viewModel.overallProgress, total: 100)
+                    .progressViewStyle(LinearProgressViewStyle())
+                    .frame(height: 2)
+                
+                Text("处理图片中... \(Int(viewModel.overallProgress))%")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding(.horizontal)
+            .transition(.opacity)
         }
     }
 }

@@ -1,22 +1,18 @@
-//
-//  MultiImagePicker.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/04.
-//
 import SwiftUI
 import PhotosUI
 
-// 图片选择器
 struct MultiImagePicker: UIViewControllerRepresentable {
     @Binding var images: [UIImage]
+    var completion: ([UIImage]) -> Void
     
     func makeUIViewController(context: Context) -> PHPickerViewController {
         var config = PHPickerConfiguration(photoLibrary: .shared())
         config.filter = .images
-        config.selectionLimit = 6 - images.count
-        // 设置预期的图片质量
         config.preferredAssetRepresentationMode = .current
+        config.selection = .ordered
+        // 根据当前已有图片数量计算剩余可选数量
+        let remainingCount = 6 - images.count
+        config.selectionLimit = max(0, remainingCount)
         
         let picker = PHPickerViewController(configuration: config)
         picker.delegate = context.coordinator
@@ -30,74 +26,77 @@ struct MultiImagePicker: UIViewControllerRepresentable {
     }
     
     class Coordinator: NSObject, PHPickerViewControllerDelegate {
-        var parent: MultiImagePicker
+        let parent: MultiImagePicker
+        private var loadedImages: [(Int, UIImage)] = []
+        private let loadQueue = DispatchQueue(label: "com.app.imageLoading")
+        private var retainCycle: Coordinator?
         
         init(_ parent: MultiImagePicker) {
             self.parent = parent
+            super.init()
         }
         
         func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            print("Started picking with \(results.count) results")
+            print("Current images count: \(parent.images.count)")
             picker.dismiss(animated: true)
             
+            guard !results.isEmpty else {
+                print("No images selected")
+                return
+            }
+            
+            retainCycle = self
+            
             let group = DispatchGroup()
-            var loadedImages: [(Int, UIImage)] = []
+            loadedImages.removeAll()
             
             for (index, result) in results.enumerated() {
                 group.enter()
                 
-                if result.itemProvider.canLoadObject(ofClass: UIImage.self) {
-                    result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] image, error in
-                        defer { group.leave() }
-                        
-                        if let error = error {
-                            print("Error loading image: \(error.localizedDescription)")
-                            return
-                        }
-                        
-                        if let uiImage = image as? UIImage {
-                            // 压缩图片
-                            if let compressedImage = self?.compressImage(uiImage) {
-                                loadedImages.append((index, compressedImage))
-                            }
-                        }
+                result.itemProvider.loadObject(ofClass: UIImage.self) { [weak self] object, error in
+                    defer { group.leave() }
+                    
+                    if let error = error {
+                        print("Error loading image \(index): \(error)")
+                        return
                     }
-                } else {
-                    group.leave()
+                    
+                    guard let image = object as? UIImage else {
+                        print("Failed to load image \(index)")
+                        return
+                    }
+                    
+                    print("Successfully loaded image \(index)")
+                    
+                    self?.loadQueue.sync {
+                        self?.loadedImages.append((index, image))
+                    }
                 }
             }
             
             group.notify(queue: .main) { [weak self] in
-                // 按原始顺序排序并添加图片
-                let sortedImages = loadedImages.sorted { $0.0 < $1.0 }.map { $0.1 }
-                self?.parent.images.append(contentsOf: sortedImages)
+                guard let self = self else {
+                    print("Coordinator was deallocated")
+                    return
+                }
+                
+                print("Processing final results...")
+                let sortedImages = self.loadedImages.sorted(by: { $0.0 < $1.0 }).map({ $0.1 })
+                print("New loaded images count: \(sortedImages.count)")
+                
+                if !sortedImages.isEmpty {
+                    // 合并现有图片和新选择的图片
+                    let combinedImages = parent.images + sortedImages
+                    // 确保总数不超过6张
+                    let finalImages = Array(combinedImages.prefix(6))
+                    print("Final combined images count: \(finalImages.count)")
+                    self.parent.completion(finalImages)
+                }
+                
+                self.retainCycle = nil
+                print("Image loading completed and retain cycle broken")
             }
-        }
-        
-        private func compressImage(_ image: UIImage) -> UIImage {
-            let maxSize: CGFloat = 1024 // 最大尺寸
-            let compressionQuality: CGFloat = 0.7 // 压缩质量
-            
-            // 调整图片尺寸
-            let size = image.size
-            let scale = min(maxSize/size.width, maxSize/size.height, 1)
-            let newSize = CGSize(width: size.width * scale, height: size.height * scale)
-            
-            UIGraphicsBeginImageContextWithOptions(newSize, false, 0)
-            defer { UIGraphicsEndImageContext() }
-            
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-            
-            guard let resizedImage = UIGraphicsGetImageFromCurrentImageContext() else {
-                return image
-            }
-            
-            // 压缩图片数据
-            if let data = resizedImage.jpegData(compressionQuality: compressionQuality),
-               let compressedImage = UIImage(data: data) {
-                return compressedImage
-            }
-            
-            return resizedImage
         }
     }
 }

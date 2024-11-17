@@ -1,8 +1,10 @@
-
 import SwiftUI
 import Combine
 import CoreLocation
+import MapKit
 
+
+typealias DraftImage = LocationPost.Draft.DraftImage
 
 // MARK: - Constants
 private enum Layout {
@@ -10,193 +12,496 @@ private enum Layout {
     static let toolbarHeight: CGFloat = 44
     static let maxCharacterCount = 777
     static let maxTitleLength = 20
-   
+    static let maxImages = 6  // 添加最大图片数量限制
+    
 }
+
 // MARK: - View Model
 final class PostInputViewModel: ObservableObject {
-    // 添加标签相关状态
-      @Published var isShowingHashtagSelector = false
-      @Published var suggestedTags = [
-          "#Meme",
-          "#ClassicIndependenceDayMovies",
-          "#foodie",
-          "#photography",
-          "#InternationalCatDay"
-      ]
-      
-    // 现有的属性
-        @Published var title = "" {
-            didSet {
-                if title.count > Layout.maxTitleLength {
-                    title = String(title.prefix(Layout.maxTitleLength))
-                }
-            }
-        }
-        @Published var content = ""
-        @Published var isKeyboardVisible = false
-        @Published var keyboardHeight: CGFloat = 0
-        @Published var selectedTags: [String] = []
-        @Published var showSecondView = false
-        @Published var selectedImages: [UIImage] = []
-        @Published var userLocationText = ""
-        @Published var isShowingImagePicker = false
-        @Published var showingPicker =  false {
-            didSet {
-                // 当显示 picker 时，暂时移除键盘观察者
-                if showingPicker {
-                    removeKeyboardObservers()
-                } else {
-                    // 当 picker 关闭时，重新添加键盘观察者
-                    setupKeyboardObservers()
-                }
-            }
-        }
-        @Published var isLocationPickerActive = false
-        
-        // 添加表情相关的属性
-        @Published var isShowingEmojiPicker = false
-        @Published var contentSelectedRange: NSRange?
-        
-        private var previousLocation: CLLocation?
-        let locationManager = LocationManager.shared
-        private var keyboardObservers: [NSObjectProtocol] = []
-        
-
-    
-    
-    // 添加发布设置相关状态
-       @Published var selectedDuration: String = "1 Month"
-       @Published var chatRoomEnabled: Bool = false
-       @Published var announcement: String = ""
-       @Published var showingDurationInfo = false
-       @Published var showingChatInfo = false
-       
-       //添加发布状态
-       @Published var isPublishing: Bool = false
-       @Published var showPublishSuccess: Bool = false
-       @Published var showPublishError: Bool = false
     
     
     
-    private var tagDeleteObserver: NSObjectProtocol?
+    // MARK: - Published Properties
+    @Published var draft = LocationPost.Draft()
+    @Published var selectedImages: [UIImage] = []
     
-    // 添加焦点追踪
-       @Published var focusedField: FocusField?
-     
-       enum FocusField {
-            case title
-            case content
-        }
-        
-         var shouldShowToolbar: Bool {
-             return focusedField == .content || isShowingHashtagSelector
-       }
+    // UI 状态
+    @Published var isShowingHashtagSelector = false
+    @Published var suggestedTags = [
+        "#Meme",
+        "#ClassicIndependenceDayMovies",
+        "#foodie",
+        "#photography",
+        "#InternationalCatDay"
+    ]
     
-    
-    // 简化插入标签的方法
-      func insertHashtag(_ tag: String) {
-          guard tag.hasPrefix("#") else { return }
-          // 只添加到已选标签列表（如果还没有这个标签）
-          if !selectedTags.contains(tag) {
-              selectedTags.append(tag)
-          }
-          // 关闭选择器
-          isShowingHashtagSelector = false
-      }
-        
-    // 简化删除标签的方法
-        func removeTag(_ tag: String) {
-            selectedTags.removeAll { $0 == tag }
-        }
-    // 仍然保留标签选择器的触发检查，但只用于工具栏按钮
-        func showHashtagSelector() {
-            isShowingHashtagSelector = true
-        }
-    // 检查是否应该显示标签选择器
-    func checkForHashtagTrigger(in text: String) {
-        withAnimation(.easeInOut(duration: 0.25)) {
-            if let lastChar = text.last, lastChar == "#" {
-                isShowingHashtagSelector = true
+    @Published var isKeyboardVisible = false
+    @Published var keyboardHeight: CGFloat = 0
+    @Published var showSecondView = false
+    @Published var isShowingImagePicker = false
+    @Published var showingPicker = false {
+        didSet {
+            if showingPicker {
+                removeKeyboardObservers()
             } else {
-                // 如果删除了 # 或输入了空格，关闭选择器
-                isShowingHashtagSelector = false
+                setupKeyboardObservers()
             }
         }
     }
+    @Published var isLocationPickerActive = false
+    @Published var isShowingEmojiPicker = false
+    @Published var overallProgress: Double = 0.0  
+    @Published var contentSelectedRange: NSRange?
+    @Published var focusedField: FocusField?
     
+    // 发布设置状态
+    @Published var showingDurationInfo = false
+    @Published var showingChatInfo = false
     
+    // 发布状态
+    @Published var isPublishing = false
+    @Published var showPublishSuccess = false
+    @Published var showPublishError = false
+    @Published var errorMessage: String = ""  // 添加错误消息属性
     
+    // MARK: - Private Properties
+    private var previousLocation: CLLocation?
+    private let locationManager = LocationManager.shared
+    private var keyboardObservers: [NSObjectProtocol] = []
+    private var tagDeleteObserver: NSObjectProtocol?
     
-    // 更新表情插入逻辑
+    // MARK: - Computed Properties
+    var characterCount: Int {
+        draft.content.count
+    }
+    
+    var shouldShowToolbar: Bool {
+        return focusedField == .content || isShowingHashtagSelector
+    }
+    
+    // MARK: - Enums
+    enum FocusField {
+        case title
+        case content
+    }
+    
+    var canAddMoreImages: Bool {
+            selectedImages.count < Layout.maxImages
+    }
+    
+    // MARK: - Tag Management
+    func insertHashtag(_ tag: String) {
+        guard tag.hasPrefix("#") else { return }
+        if !draft.tags.contains(tag) {
+            draft.tags.append(tag)
+        }
+        isShowingHashtagSelector = false
+    }
+    
+    func removeTag(_ tag: String) {
+        draft.tags.removeAll { $0 == tag }
+    }
+    
+    func showHashtagSelector() {
+        isShowingHashtagSelector = true
+    }
+    
+    func checkForHashtagTrigger(in text: String) {
+        withAnimation(.easeInOut(duration: 0.25)) {
+            isShowingHashtagSelector = text.last == "#"
+        }
+    }
+    
+    // MARK: - Emoji Handling
     func insertEmoji(_ emoji: String) {
-        if content.isEmpty {
-            // 第一次插入（内容为空）的情况
-            content = emoji
+        if draft.content.isEmpty {
+            draft.content = emoji
             contentSelectedRange = NSRange(location: emoji.utf16.count, length: 0)
             return
         }
         
         guard let selectedRange = contentSelectedRange else {
-            // 没有选中范围，但内容不为空的情况
-            content.append(emoji)
-            contentSelectedRange = NSRange(location: content.utf16.count, length: 0)
+            draft.content.append(emoji)
+            contentSelectedRange = NSRange(location: draft.content.utf16.count, length: 0)
             return
         }
         
-        // 有选中范围的情况
-        let utf16Start = content.utf16.index(content.utf16.startIndex, offsetBy: selectedRange.location)
-        let utf16End = content.utf16.index(utf16Start, offsetBy: selectedRange.length)
+        let utf16Start = draft.content.utf16.index(draft.content.utf16.startIndex, offsetBy: selectedRange.location)
+        let utf16End = draft.content.utf16.index(utf16Start, offsetBy: selectedRange.length)
         
-        guard let start = String.Index(utf16Start, within: content),
-              let end = String.Index(utf16End, within: content) else {
+        guard let start = String.Index(utf16Start, within: draft.content),
+              let end = String.Index(utf16End, within: draft.content) else {
             return
         }
         
         let range = start..<end
-        content.replaceSubrange(range, with: emoji)
+        draft.content.replaceSubrange(range, with: emoji)
         
         let newLocation = selectedRange.location + emoji.utf16.count
         contentSelectedRange = NSRange(location: newLocation, length: 0)
     }
-       
-         func showLocationPicker() {
-             
-             // 移除键盘观察者
-                     removeKeyboardObservers()
-                     
-                     // 确保键盘收起并重置状态
-                     isKeyboardVisible = false
-                     keyboardHeight = 0
-           isLocationPickerActive = true
-           // 确保键盘收起
-           UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
-                                         to: nil, from: nil, for: nil)
-           // 延迟显示选择器，确保键盘完全收起
-           DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-               self.showingPicker = true
-           }
-       }
-     
+    
+    // MARK: - Location Management
+    func showLocationPicker() {
+        removeKeyboardObservers()
+        isKeyboardVisible = false
+        keyboardHeight = 0
+        isLocationPickerActive = true
         
-        var characterCount: Int {
-            content.count
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                      to: nil, from: nil, for: nil)
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            self.showingPicker = true
+        }
+    }
+    
+    func handleMapItemSelection(_ mapItem: MKMapItem?) {
+        if let placemark = mapItem?.placemark {
+            draft.location = LocationPost.Draft.LocationInfo(from: placemark)
+        }
+    }
+    
+    // MARK: - Draft Management
+    func showDraftActionSheet() -> Bool {
+        return !draft.title.isEmpty ||
+               !draft.content.isEmpty ||
+               !draft.tags.isEmpty ||
+               !selectedImages.isEmpty
+    }
+    
+    func saveDraft() {
+       
+        if let encoded = try? JSONEncoder().encode(draft) {
+            UserDefaults.standard.set(encoded, forKey: "location_post_draft")
+        }
+    }
+    
+    func loadDraft() {
+          guard let data = UserDefaults.standard.data(forKey: "location_post_draft"),
+                let savedDraft = try? JSONDecoder().decode(LocationPost.Draft.self, from: data) else {
+              return
+          }
+          
+          draft = savedDraft
+          
+          // 加载图片：从 draftImages 中加载
+          selectedImages = draft.draftImages.compactMap { draftImage in
+              DraftImageManager.shared.loadImage(identifier: draftImage.localIdentifier)
+          }
+      }
+    
+    func clearDraft() {
+            // 清理本地存储的图片
+            draft.draftImages.forEach { draftImage in
+                DraftImageManager.shared.deleteImage(identifier: draftImage.localIdentifier)
+            }
+            
+            UserDefaults.standard.removeObject(forKey: "location_post_draft")
+            draft = LocationPost.Draft()
+            selectedImages.removeAll()
+        }
+   
+   
+    // PostInputViewModel.swift 中的修改部分
+
+    // 在 PostInputViewModel 中修改
+
+    func handleImageSelection(_ newImages: [UIImage]) {
+            // 检查是否已达到最大数量
+            if !canAddMoreImages {
+                errorMessage = "最多只能上传\(Layout.maxImages)张图片"
+                showPublishError = true
+                return
+            }
+            
+            print("handleImageSelection called with \(newImages.count) new images")
+            print("Current selected images: \(selectedImages.count)")
+            
+            // 如果选择的新图片会超过限制，截取允许的数量
+            let availableSlots = Layout.maxImages - selectedImages.count
+            let imagesToProcess = newImages.prefix(availableSlots)
+            
+            isPublishing = true
+            overallProgress = 0
+            
+            let oldIdentifiers = draft.draftImages.map { $0.localIdentifier }
+            
+            let group = DispatchGroup()
+            var newDraftImages: [(Int, DraftImage)] = []
+            var newSelectedImages: [(Int, UIImage)] = []
+            
+            for (index, image) in imagesToProcess.enumerated() {
+                group.enter()
+                print("Processing new image \(index + 1)")
+                
+                DispatchQueue.global(qos: .userInitiated).async {
+                    if let identifier = DraftImageManager.shared.saveImage(image) {
+                        print("Successfully saved image \(index + 1) with identifier: \(identifier)")
+                        let draftImage = DraftImage(
+                            localIdentifier: identifier,
+                            uploadStatus: .draft
+                        )
+                        newDraftImages.append((index, draftImage))
+                        newSelectedImages.append((index, image))
+                    } else {
+                        print("Failed to save image \(index + 1)")
+                    }
+                    group.leave()
+                }
+            }
+            
+            group.notify(queue: .main) { [weak self] in
+                guard let self = self else {
+                    print("Self was deallocated in completion handler")
+                    return
+                }
+                
+                print("All new image processing completed")
+                
+                // 按索引排序
+                let sortedDraftImages = newDraftImages.sorted { $0.0 < $1.0 }.map { $0.1 }
+                let sortedSelectedImages = newSelectedImages.sorted { $0.0 < $1.0 }.map { $0.1 }
+                
+                // 设置新的图片数组（保留现有图片并添加新图片）
+                self.draft.draftImages.append(contentsOf: sortedDraftImages)
+                self.selectedImages.append(contentsOf: sortedSelectedImages)
+                
+                if !sortedDraftImages.isEmpty {
+                    self.saveDraft()
+                    print("Draft saved successfully")
+                }
+                
+                self.isPublishing = false
+                self.overallProgress = 0
+                print("Image selection handling completed. Total images: \(self.selectedImages.count)")
+            }
+        }
+    
+    
+    private func validateImages() -> Bool {
+            // 检查是否所有图片都存在
+            let allImagesValid = draft.draftImages.allSatisfy { draftImage in
+                DraftImageManager.shared.imageExists(identifier: draftImage.localIdentifier)
+            }
+            
+            if !allImagesValid {
+                errorMessage = "部分图片已丢失，请重新选择"
+                showPublishError = true
+                return false
+            }
+            
+            return true
+        }
+    func hasDraft() -> Bool {
+        return UserDefaults.standard.data(forKey: "location_post_draft") != nil
+    }
+   
+    
+    func removeImage(at index: Int) {
+          guard index < selectedImages.count && index < draft.draftImages.count else { return }
+          
+          let draftImage = draft.draftImages[index]
+          DraftImageManager.shared.deleteImage(identifier: draftImage.localIdentifier)
+          
+          draft.draftImages.remove(at: index)
+          selectedImages.remove(at: index)
+          
+          saveDraft()
+      }
+
+    // 发布错误类型
+    enum PublishError: LocalizedError {
+        case emptyTitle
+        case emptyContent
+        case emptyLocation
+        case uploadFailed
+        case publishFailed
+        case titleTooLong
+        case contentTooLong
+        
+        var errorDescription: String? {
+            switch self {
+            case .emptyTitle:
+                return "标题不能为空"
+            case .emptyContent:
+                return "内容不能为空"
+            case .emptyLocation:
+                return "请选择位置"
+            case .uploadFailed:
+                return "图片上传失败"
+            case .publishFailed:
+                return "发布失败"
+            case .titleTooLong:
+                return "标题最多20个字符"
+            case .contentTooLong:
+                return "内容最多777个字符"
+            }
+        }
+    }
+    // 图片上传方法
+    private func uploadImage(localIdentifier: String) async throws -> String {
+        guard let image = DraftImageManager.shared.loadImage(identifier: localIdentifier) else {
+            throw PublishError.uploadFailed
         }
         
-     
-    init() {
-           setupKeyboardObservers()
-           // 初始化时获取位置
-           updateLocationText()
-        checkAndLoadDraft() // 检查并加载草稿
+        // TODO: 实现实际的图片上传API调用
+        // 这里应该是您的图片上传逻辑
+        // 返回服务器图片URL
+        return "https://example.com/images/\(UUID().uuidString).jpg"
+    }
+    
+    
+  
+    private func uploadImages() async throws -> [String] {
+        var uploadedUrls: [String] = []
         
-      
-       }
+        for draftImage in draft.draftImages {
+            guard let image = DraftImageManager.shared.loadImage(identifier: draftImage.localIdentifier) else {
+                continue
+            }
+            
+            // 模拟上传，实际使用时替换为真实的上传代码
+            try await Task.sleep(nanoseconds: 1_000_000_000) // 等待1秒
+            let imageUrl = "https://example.com/images/\(UUID().uuidString).jpg"
+            uploadedUrls.append(imageUrl)
+        }
+        
+        return uploadedUrls
+    }
+    
+    
+    
+    
+   
+    
+    private func publishPost(_ post: LocationPost) async throws {
+        // TODO: 实现实际的发布API调用
+        // 这里应该是您的发布逻辑
+        
+        // 模拟网络延迟
+        try await Task.sleep(nanoseconds: 1_500_000_000)
+    }
+    // MARK: - Publishing
+    func publishBlog(completion: @escaping (Bool) -> Void) {
+            Task {
+                do {
+                    guard !isPublishing else { return }
+                    isPublishing = true
+                    
+                    // 1. 验证基本信息
+                    try validateBasicInfo()
+                    
+                    // 2. 验证图片
+                    guard validateImages() else {
+                        throw PublishError.uploadFailed
+                    }
+                    
+                    // 3. 上传图片
+                    let uploadedUrls = try await uploadImages()
+                    draft.imageUrls = uploadedUrls
+                    
+                    // 4. 发布帖子
+                    let post = LocationPost.createFromDraft(draft)
+                    try await publishPost(post)
+                    
+                    await MainActor.run {
+                        self.isPublishing = false
+                        self.showPublishSuccess = true
+                        self.errorMessage = ""
+                        self.clearDraft()
+                        completion(true)
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.isPublishing = false
+                        self.showPublishError = true
+                        if let publishError = error as? PublishError {
+                            self.errorMessage = publishError.errorDescription ?? "发布失败"
+                        } else {
+                            self.errorMessage = error.localizedDescription
+                        }
+                        completion(false)
+                    }
+                }
+            }
+        }
+    private func validateBasicInfo() throws {
+            guard !draft.title.isEmpty else { throw PublishError.emptyTitle }
+            guard !draft.content.isEmpty else { throw PublishError.emptyContent }
+            guard !draft.location.name.isEmpty else { throw PublishError.emptyLocation }
+            
+            // 添加字数限制验证
+            guard draft.title.count <= Layout.maxTitleLength else {
+                throw PublishError.titleTooLong
+            }
+            guard draft.content.count <= Layout.maxCharacterCount else {
+                throw PublishError.contentTooLong
+            }
+        }
+    // MARK: - Keyboard Management
+    func setupKeyboardObservers() {
+        removeKeyboardObservers()
+        
+        let hideObserver = NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillHideNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            DispatchQueue.main.async {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    self?.isKeyboardVisible = false
+                    self?.keyboardHeight = 0
+                }
+            }
+        }
+        
+        let showObserver = NotificationCenter.default.addObserver(
+            forName: UIResponder.keyboardWillShowNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] notification in
+            guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            DispatchQueue.main.async {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    self?.isKeyboardVisible = true
+                    self?.keyboardHeight = keyboardFrame.height
+                }
+            }
+        }
+        
+        keyboardObservers = [showObserver, hideObserver]
+    }
+    
+    private func removeKeyboardObservers() {
+        keyboardObservers.forEach {
+            NotificationCenter.default.removeObserver($0)
+        }
+        keyboardObservers.removeAll()
+    }
+    
+    // MARK: - Initialization
+    init() {
+        setupKeyboardObservers()
+        checkAndLoadDraft()
+        // 如果没有位置信息，尝试获取当前位置
+            if draft.location.name.isEmpty {
+                updateLocationText()
+            }
+    }
     
     deinit {
         removeKeyboardObservers()
         if let observer = tagDeleteObserver {
-                    NotificationCenter.default.removeObserver(observer)
-                }
+            NotificationCenter.default.removeObserver(observer)
+        }
+    }
+    
+    // MARK: - Draft Loading
+    private func checkAndLoadDraft() {
+        if hasDraft() {
+            loadDraft()
+        }
     }
     func updateLocationText() {
             guard let location = locationManager.userLocation else { return }
@@ -211,160 +516,21 @@ final class PostInputViewModel: ObservableObject {
                 guard let self = self,
                       let placemark = placemarks?.first else { return }
                 
-                var components: [String] = []
-                
-                if let subLocality = placemark.subLocality, !subLocality.isEmpty {
-                    components.append(subLocality)
-                }
-                if let locality = placemark.locality, !locality.isEmpty {
-                    components.append(locality)
-                }
-                if let area = placemark.administrativeArea, !area.isEmpty {
-                    components.append(area)
-                }
-                
-                DispatchQueue.main.async {
-                    self.userLocationText = components.joined(separator: ", ")
+                // 如果用户还没有选择位置，使用当前位置
+                if self.draft.location.name.isEmpty {
+                    let locationInfo = LocationPost.Draft.LocationInfo(
+                        name: placemark.name ?? "",
+                        address: placemark.formattedAddress,
+                        latitude: placemark.location?.coordinate.latitude ?? 0,
+                        longitude: placemark.location?.coordinate.longitude ?? 0
+                    )
+                    
+                    DispatchQueue.main.async {
+                        self.draft.location = locationInfo
+                    }
                 }
             }
         }
-     func setupKeyboardObservers() {
-        
-        // 移除现有观察者
-         removeKeyboardObservers()
-        
-        
-         let hideObserver = NotificationCenter.default.addObserver(
-             forName: UIResponder.keyboardWillHideNotification,
-             object: nil,
-             queue: .main
-         ) { [weak self] _ in
-             DispatchQueue.main.async {
-                 withAnimation(.easeOut(duration: 0.25)) {
-                     self?.isKeyboardVisible = false
-                     self?.keyboardHeight = 0
-                 }
-             }
-         }
-
-         // 同样修改显示键盘的观察者
-         let showObserver = NotificationCenter.default.addObserver(
-             forName: UIResponder.keyboardWillShowNotification,
-             object: nil,
-             queue: .main
-         ) { [weak self] notification in
-             guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-             DispatchQueue.main.async {
-                 withAnimation(.easeOut(duration: 0.25)) {
-                     self?.isKeyboardVisible = true
-                     self?.keyboardHeight = keyboardFrame.height
-                 }
-             }
-         }
-        
-        keyboardObservers = [showObserver, hideObserver]
-    }
     
-    private func removeKeyboardObservers() {
-        keyboardObservers.forEach {
-            NotificationCenter.default.removeObserver($0)
-        }
-        keyboardObservers.removeAll()
-    }
-    
-    // 检查是否有需要保存的内容
-    func showDraftActionSheet() -> Bool {
-            return !title.isEmpty || !content.isEmpty || !selectedTags.isEmpty || !selectedImages.isEmpty
-        }
-        
-        // 保存草稿
-    func saveDraft() {
-          // 1. 首先通过 DraftImageManager 保存所有图片
-          let imageIdentifiers = selectedImages.compactMap { image in
-              DraftImageManager.shared.saveImage(image)
-          }
-          
-          // 2. 创建 PostDraft 对象
-        // 创建包含所有数据的草稿
-             let draft = BlogDraft(
-                 title: title,
-                 content: content,
-                 location: userLocationText,
-                 tags: selectedTags,
-                 imageNames: imageIdentifiers,
-                 selectedDuration: selectedDuration,
-                 chatRoomEnabled: chatRoomEnabled,
-                 announcement: announcement
-             )
-          
-          // 3. 将草稿数据保存到 UserDefaults
-          if let encoded = try? JSONEncoder().encode(draft) {
-              UserDefaults.standard.set(encoded, forKey: "blog_draft")
-          }
-      }
-        
-        // 加载草稿
-    func loadDraft() {
-          guard let data = UserDefaults.standard.data(forKey: "blog_draft"),
-                let draft = try? JSONDecoder().decode(BlogDraft.self, from: data) else {
-              return
-          }
-          
-          // 加载所有数据
-          title = draft.title
-          content = draft.content
-          userLocationText = draft.location
-          selectedTags = draft.tags
-          selectedDuration = draft.selectedDuration
-          chatRoomEnabled = draft.chatRoomEnabled
-          announcement = draft.announcement
-          
-          // 加载图片
-          selectedImages = draft.imageNames.compactMap { identifier in
-              DraftImageManager.shared.loadImage(identifier: identifier)
-          }
-      }
-        
-        // 清除草稿
-    func clearDraft() {
-           UserDefaults.standard.removeObject(forKey: "blog_draft")
-           DraftImageManager.shared.clearAllDraftImages()
-           
-           // 重置所有状态
-           title = ""
-           content = ""
-           userLocationText = ""
-           selectedTags = []
-           selectedImages = []
-           selectedDuration = "1 Month"
-           chatRoomEnabled = false
-           announcement = ""
-       }
-    // 检查是否存在草稿
-      func hasDraft() -> Bool {
-          return UserDefaults.standard.data(forKey: "blog_draft") != nil
-      }
-    // 初始化时检查并加载草稿
-    func checkAndLoadDraft() {
-           if hasDraft() {
-               loadDraft()
-           }
-       }
-    
-    
-    // 发布相关方法
-       func publishBlog(completion: @escaping (Bool) -> Void) {
-           isPublishing = true
-           
-           // 这里添加实际的发布逻辑
-           // 模拟网络请求
-           DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-               self.isPublishing = false
-               self.showPublishSuccess = true
-               completion(true)
-               
-               // 发布成功后清除草稿
-               self.clearDraft()
-           }
-       }
 }
+
