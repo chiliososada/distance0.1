@@ -304,14 +304,12 @@ final class ChatDetailViewModel: ObservableObject {
                     sendImageMessage(image)
                 }
                 
-            case .sticker:
-                print("选择贴纸") // 实现贴纸功能
+           
                 
             case .audio:
                 print("录制音频") // 实现音频功能
                 
-            case .more:
-                print("更多选项") // 实现更多选项
+            
             }
         }
     private func sendImageMessage(_ image: UIImage) {

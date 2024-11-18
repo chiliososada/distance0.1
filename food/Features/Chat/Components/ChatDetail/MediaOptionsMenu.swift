@@ -1,13 +1,12 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 // MARK: - Media Option Models
 enum MediaOption: Identifiable {
     case camera
     case photoLibrary
-    case sticker
     case audio
-    case more
     
     var id: String { title }
     
@@ -15,9 +14,7 @@ enum MediaOption: Identifiable {
         switch self {
         case .camera: return "camera.fill"
         case .photoLibrary: return "photo.fill"
-        case .sticker: return "moonphase.last.quarter"
         case .audio: return "waveform"
-        case .more: return "chevron.down"
         }
     }
     
@@ -25,9 +22,7 @@ enum MediaOption: Identifiable {
         switch self {
         case .camera: return "相机"
         case .photoLibrary: return "照片"
-        case .sticker: return "贴纸"
         case .audio: return "音频"
-        case .more: return "更多"
         }
     }
     
@@ -35,9 +30,7 @@ enum MediaOption: Identifiable {
         switch self {
         case .camera: return Color(.systemGray2)
         case .photoLibrary: return Color(.systemGray2)
-        case .sticker: return .purple.opacity(0.8)
         case .audio: return .orange.opacity(0.8)
-        case .more: return Color(.systemBlue)
         }
     }
 }
@@ -45,9 +38,7 @@ enum MediaOption: Identifiable {
 enum MediaResult {
     case capturedImage(UIImage)
     case selectedImages([UIImage])
-    case sticker
     case audio
-    case more
 }
 
 // MARK: - Media Options Menu
@@ -60,13 +51,10 @@ struct MediaOptionsMenu: View {
     private let options: [MediaOption] = [
         .camera,
         .photoLibrary,
-        .sticker,
-        .audio,
-        .more
+        .audio
     ]
     
     var body: some View {
-        // 选项菜单
         VStack(spacing: 15) {
             HStack(spacing: 20) {
                 ForEach(options) { option in
@@ -79,11 +67,11 @@ struct MediaOptionsMenu: View {
             .padding(.horizontal)
             .background(Color(.systemBackground))
         }
-        .frame(height: 120) // 设置固定高度
+        .frame(height: 120)
         .background(Color(.systemBackground))
         .transition(.move(edge: .bottom))
         .sheet(isPresented: $showChatImagePicker) {
-            ChatImagePicker { images in
+            PhotoPicker(isPresented: $showChatImagePicker) { images in
                 if !images.isEmpty {
                     onSelect(.selectedImages(images))
                 }
@@ -104,55 +92,87 @@ struct MediaOptionsMenu: View {
             showCamera = true
         case .photoLibrary:
             showChatImagePicker = true
-        case .sticker:
-            onSelect(.sticker)
         case .audio:
             onSelect(.audio)
-        case .more:
-            onSelect(.more)
         }
     }
 }
-// MARK: - Chat Image Picker
-struct ChatImagePicker: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var selectedItems: [PhotosPickerItem] = []
-    let completion: ([UIImage]) -> Void
+
+// MARK: - Button View
+struct MediaOptionButton: View {
+    let option: MediaOption
+    let action: () -> Void
     
     var body: some View {
-        NavigationView {
-            PhotosPicker(
-                selection: $selectedItems,
-                maxSelectionCount: 9,
-                matching: .images,
-                preferredItemEncoding: .automatic
-            ) {
-                Color.clear
-            }
-            .navigationTitle("选择图片")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("取消") {
-                        dismiss()
-                    }
-                }
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Circle()
+                    .fill(option.color)
+                    .frame(width: 50, height: 50)
+                    .overlay(
+                        Image(systemName: option.icon)
+                            .font(.system(size: 24))
+                            .foregroundColor(.white)
+                    )
+                
+                Text(option.title)
+                    .font(.system(size: 12))
+                    .foregroundColor(.primary)
             }
         }
-        .onChange(of: selectedItems) { newItems in
-            Task {
-                var images: [UIImage] = []
-                for item in newItems {
-                    if let data = try? await item.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
+    }
+}
+
+// MARK: - Photo Picker
+struct PhotoPicker: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    let completion: ([UIImage]) -> Void
+    
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration(photoLibrary: .shared())
+        config.selectionLimit = 6
+        config.filter = .images
+        
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+    
+    func updateUIViewController(_ uiViewController: PHPickerViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+    
+    class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: PhotoPicker
+        
+        init(parent: PhotoPicker) {
+            self.parent = parent
+        }
+        
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            guard !results.isEmpty else {
+                parent.isPresented = false
+                return
+            }
+            
+            let dispatchGroup = DispatchGroup()
+            var images: [UIImage] = []
+            
+            for result in results {
+                dispatchGroup.enter()
+                result.itemProvider.loadObject(ofClass: UIImage.self) { object, error in
+                    defer { dispatchGroup.leave() }
+                    if let image = object as? UIImage {
                         images.append(image)
                     }
                 }
-                
-                DispatchQueue.main.async {
-                    completion(images)
-                    dismiss()
-                }
+            }
+            
+            dispatchGroup.notify(queue: .main) {
+                self.parent.completion(images)
+                self.parent.isPresented = false
             }
         }
     }
@@ -196,42 +216,5 @@ struct CameraView: UIViewControllerRepresentable {
             parent.completion(nil)
             picker.dismiss(animated: true)
         }
-    }
-}
-
-// MARK: - Media Option Button
-struct MediaOptionButton: View {
-    let option: MediaOption
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 8) {
-                Circle()
-                    .fill(option.color)
-                    .frame(width: 50, height: 50)
-                    .overlay(
-                        Image(systemName: option.icon)
-                            .font(.system(size: 24))
-                            .foregroundColor(.white)
-                    )
-                
-                Text(option.title)
-                    .font(.system(size: 12))
-                    .foregroundColor(.primary)
-            }
-        }
-    }
-}
-
-// MARK: - Preview
-struct MediaOptionsMenu_Previews: PreviewProvider {
-    static var previews: some View {
-        MediaOptionsMenu(
-            isPresented: .constant(true),
-            onSelect: { result in
-                print("Selected: \(result)")
-            }
-        )
     }
 }
