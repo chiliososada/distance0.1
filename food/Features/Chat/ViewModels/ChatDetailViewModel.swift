@@ -137,6 +137,15 @@ final class ChatDetailViewModel: ObservableObject {
             for: nil
         )
     }
+    func showMoreOptions() {
+           // 实现更多选项的展示逻辑
+           print("Showing more options menu")
+       }
+       
+    func showEmojiPicker() {
+           // 实现表情选择器的展示逻辑
+           print("Showing emoji picker")
+    }
 }
 
 // MARK: - Preview Helper

@@ -19,8 +19,6 @@ private enum Layout {
 // MARK: - View Model
 final class PostInputViewModel: ObservableObject {
     
-    
-    
     // MARK: - Published Properties
     @Published var draft = LocationPost.Draft()
     @Published var selectedImages: [UIImage] = []

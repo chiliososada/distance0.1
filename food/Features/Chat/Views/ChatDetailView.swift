@@ -5,18 +5,20 @@ import SwiftUI
 
 // MARK: - Constants
 private enum Layout {
-    static let iconSize: CGFloat = 16
-    static let buttonPadding: CGFloat = 10
-    static let cornerRadius: CGFloat = 16
-    static let shadowRadius: CGFloat = 3
+    static let iconSize: CGFloat = 24 // 增大图标尺寸
+    static let buttonSize: CGFloat = 32 // 按钮大小
+    static let cornerRadius: CGFloat = 20 // 输入框圆角
+    static let minHeight: CGFloat = 40
+    static let maxHeight: CGFloat = 120
     
     static let colors = ColorScheme()
     
     struct ColorScheme {
         let primary = Color.blue
         let secondary = Color.black
-        let border = Color.black.opacity(0.2)
-        let shadow = Color.gray.opacity(0.2)
+        let border = Color.black
+        let buttonGray = Color.gray.opacity(0.4)
+        let textGray = Color.gray.opacity(0.3)
     }
 }
 
@@ -48,14 +50,14 @@ struct ChatDetailView: View {
             DetailInputSection(viewModel: viewModel)
         }
         .onAppear {
-                   tabBarManager.isNavigatingInTab = true
-               }
-               .onDisappear {
-                   // 只有当返回到主页面时才重置状态
-                   if navigationManager.navigationPath.count == 0 {
-                       tabBarManager.isNavigatingInTab = false
-                   }
-               }
+            tabBarManager.isNavigatingInTab = true
+        }
+        .onDisappear {
+            // 只有当返回到主页面时才重置状态
+            if navigationManager.navigationPath.count == 0 {
+                tabBarManager.isNavigatingInTab = false
+            }
+        }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
@@ -74,12 +76,11 @@ struct ChatDetailView: View {
                     .font(.headline)
             }
         }
-//        .tabBarVisibility(tabBarManager)
         .memberListSheet(
             isPresented: $viewModel.showMemberList,
             chatRoom: viewModel.chatRoom
         )
-      
+        
     }
 }
 
@@ -143,25 +144,33 @@ struct DetailInputSection: View {
     
     var body: some View {
         HStack(spacing: 10) {
-            MediaButton()
+            AddButton(action: viewModel.showMoreOptions)
             MessageTextField(text: $viewModel.newMessage)
-            SendButton(action: viewModel.sendMessage)
+            EmojiButton(action: viewModel.showEmojiPicker)
+            SendButton(
+                action: viewModel.sendMessage,
+                isEnabled: !viewModel.newMessage.isEmpty
+            )
         }
         .padding(.horizontal)
         .padding(.bottom, 1)
     }
 }
 
-struct MediaButton: View {
+
+
+
+struct AddButton: View {
+    let action: () -> Void
+    
     var body: some View {
-        Button(action: {}) {
-            Image(systemName: "camera.fill")
-                .font(.system(size: Layout.iconSize))
-                .foregroundColor(.white)
-                .padding(Layout.buttonPadding)
-                .background(Layout.colors.primary)
+        Button(action: action) {
+            Image(systemName: "plus")
+                .font(.system(size: Layout.iconSize, weight: .light))
+                .foregroundColor(.black)
+                .frame(width: Layout.buttonSize, height: Layout.buttonSize)
+            
                 .clipShape(Circle())
-                .shadow(radius: Layout.shadowRadius)
         }
     }
 }
@@ -171,31 +180,47 @@ struct MessageTextField: View {
     
     var body: some View {
         TextField("Start typing...", text: $text)
-            .padding(Layout.buttonPadding)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(Color.white)
             .cornerRadius(Layout.cornerRadius)
             .overlay(
                 RoundedRectangle(cornerRadius: Layout.cornerRadius)
-                    .stroke(Layout.colors.border, lineWidth: 1)
+                    .stroke(Layout.colors.border, lineWidth: 0.5)
             )
-            .foregroundColor(.black)
-            .shadow(radius: 1)
+            .font(.system(size: 16))
     }
 }
 
+struct EmojiButton: View {
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "face.smiling")
+                .font(.system(size: Layout.iconSize, weight: .light))
+                .foregroundColor(.black)
+                .frame(width: Layout.buttonSize, height: Layout.buttonSize)
+            
+                .clipShape(Circle())
+        }
+    }
+}
+
+
 struct SendButton: View {
     let action: () -> Void
+    let isEnabled: Bool
     
     var body: some View {
         Button(action: action) {
             Image(systemName: "paperplane.fill")
                 .font(.system(size: Layout.iconSize))
-                .foregroundColor(.white)
-                .padding(Layout.buttonPadding)
-                .background(Layout.colors.secondary)
+                .foregroundColor(.black)
+                .frame(width: Layout.buttonSize, height: Layout.buttonSize)
                 .clipShape(Circle())
-                .shadow(radius: Layout.shadowRadius)
         }
+        .disabled(!isEnabled)
     }
 }
 
@@ -225,21 +250,21 @@ extension View {
     }
     
     func memberListSheet(isPresented: Binding<Bool>, chatRoom: ChatRoom) -> some View {
-            self.sheet(isPresented: isPresented) {
-                ZStack {
-                    BlurView()
-                    VStack {
-                        ChatSettingsView(chatRoom: chatRoom)
-                            .padding()
-                            .background(Color.white)
-                            .cornerRadius(30)
-                            .shadow(radius: 10)
-                            .padding()
-                    }
-                    .background(Color.clear)
+        self.sheet(isPresented: isPresented) {
+            ZStack {
+                BlurView()
+                VStack {
+                    ChatSettingsView(chatRoom: chatRoom)
+                        .padding()
+                        .background(Color.white)
+                        .cornerRadius(30)
+                        .shadow(radius: 10)
+                        .padding()
                 }
+                .background(Color.clear)
             }
         }
+    }
 }
 
 // MARK: - Toolbar Buttons
