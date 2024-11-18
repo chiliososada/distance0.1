@@ -155,48 +155,67 @@ struct DetailInputSection: View {
     @ObservedObject var viewModel: ChatDetailViewModel
     
     var body: some View {
-        HStack(alignment: .bottom, spacing: 12) {
-            AddButton(action: viewModel.showMoreOptions)
-            
-            AdaptiveTextEditor(
-                text: $viewModel.newMessage,
-                placeholder: "",
-                isShowingEmoji: $viewModel.isShowingEmoji
-            )
-            
-            Button(action: viewModel.showEmojiPickerView) {
-                Image(systemName: viewModel.isShowingEmoji ? "keyboard" : "face.smiling")
-                    .font(.system(size: Layout.iconSize, weight: .light))
-                    .foregroundColor(.black)
-                    .frame(width: Layout.buttonSize, height: Layout.buttonSize)
-                    .clipShape(Circle())
+        VStack(spacing: 0) {
+            // 主要输入区域
+            HStack(alignment: .bottom, spacing: 12) {
+                AddButton(
+                    action: viewModel.showMoreOptions,
+                    isShowingMedia: viewModel.showMediaOptions  
+                )
+                
+                if !viewModel.showMediaOptions {
+                    AdaptiveTextEditor(
+                        text: $viewModel.newMessage,
+                        placeholder: "",
+                        isShowingEmoji: $viewModel.isShowingEmoji
+                    )
+                    
+                    Button(action: viewModel.showEmojiPickerView) {
+                        Image(systemName: viewModel.isShowingEmoji ? "keyboard" : "face.smiling")
+                            .font(.system(size: Layout.iconSize, weight: .light))
+                            .foregroundColor(.black)
+                            .frame(width: Layout.buttonSize, height: Layout.buttonSize)
+                            .clipShape(Circle())
+                    }
+                    
+                    SendButton(
+                        action: viewModel.sendMessage,
+                        isEnabled: !viewModel.newMessage.isEmpty
+                    )
+                }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.white)
             
-            SendButton(
-                action: viewModel.sendMessage,
-                isEnabled: !viewModel.newMessage.isEmpty
-            )
+            // 底部区域：媒体选项、表情键盘或系统键盘
+            if viewModel.showMediaOptions {
+                MediaOptionsMenu(
+                    isPresented: $viewModel.showMediaOptions,
+                    onSelect: viewModel.handleMediaResult
+                )
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
         .background(Color.white)
         .animation(.easeOut(duration: 0.2), value: viewModel.newMessage)
+        .animation(.easeOut(duration: 0.2), value: viewModel.showMediaOptions)
     }
 }
 
 
 
 
+
 struct AddButton: View {
     let action: () -> Void
+    let isShowingMedia: Bool  // 添加状态属性
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: "plus")
+            Image(systemName: isShowingMedia ? "xmark" : "plus")  // 根据状态切换图标
                 .font(.system(size: Layout.iconSize, weight: .light))
                 .foregroundColor(.black)
                 .frame(width: Layout.buttonSize, height: Layout.buttonSize)
-            
                 .clipShape(Circle())
         }
     }

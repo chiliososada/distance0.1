@@ -22,8 +22,14 @@ final class ChatDetailViewModel: ObservableObject {
     
     let currentMember: Member
     
-    
+    //emoji
     @Published var isShowingEmoji = false
+    
+    //media
+    @Published var showMediaOptions = false
+    @Published var showImagePicker = false
+    @Published var imagePickerSourceType: UIImagePickerController.SourceType = .camera
+    
     
     // MARK: - View State
     enum ViewState: Equatable {
@@ -270,19 +276,80 @@ final class ChatDetailViewModel: ObservableObject {
     }
     
     func showMoreOptions() {
-        showOptionsMenu = true
-    }
+          // 如果键盘或表情键盘是打开状态，先关闭它们
+          if isShowingEmoji {
+              isShowingEmoji = false
+          }
+          // 关闭系统键盘
+          UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                       to: nil,
+                                       from: nil,
+                                       for: nil)
+          
+          withAnimation {
+              showMediaOptions.toggle()
+          }
+      }
     
-    func showEmojiPickerView() {
-            isShowingEmoji.toggle()
-            // 确保切换后文本框保持焦点
-            if isShowingEmoji {
-                // 稍微延迟以确保切换状态已更新
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    NotificationCenter.default.post(name: .showKeyboard, object: nil)
+    
+    func handleMediaResult(_ result: MediaResult) {
+            switch result {
+            case .capturedImage(let image):
+                // 处理拍照的图片
+                sendImageMessage(image)
+                
+            case .selectedImages(let images):
+                // 处理选择的多张图片
+                for image in images {
+                    sendImageMessage(image)
                 }
+                
+            case .sticker:
+                print("选择贴纸") // 实现贴纸功能
+                
+            case .audio:
+                print("录制音频") // 实现音频功能
+                
+            case .more:
+                print("更多选项") // 实现更多选项
             }
         }
+    private func sendImageMessage(_ image: UIImage) {
+           // 这里应该先上传图片到服务器，获取URL后再发送消息
+           // 这里使用模拟的URL
+           let imageUrl = URL(string: "https://example.com/image.jpg")!
+           
+           let newMsg = Message(
+               id: UUID(),
+               sender: currentMember,
+               content: .image(imageUrl),
+               timestamp: Date(),
+               status: .sending
+           )
+           
+           withAnimation {
+               messages.append(newMsg)
+           }
+           
+           // 添加到消息队列
+           enqueueMessage(newMsg)
+       }
+    func showEmojiPickerView() {
+        // 如果媒体选项菜单是打开的，先关闭它
+        if showMediaOptions {
+            showMediaOptions = false
+        }
+        
+        isShowingEmoji.toggle()
+        
+        // 确保切换后文本框保持焦点
+        if isShowingEmoji {
+            // 稍微延迟以确保切换状态已更新
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                NotificationCenter.default.post(name: .showKeyboard, object: nil)
+            }
+        }
+    }
     
     deinit {
         messageSubscription?.cancel()
