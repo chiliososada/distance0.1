@@ -8,8 +8,6 @@ private enum Layout {
     static let iconSize: CGFloat = 24 // 增大图标尺寸
     static let buttonSize: CGFloat = 32 // 按钮大小
     static let cornerRadius: CGFloat = 20 // 输入框圆角
-    static let minHeight: CGFloat = 40
-    static let maxHeight: CGFloat = 120
     
     static let colors = ColorScheme()
     
@@ -143,17 +141,25 @@ struct DetailInputSection: View {
     @ObservedObject var viewModel: ChatDetailViewModel
     
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(alignment: .bottom, spacing: 12) { // 修改对齐方式为底部对齐
             AddButton(action: viewModel.showMoreOptions)
-            MessageTextField(text: $viewModel.newMessage)
+            
+            AdaptiveTextEditor(
+                text: $viewModel.newMessage,
+                placeholder: ""
+            ) 
+            
             EmojiButton(action: viewModel.showEmojiPicker)
+            
             SendButton(
                 action: viewModel.sendMessage,
                 isEnabled: !viewModel.newMessage.isEmpty
             )
         }
-        .padding(.horizontal)
-        .padding(.bottom, 1)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color.white)
+        .animation(.easeOut(duration: 0.2), value: viewModel.newMessage)
     }
 }
 
@@ -175,22 +181,6 @@ struct AddButton: View {
     }
 }
 
-struct MessageTextField: View {
-    @Binding var text: String
-    
-    var body: some View {
-        TextField("Start typing...", text: $text)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(Color.white)
-            .cornerRadius(Layout.cornerRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: Layout.cornerRadius)
-                    .stroke(Layout.colors.border, lineWidth: 0.5)
-            )
-            .font(.system(size: 16))
-    }
-}
 
 struct EmojiButton: View {
     let action: () -> Void
