@@ -22,6 +22,9 @@ final class ChatDetailViewModel: ObservableObject {
     
     let currentMember: Member
     
+    
+    @Published var isShowingEmoji = false
+    
     // MARK: - View State
     enum ViewState: Equatable {
         case loading
@@ -271,8 +274,15 @@ final class ChatDetailViewModel: ObservableObject {
     }
     
     func showEmojiPickerView() {
-        showEmojiPicker = true
-    }
+            isShowingEmoji.toggle()
+            // 确保切换后文本框保持焦点
+            if isShowingEmoji {
+                // 稍微延迟以确保切换状态已更新
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    NotificationCenter.default.post(name: .showKeyboard, object: nil)
+                }
+            }
+        }
     
     deinit {
         messageSubscription?.cancel()
@@ -294,4 +304,10 @@ extension ChatDetailViewModel {
         let viewModel = ChatDetailViewModel(chatRoom: chatRoom)
         return viewModel
     }
+}
+
+
+// 添加通知名称
+extension Notification.Name {
+    static let showKeyboard = Notification.Name("showKeyboard")
 }

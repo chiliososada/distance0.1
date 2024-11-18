@@ -155,15 +155,22 @@ struct DetailInputSection: View {
     @ObservedObject var viewModel: ChatDetailViewModel
     
     var body: some View {
-        HStack(alignment: .bottom, spacing: 12) { // 修改对齐方式为底部对齐
+        HStack(alignment: .bottom, spacing: 12) {
             AddButton(action: viewModel.showMoreOptions)
             
             AdaptiveTextEditor(
                 text: $viewModel.newMessage,
-                placeholder: ""
-            ) 
+                placeholder: "",
+                isShowingEmoji: $viewModel.isShowingEmoji
+            )
             
-            EmojiButton(action: viewModel.showEmojiPickerView)
+            Button(action: viewModel.showEmojiPickerView) {
+                Image(systemName: viewModel.isShowingEmoji ? "keyboard" : "face.smiling")
+                    .font(.system(size: Layout.iconSize, weight: .light))
+                    .foregroundColor(.black)
+                    .frame(width: Layout.buttonSize, height: Layout.buttonSize)
+                    .clipShape(Circle())
+            }
             
             SendButton(
                 action: viewModel.sendMessage,
