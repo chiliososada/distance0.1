@@ -1,46 +1,76 @@
 import Foundation
 import SwiftUI
+import Combine
 
 final class ChatDetailViewModel: ObservableObject {
     // MARK: - Published Properties
-    @Published var messages: [Message] = []
+    @Published private(set) var messages: [Message] = []
     @Published var newMessage = ""
     @Published var isAnnouncementVisible = true
     @Published var showMemberList = false
-    @Published var viewState: ViewState = .loading
+    @Published private(set) var viewState: ViewState = .loading
+    @Published var showEmojiPicker = false
+    @Published var showOptionsMenu = false
     
     // MARK: - Properties
-    let chatRoom: ChatRoom
-    var currentMember: Member  // 当前用户
+    private let chatRoom: ChatRoom
+    private var messageSubscription: AnyCancellable?
+    private var debounceTimer: Timer?
+    private var messageBatch: [Message] = []
+    private let batchSize = 20
+    private var isLoadingMore = false
+    
+    let currentMember: Member
     
     // MARK: - View State
-    enum ViewState {
+    enum ViewState: Equatable {
         case loading
         case loaded
         case error(String)
+        case loadingMore
+        
+        static func ==(lhs: ViewState, rhs: ViewState) -> Bool {
+            switch (lhs, rhs) {
+            case (.loading, .loading),
+                 (.loaded, .loaded),
+                 (.loadingMore, .loadingMore):
+                return true
+            case (.error(let lhsError), .error(let rhsError)):
+                return lhsError == rhsError
+            default:
+                return false
+            }
+        }
     }
+    
+    // MARK: - Message Management
+    private var messageQueue: [(Message, Timer?)] = []
+    private let maxRetryAttempts = 3
+    private var retryCount: [UUID: Int] = [:]
     
     // MARK: - Initialization
     init(chatRoom: ChatRoom) {
         self.chatRoom = chatRoom
-        // TODO: 从用户系统获取当前用户信息
         self.currentMember = Member(
             id: UUID(),
             name: "Me",
             avatar: "sample1",
             role: .member
         )
+        
+        setupMessageSubscription()
         loadInitialMessages()
     }
     
     // MARK: - Public Methods
     func sendMessage() {
-        guard !newMessage.isEmpty else { return }
+        guard !newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         
+        let trimmedMessage = newMessage.trimmingCharacters(in: .whitespacesAndNewlines)
         let newMsg = Message(
             id: UUID(),
             sender: currentMember,
-            content: .text(newMessage),
+            content: .text(trimmedMessage),
             timestamp: Date(),
             status: .sending
         )
@@ -49,84 +79,171 @@ final class ChatDetailViewModel: ObservableObject {
             messages.append(newMsg)
         }
         
-        // 模拟发送消息
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if let index = self.messages.firstIndex(where: { $0.id == newMsg.id }) {
-                withAnimation {
-                    // 更新消息状态为已发送
-                    var updatedMsg = newMsg
-                    updatedMsg = Message(
-                        id: newMsg.id,
-                        sender: newMsg.sender,
-                        content: newMsg.content,
-                        timestamp: newMsg.timestamp,
-                        status: .sent
-                    )
-                    self.messages[index] = updatedMsg
-                }
-            }
-        }
-        
+        // 清空输入并隐藏键盘
         newMessage = ""
         dismissKeyboard()
+        
+        // 添加到消息队列
+        enqueueMessage(newMsg)
     }
     
-    func toggleAnnouncement() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isAnnouncementVisible.toggle()
+    func loadMoreMessages() {
+        guard !isLoadingMore, viewState == .loaded else { return }
+        
+        isLoadingMore = true
+        viewState = .loadingMore
+        
+        // 模拟加载更多消息
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self else { return }
+            
+            // 模拟获取更多历史消息
+            let olderMessages = self.generateOlderMessages()
+            
+            withAnimation {
+                self.messages.insert(contentsOf: olderMessages, at: 0)
+            }
+            
+            self.isLoadingMore = false
+            self.viewState = .loaded
         }
     }
     
-    func showSettings() {
-        showMemberList = true
+    func retry(messageId: UUID) {
+        guard let index = messages.firstIndex(where: { $0.id == messageId }),
+              messages[index].status == .failed else { return }
+        
+        let message = messages[index]
+        retryCount[messageId, default: 0] += 1
+        
+        if retryCount[messageId, default: 0] <= maxRetryAttempts {
+            // 重试发送消息
+            updateMessageStatus(messageId: messageId, status: .sending)
+            enqueueMessage(message)
+        }
     }
     
     // MARK: - Private Methods
+    private func setupMessageSubscription() {
+        // 监听新消息
+        messageSubscription = NotificationCenter.default
+            .publisher(for: .newMessageReceived)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let message = notification.object as? Message else { return }
+                self?.handleIncomingMessage(message)
+            }
+    }
+    
+    private func enqueueMessage(_ message: Message) {
+        let timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) { [weak self] _ in
+            self?.processMessage(message)
+        }
+        messageQueue.append((message, timer))
+    }
+    
+    private func processMessage(_ message: Message) {
+        // 模拟消息发送
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+            
+            // 模拟成功率 90%
+            let isSuccess = Double.random(in: 0...1) > 0.1
+            
+            if isSuccess {
+                self.updateMessageStatus(messageId: message.id, status: .sent)
+                
+                // 模拟消息送达
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.updateMessageStatus(messageId: message.id, status: .delivered)
+                }
+            } else {
+                self.updateMessageStatus(messageId: message.id, status: .failed)
+            }
+            
+            // 从队列中移除消息
+            self.messageQueue.removeAll { $0.0.id == message.id }
+        }
+    }
+    
+    private func updateMessageStatus(messageId: UUID, status: Message.MessageStatus) {
+        guard let index = messages.firstIndex(where: { $0.id == messageId }) else { return }
+        
+        withAnimation {
+            let updatedMessage = Message(
+                id: messages[index].id,
+                sender: messages[index].sender,
+                content: messages[index].content,
+                timestamp: messages[index].timestamp,
+                status: status
+            )
+            messages[index] = updatedMessage
+        }
+    }
+    
+    private func handleIncomingMessage(_ message: Message) {
+        withAnimation {
+            messages.append(message)
+        }
+        
+        // 如果消息不在视图底部，显示新消息提醒
+        // 这里可以添加新消息提醒的逻辑
+    }
+    
+    private func generateOlderMessages() -> [Message] {
+        // 生成模拟的历史消息
+        // 实际应用中，这里应该从服务器获取历史消息
+        return []
+    }
+    
     private func loadInitialMessages() {
         viewState = .loading
         
-        // 模拟网络请求延迟
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            let alice = Member(
-                id: UUID(),
-                name: "Alice",
-                avatar: "sample1",
-                role: .member
-            )
+        // 实现批量加载逻辑
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
             
-            let bob = Member(
-                id: UUID(),
-                name: "Bob",
-                avatar: "sample2",
-                role: .member
-            )
-            
-            self.messages = [
-                Message(
-                    id: UUID(),
-                    sender: alice,
-                    content: .text("Lets goooooo @AJPicard913, I'm buying mine now"),
-                    timestamp: Date().addingTimeInterval(-3600),
-                    status: .read
-                ),
-                Message(
-                    id: UUID(),
-                    sender: bob,
-                    content: .text("Count me in! Can't wait!"),
-                    timestamp: Date().addingTimeInterval(-1800),
-                    status: .read
-                ),
-                Message(
-                    id: UUID(),
-                    sender: self.currentMember,
-                    content: .text("Great! See you all there!"),
-                    timestamp: Date(),
-                    status: .sent
-                )
-            ]
-            
-            self.viewState = .loaded
+            // 使用批量加载优化性能
+            self.loadMessageBatch(count: self.batchSize) { messages in
+                withAnimation {
+                    self.messages = messages
+                    self.viewState = .loaded
+                }
+            }
         }
+    }
+    
+    private func loadMessageBatch(count: Int, completion: @escaping ([Message]) -> Void) {
+        // 实现批量加载逻辑
+        // 这里使用示例数据
+        let alice = Member(id: UUID(), name: "Alice", avatar: "sample1", role: .member)
+        let bob = Member(id: UUID(), name: "Bob", avatar: "sample2", role: .member)
+        
+        let messages = [
+            Message(
+                id: UUID(),
+                sender: alice,
+                content: .text("Lets goooooo @AJPicard913, I'm buying mine now"),
+                timestamp: Date().addingTimeInterval(-3600),
+                status: .read
+            ),
+            Message(
+                id: UUID(),
+                sender: bob,
+                content: .text("Count me in! Can't wait!"),
+                timestamp: Date().addingTimeInterval(-1800),
+                status: .read
+            ),
+            Message(
+                id: UUID(),
+                sender: currentMember,
+                content: .text("Great! See you all there!"),
+                timestamp: Date(),
+                status: .sent
+            )
+        ]
+        
+        completion(messages)
     }
     
     private func dismissKeyboard() {
@@ -137,22 +254,44 @@ final class ChatDetailViewModel: ObservableObject {
             for: nil
         )
     }
-    func showMoreOptions() {
-           // 实现更多选项的展示逻辑
-           print("Showing more options menu")
-       }
-       
-    func showEmojiPicker() {
-           // 实现表情选择器的展示逻辑
-           print("Showing emoji picker")
+    
+    // MARK: - UI Actions
+    func toggleAnnouncement() {
+        withAnimation(.easeInOut(duration: 0.2)) {
+            isAnnouncementVisible.toggle()
+        }
     }
+    
+    func showSettings() {
+        showMemberList = true
+    }
+    
+    func showMoreOptions() {
+        showOptionsMenu = true
+    }
+    
+    func showEmojiPickerView() {
+        showEmojiPicker = true
+    }
+    
+    deinit {
+        messageSubscription?.cancel()
+        debounceTimer?.invalidate()
+        messageQueue.forEach { _, timer in
+            timer?.invalidate()
+        }
+    }
+}
+
+// MARK: - Notification Extension
+extension Notification.Name {
+    static let newMessageReceived = Notification.Name("newMessageReceived")
 }
 
 // MARK: - Preview Helper
 extension ChatDetailViewModel {
     static func preview(chatRoom: ChatRoom) -> ChatDetailViewModel {
         let viewModel = ChatDetailViewModel(chatRoom: chatRoom)
-        // 预览数据会通过 loadInitialMessages 自动加载
         return viewModel
     }
 }

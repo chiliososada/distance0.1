@@ -28,8 +28,9 @@ struct ChatRoomListView: View {
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .chatDetail(let chatRoom):
-                    ChatDetailView(chatRoom: chatRoom)
-                        .environmentObject(navigationManager)
+                                    let cachedRoom = chatRoom  // 缓存 chatRoom
+                                    ChatDetailView(chatRoom: cachedRoom)
+                                        .id(cachedRoom.id.uuidString)  // 添加稳定的 ID
                 default:
                     EmptyView()
                 }
@@ -202,7 +203,8 @@ struct ChatListContent: View {
                 ChatRoomCell(
                     chatRoom: chatRoom,
                     onSelect: {
-                        navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
+                        let route = AppRoute.chatDetail(chatRoom: chatRoom)
+                           navigationManager.navigate(to: route)
                     }
                 )
                 .listRowStyle()

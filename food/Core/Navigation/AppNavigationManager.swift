@@ -58,7 +58,11 @@ final class AppNavigationManager: ObservableObject {
     static let shared: AppNavigationManager = .init()
     
     // MARK: - Published Properties
-    @Published var navigationPath = NavigationPath()
+    @Published var navigationPath = NavigationPath() {
+           didSet {
+               print("Navigation path changed: \(navigationPath)")
+           }
+       }
     @Published var selectedTab: TabRoute = .home
     @Published var presentedSheet: AppRoute?
     @Published var isPresentingSheet = false

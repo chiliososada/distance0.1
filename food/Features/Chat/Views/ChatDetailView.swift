@@ -22,38 +22,53 @@ private enum Layout {
 
 // MARK: - Main View
 struct ChatDetailView: View {
+    private let chatRoom: ChatRoom
     @StateObject private var viewModel: ChatDetailViewModel
     @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var tabBarManager: TabBarManager
     
+    // 添加一个静态属性来跟踪当前显示的聊天室ID
+    private static var currentChatRoomId: UUID?
+    
     init(chatRoom: ChatRoom) {
-        print("chatdeteal view")
+        // 检查是否已经显示这个聊天室
+        if Self.currentChatRoomId == chatRoom.id {
+            print("ChatDetailView - Skipping duplicate initialization for room: \(chatRoom.id)")
+            self.chatRoom = chatRoom
+            // 使用已存在的 ViewModel
+            _viewModel = StateObject(wrappedValue: ChatDetailViewModel(chatRoom: chatRoom))
+            return
+        }
+        
+        print("ChatDetailView init - Room: \(chatRoom.name), ID: \(chatRoom.id)")
+        self.chatRoom = chatRoom
         _viewModel = StateObject(wrappedValue: ChatDetailViewModel(chatRoom: chatRoom))
     }
     
     var body: some View {
         VStack(spacing: 1) {
-            // 公告区域
             AnnouncementSection(
                 isVisible: $viewModel.isAnnouncementVisible
             )
             
-            // 消息列表
             MessagesSection(
                 messages: viewModel.messages,
                 currentMember: viewModel.currentMember
             )
             
-            // 输入区域
             DetailInputSection(viewModel: viewModel)
         }
+        .id(chatRoom.id.uuidString)
         .onAppear {
+            print("ChatDetailView onAppear - Room: \(chatRoom.name), ID: \(chatRoom.id)")
+            Self.currentChatRoomId = chatRoom.id
             tabBarManager.isNavigatingInTab = true
         }
         .onDisappear {
-            // 只有当返回到主页面时才重置状态
+            print("ChatDetailView onDisappear - Room: \(chatRoom.name), ID: \(chatRoom.id)")
             if navigationManager.navigationPath.count == 0 {
                 tabBarManager.isNavigatingInTab = false
+                Self.currentChatRoomId = nil
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -61,6 +76,7 @@ struct ChatDetailView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 BackButton(action: {
+                    Self.currentChatRoomId = nil  // 清除当前ID
                     navigationManager.goBack()
                 })
             }
@@ -70,18 +86,16 @@ struct ChatDetailView: View {
                 })
             }
             ToolbarItem(placement: .principal) {
-                Text(viewModel.chatRoom.name)
+                Text(chatRoom.name)
                     .font(.headline)
             }
         }
         .memberListSheet(
             isPresented: $viewModel.showMemberList,
-            chatRoom: viewModel.chatRoom
+            chatRoom: chatRoom
         )
-        
     }
 }
-
 // MARK: - Supporting Views
 struct AnnouncementSection: View {
     @Binding var isVisible: Bool
@@ -149,7 +163,7 @@ struct DetailInputSection: View {
                 placeholder: ""
             ) 
             
-            EmojiButton(action: viewModel.showEmojiPicker)
+            EmojiButton(action: viewModel.showEmojiPickerView)
             
             SendButton(
                 action: viewModel.sendMessage,
@@ -290,41 +304,36 @@ struct SettingsButton: View {
 // MARK: - Preview
 struct ChatDetailView_Previews: PreviewProvider {
     static var previews: some View {
-        NavigationView {
-            ChatDetailView(
-                chatRoom: ChatRoom(
-                    name: "Sample Chat",
-                    type: .group,
-                    avatar: "sampleAvatar",
-                    lastMessage: Message(
-                        id: UUID(),
-                        sender: Member(
-                            id: UUID(),
-                            name: "Alice",
-                            avatar: "sample1",
-                            role: .member
-                        ),
-                        content: .text("This is the last message"),
-                        timestamp: Date(),
-                        status: .sent
-                    ),
-                    members: [
-                        Member(
-                            id: UUID(),
-                            name: "Alice",
-                            avatar: "sample1",
-                            role: .owner
-                        ),
-                        Member(
-                            id: UUID(),
-                            name: "Bob",
-                            avatar: "sample2",
-                            role: .member
-                        )
-                    ]
-                )
-            )
-            .environmentObject(TabBarManager())
+        NavigationStack {  // 使用 NavigationStack 替代 NavigationView
+            ChatDetailView(chatRoom: .preview)  // 直接使用 ChatRoom.preview
+                .environmentObject(AppNavigationManager.shared)  // 添加 navigationManager
+                .environmentObject(TabBarManager())
         }
+    }
+}
+
+extension ChatRoom {
+    static var preview: ChatRoom {
+        ChatRoom(
+            name: "Sample Chat",
+            type: .group,
+            avatar: "sampleAvatar",
+            lastMessage: Message(
+                id: UUID(),
+                sender: Member(
+                    id: UUID(),
+                    name: "Alice",
+                    avatar: "sample1",
+                    role: .member
+                ),
+                content: .text("This is the last message"),
+                timestamp: Date(),
+                status: .sent
+            ),
+            members: [
+                Member(id: UUID(), name: "Alice", avatar: "sample1", role: .owner),
+                Member(id: UUID(), name: "Bob", avatar: "sample2", role: .member)
+            ]
+        )
     }
 }
