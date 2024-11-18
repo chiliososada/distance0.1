@@ -6,7 +6,7 @@ final class ChatDetailViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published private(set) var messages: [Message] = []
     @Published var newMessage = ""
-    @Published var isAnnouncementVisible = true
+    @Published var isAnnouncementVisible = false
     @Published var showMemberList = false
     @Published private(set) var viewState: ViewState = .loading
     @Published var showEmojiPicker = false
@@ -303,13 +303,6 @@ final class ChatDetailViewModel: ObservableObject {
                 for image in images {
                     sendImageMessage(image)
                 }
-                
-           
-                
-            case .audio:
-                print("录制音频") // 实现音频功能
-                
-            
             }
         }
     private func sendImageMessage(_ image: UIImage) {

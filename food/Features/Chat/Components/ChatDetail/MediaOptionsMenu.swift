@@ -3,34 +3,53 @@ import PhotosUI
 import UIKit
 
 // MARK: - Media Option Models
+import SwiftUI
+import PhotosUI
+import UIKit
+
+// MARK: - Media Option Models
 enum MediaOption: Identifiable {
     case camera
     case photoLibrary
-    case audio
     
     var id: String { title }
     
+    // 更新图标样式
     var icon: String {
         switch self {
-        case .camera: return "camera.fill"
-        case .photoLibrary: return "photo.fill"
-        case .audio: return "waveform"
+        case .camera: return "camera.aperture"  // 使用更精致的相机图标
+        case .photoLibrary: return "photo.stack.fill"  // 使用层叠效果的照片图标
         }
     }
     
     var title: String {
         switch self {
         case .camera: return "相机"
-        case .photoLibrary: return "照片"
-        case .audio: return "音频"
+        case .photoLibrary: return "相册"
         }
     }
     
-    var color: Color {
+    // 使用渐变色
+    var gradientColors: [Color] {
         switch self {
-        case .camera: return Color(.systemGray2)
-        case .photoLibrary: return Color(.systemGray2)
-        case .audio: return .orange.opacity(0.8)
+        case .camera:
+            return [
+                Color(red: 0.32, green: 0.46, blue: 0.98), // 蓝色
+                Color(red: 0.44, green: 0.38, blue: 0.92)  // 紫色
+            ]
+        case .photoLibrary:
+            return [
+                Color(red: 0.90, green: 0.36, blue: 0.51), // 粉色
+                Color(red: 0.93, green: 0.23, blue: 0.36)  // 红色
+            ]
+        }
+    }
+    
+    // 背景装饰图标
+    var decorationIcon: String {
+        switch self {
+        case .camera: return "circle.grid.cross.fill"
+        case .photoLibrary: return "square.grid.3x3.fill"
         }
     }
 }
@@ -38,7 +57,6 @@ enum MediaOption: Identifiable {
 enum MediaResult {
     case capturedImage(UIImage)
     case selectedImages([UIImage])
-    case audio
 }
 
 // MARK: - Media Options Menu
@@ -50,8 +68,7 @@ struct MediaOptionsMenu: View {
     
     private let options: [MediaOption] = [
         .camera,
-        .photoLibrary,
-        .audio
+        .photoLibrary
     ]
     
     var body: some View {
@@ -92,8 +109,6 @@ struct MediaOptionsMenu: View {
             showCamera = true
         case .photoLibrary:
             showChatImagePicker = true
-        case .audio:
-            onSelect(.audio)
         }
     }
 }
@@ -102,22 +117,58 @@ struct MediaOptionsMenu: View {
 struct MediaOptionButton: View {
     let option: MediaOption
     let action: () -> Void
+    @State private var isPressed = false
     
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Circle()
-                    .fill(option.color)
-                    .frame(width: 50, height: 50)
-                    .overlay(
-                        Image(systemName: option.icon)
-                            .font(.system(size: 24))
-                            .foregroundColor(.white)
-                    )
+                // 主图标容器
+                ZStack {
+                    // 渐变背景
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: option.gradientColors,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 56, height: 56)
+                        .shadow(
+                            color: option.gradientColors[0].opacity(0.5),
+                            radius: isPressed ? 4 : 8,
+                            x: 0,
+                            y: isPressed ? 2 : 4
+                        )
+                    
+                    // 装饰背景图标
+                    Image(systemName: option.decorationIcon)
+                        .font(.system(size: 40))
+                        .foregroundColor(.white.opacity(0.2))
+                        .offset(x: 1, y: 1)
+                    
+                    // 主图标
+                    Image(systemName: option.icon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(.white)
+                }
                 
+                // 标题
                 Text(option.title)
-                    .font(.system(size: 12))
-                    .foregroundColor(.primary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.gray)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        .pressEvents {
+            withAnimation {
+                isPressed = true
+            }
+        } onRelease: {
+            withAnimation {
+                isPressed = false
             }
         }
     }
@@ -216,5 +267,20 @@ struct CameraView: UIViewControllerRepresentable {
             parent.completion(nil)
             picker.dismiss(animated: true)
         }
+    }
+}
+
+// 添加按压事件检测
+extension View {
+    func pressEvents(onPress: @escaping () -> Void, onRelease: @escaping () -> Void) -> some View {
+        self.simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    onPress()
+                }
+                .onEnded { _ in
+                    onRelease()
+                }
+        )
     }
 }

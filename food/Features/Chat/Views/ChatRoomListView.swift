@@ -176,26 +176,30 @@ struct ChatTabView: View {
     @EnvironmentObject private var navigationManager: AppNavigationManager
     
     var body: some View {
-        TabView(selection: $viewModel.selectedTab) {
-            ChatListContent(
-                chatRooms: viewModel.filteredRooms,
-                navigationManager: navigationManager
-            )
-            .tag(0)
-            
-            ChatListContent(
-                chatRooms: viewModel.filteredRooms,
-                navigationManager: navigationManager
-            )
-            .tag(1)
+        // 移除 TabView,改用基于 selectedTab 的条件渲染
+        Group {
+            if viewModel.selectedTab == 0 {
+                ChatListContent(
+                    chatRooms: viewModel.filteredRooms,
+                    navigationManager: navigationManager
+                )
+            } else {
+                ChatListContent(
+                    chatRooms: viewModel.filteredRooms,
+                    navigationManager: navigationManager
+                )
+            }
         }
-        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+        // 可以添加切换动画
+        .animation(.easeInOut, value: viewModel.selectedTab)
     }
 }
 
 struct ChatListContent: View {
     let chatRooms: [ChatRoom]
     let navigationManager: AppNavigationManager
+    @State private var showDeleteAlert = false
+    @State private var chatRoomToDelete: ChatRoom?
     
     var body: some View {
         List {
@@ -204,14 +208,58 @@ struct ChatListContent: View {
                     chatRoom: chatRoom,
                     onSelect: {
                         let route = AppRoute.chatDetail(chatRoom: chatRoom)
-                           navigationManager.navigate(to: route)
+                        navigationManager.navigate(to: route)
                     }
                 )
                 .listRowStyle()
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    // 删除按钮
+                    Button(role: .destructive) {
+                        chatRoomToDelete = chatRoom
+                        showDeleteAlert = true
+                    } label: {
+                        Label("删除", systemImage: "trash")
+                    }
+                    .tint(.red)
+                }
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    // 收藏/取消收藏按钮
+                    Button {
+                        // 处理收藏/取消收藏操作
+                        print("Toggle favorite for chat room: \(chatRoom.id)")
+                    } label: {
+                        Label(chatRoom.isTopChat ? "取消置顶" : "置顶",
+                              systemImage: chatRoom.isTopChat ? "pin.slash" : "pin")
+                    }
+                    .tint(.orange)
+                    
+                    // 标记已读/未读按钮
+                    Button {
+                        // 处理标记已读/未读操作
+                        print("Toggle read status for chat room: \(chatRoom.id)")
+                    } label: {
+                        Label("已读", systemImage: "checkmark.circle")
+                    }
+                    .tint(.blue)
+                }
             }
         }
         .listStyle(PlainListStyle())
         .background(Color.white)
+        // 删除确认对话框
+        .alert("删除聊天", isPresented: $showDeleteAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                if let chatRoom = chatRoomToDelete {
+                    // 处理删除操作
+                    print("Deleting chat room: \(chatRoom.id)")
+                }
+            }
+        } message: {
+            if let chatRoom = chatRoomToDelete {
+                Text("确定要删除与\"\(chatRoom.name)\"的聊天吗？")
+            }
+        }
     }
 }
 
@@ -219,6 +267,7 @@ struct ChatListContent: View {
 struct ChatRoomCell: View {
     let chatRoom: ChatRoom
     let onSelect: () -> Void
+    @State private var offset: CGFloat = 0
     
     var body: some View {
         Button(action: onSelect) {
@@ -226,6 +275,9 @@ struct ChatRoomCell: View {
                 .modifier(ChatRoomStyle())
         }
         .buttonStyle(PlainButtonStyle())
+        // 添加滑动反馈动画
+        .offset(x: offset)
+        .animation(.interactiveSpring(), value: offset)
     }
 }
 
@@ -252,6 +304,7 @@ private extension View {
         self
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
     }
 }
 

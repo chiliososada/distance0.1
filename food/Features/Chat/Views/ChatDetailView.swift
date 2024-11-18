@@ -47,9 +47,18 @@ struct ChatDetailView: View {
     
     var body: some View {
         VStack(spacing: 1) {
-            AnnouncementSection(
-                isVisible: $viewModel.isAnnouncementVisible
-            )
+            // 修改公告部分，默认不显示
+                      Group {
+                          if viewModel.isAnnouncementVisible {
+                              AnnouncementSection(
+                                  isVisible: $viewModel.isAnnouncementVisible
+                              )
+                          } else {
+                              // 只显示切换按钮
+                              ToggleButton(isVisible: $viewModel.isAnnouncementVisible)
+                                  .padding(.vertical, 6)
+                          }
+                      }
             
             MessagesSection(
                 messages: viewModel.messages,
@@ -122,10 +131,17 @@ struct ToggleButton: View {
                 isVisible.toggle()
             }
         } label: {
-            Text(isVisible ? "收起公告" : "展开公告")
-                .font(.footnote)
-                .foregroundColor(.blue)
-                .padding(.bottom, 4)
+            HStack {
+                Image(systemName: isVisible ? "chevron.up" : "chevron.down")
+                    .font(.system(size: 12))
+                Text(isVisible ? "收起公告" : "展开公告")
+                    .font(.footnote)
+            }
+            .foregroundColor(.blue)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(Color.blue.opacity(0.1))
+            .cornerRadius(15)
         }
     }
 }
@@ -138,16 +154,67 @@ struct MessagesSection: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 1) {
-                ForEach(messages) { message in
-                    MessageView(
-                        message: message,
-                        isCurrentUser: message.sender.id == currentMember.id
-                    )
+                // 按日期分组消息
+                ForEach(groupedMessages, id: \.date) { group in
+                    // 时间分割线
+                    TimeDivider(date: group.date)
+                    
+                    // 该组的消息
+                    ForEach(group.messages) { message in
+                        MessageView(
+                            message: message,
+                            isCurrentUser: message.sender.id == currentMember.id
+                        )
+                    }
                 }
             }
             .padding(.horizontal)
         }
         .padding(.bottom, 4)
+    }
+    
+    // 消息分组数据结构
+    private struct MessageGroup {
+        let date: Date
+        let messages: [Message]
+    }
+    
+    // 将消息按日期分组
+    private var groupedMessages: [MessageGroup] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: messages) { message in
+            calendar.startOfDay(for: message.timestamp)
+        }
+        
+        return grouped.map { date, messages in
+            MessageGroup(date: date, messages: messages.sorted { $0.timestamp < $1.timestamp })
+        }.sorted { $0.date < $1.date }
+    }
+}
+
+
+// 时间分割线视图
+struct TimeDivider: View {
+    let date: Date
+    
+    var body: some View {
+        Text(timeString)
+            .font(.caption2)
+            .foregroundColor(.gray)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+    }
+    
+    private var timeString: String {
+        let formatter = DateFormatter()
+        if Calendar.current.isDateInToday(date) {
+            return "今天"
+        } else if Calendar.current.isDateInYesterday(date) {
+            return "昨天"
+        } else {
+            formatter.dateFormat = "M月d日"
+            return formatter.string(from: date)
+        }
     }
 }
 

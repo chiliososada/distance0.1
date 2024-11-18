@@ -30,14 +30,41 @@ struct ChatRoomRow: View {
             
             Spacer()
             
-            TimeView(timestamp: chatRoom.lastMessage?.timestamp)
+            // 右侧时间和未读消息组
+            VStack(alignment: .trailing, spacing: 4) {
+                // 时间显示
+                TimeView(timestamp: chatRoom.lastMessage?.timestamp)
+                
+                // 未读消息计数
+                if chatRoom.unreadCount > 0 {
+                    UnreadCountBadge(count: chatRoom.unreadCount)
+                }
+            }
+            .frame(width: 60) // 固定宽度保持对齐
         }
         .padding(.vertical, Layout.verticalPadding)
         .padding(.horizontal, Layout.horizontalPadding)
         .background(Color.white)
     }
 }
-
+// 未读消息计数徽章
+struct UnreadCountBadge: View {
+    let count: Int
+    
+    var body: some View {
+        Text("\(count)")
+            .font(.system(size: 12, weight: .medium))
+            .foregroundColor(.white)
+            .frame(minWidth: 18, minHeight: 18) // 修复语法错误
+            .background(Color.red)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(Color.white, lineWidth: 1)
+            )
+            .shadow(color: Color.black.opacity(0.1), radius: 1, x: 0, y: 1)
+    }
+}
 // MARK: - Supporting Views
 private struct AvatarView: View {
     let imageName: String
@@ -97,12 +124,12 @@ private struct MessageContent: View {
     }
 }
 
-private struct TimeView: View {
+struct TimeView: View {
     let timestamp: Date?
     
     var body: some View {
         Text(formattedTime)
-            .font(.footnote)
+            .font(.caption)
             .foregroundColor(.gray)
     }
     
@@ -123,7 +150,6 @@ private struct TimeView: View {
         return formatter.localizedString(for: timestamp, relativeTo: Date())
     }
 }
-
 // MARK: - Preview Provider
 struct ChatRoomRow_Previews: PreviewProvider {
     static let previewMember = Member(

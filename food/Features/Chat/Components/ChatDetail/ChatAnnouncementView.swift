@@ -53,7 +53,7 @@ struct AnnouncementView: View {
     
     private var contentView: some View {
         VStack(spacing: Layout.spacing) {
-            TimeView(time: viewModel.announcement.time)
+            AnnouncementTimeView(time: viewModel.announcement.time)
             AnnouncementTitleView(title: viewModel.announcement.title)
             LinkView(link: viewModel.announcement.link)
         }
@@ -62,7 +62,7 @@ struct AnnouncementView: View {
 }
 
 // MARK: - Supporting Views
-private struct TimeView: View {
+private struct AnnouncementTimeView: View {
     let time: String
     
     var body: some View {

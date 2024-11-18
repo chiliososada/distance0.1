@@ -36,6 +36,7 @@ struct BubbleShape: Shape {
 struct MessageView: View {
     let message: Message
     let isCurrentUser: Bool
+    @State private var showTime = false
     
     var body: some View {
         HStack(spacing: Layout.avatarSpacing) {
@@ -56,11 +57,44 @@ struct MessageView: View {
         VStack(alignment: isCurrentUser ? .trailing : .leading,
                spacing: Layout.messageSpacing) {
             UserNameLabel(name: message.sender.name)
-            MessageBubble(message: message, isCurrentUser: isCurrentUser)
+            
+            // 消息气泡和时间组合
+            ZStack(alignment: isCurrentUser ? .topTrailing : .topLeading) {
+                MessageBubble(message: message, isCurrentUser: isCurrentUser)
+                    .onTapGesture {
+                        withAnimation {
+                            showTime.toggle()
+                        }
+                    }
+                
+                if showTime {
+                    // 时间标签
+                    Text(formatMessageTime(message.timestamp))
+                        .font(.system(size: 10))
+                        .foregroundColor(.gray)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.9))
+                        .cornerRadius(8)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
+                        )
+                        .offset(y: -20)
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
+            
             if isCurrentUser {
                 MessageStatus(status: message.status)
             }
         }
+    }
+    
+    private func formatMessageTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
     }
 }
 

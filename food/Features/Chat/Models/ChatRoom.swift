@@ -5,40 +5,42 @@ import Foundation
 // MARK: - Chat Room Model
 struct ChatRoom: Identifiable, Hashable {
     let id: UUID
-    let name: String
-    let type: ChatRoomType
-    let avatar: String
-    var lastMessage: Message?
-    var members: [Member]
-    var announcement: Announcement?
-    var isTopChat: Bool
-    
-    enum ChatRoomType {
-        case individual
-        case group
-    }
-    
-    // MARK: - Initialization
-    init(
-        id: UUID = UUID(),
-        name: String,
-        type: ChatRoomType,
-        avatar: String,
-        lastMessage: Message? = nil,
-        members: [Member] = [],
-        announcement: Announcement? = nil,
-        isTopChat: Bool = false
-    ) {
-        self.id = id
-        self.name = name
-        self.type = type
-        self.avatar = avatar
-        self.lastMessage = lastMessage
-        self.members = members
-        self.announcement = announcement
-        self.isTopChat = isTopChat
-    }
-    
+      let name: String
+      let type: ChatRoomType
+      let avatar: String
+      var lastMessage: Message?
+      var members: [Member]
+      var announcement: Announcement?
+      var isTopChat: Bool
+      var unreadCount: Int  // 添加未读消息计数
+      
+      enum ChatRoomType {
+          case individual
+          case group
+      }
+      
+      // MARK: - Initialization
+      init(
+          id: UUID = UUID(),
+          name: String,
+          type: ChatRoomType,
+          avatar: String,
+          lastMessage: Message? = nil,
+          members: [Member] = [],
+          announcement: Announcement? = nil,
+          isTopChat: Bool = false,
+          unreadCount: Int = 0  // 添加默认值为0的参数
+      ) {
+          self.id = id
+          self.name = name
+          self.type = type
+          self.avatar = avatar
+          self.lastMessage = lastMessage
+          self.members = members
+          self.announcement = announcement
+          self.isTopChat = isTopChat
+          self.unreadCount = unreadCount
+      }
     // MARK: - Hashable
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
@@ -147,13 +149,15 @@ extension ChatRoom {
     static func createIndividual(
         name: String,
         avatar: String,
-        members: [Member]
+        members: [Member],
+        unreadCount: Int = 0  // 添加未读消息参数
     ) -> ChatRoom {
         ChatRoom(
             name: name,
             type: .individual,
             avatar: avatar,
-            members: members
+            members: members,
+            unreadCount: unreadCount
         )
     }
     
@@ -161,14 +165,16 @@ extension ChatRoom {
         name: String,
         avatar: String,
         members: [Member],
-        announcement: Announcement? = nil
+        announcement: Announcement? = nil,
+        unreadCount: Int = 0  // 添加未读消息参数
     ) -> ChatRoom {
         ChatRoom(
             name: name,
             type: .group,
             avatar: avatar,
             members: members,
-            announcement: announcement
+            announcement: announcement,
+            unreadCount: unreadCount
         )
     }
 }
@@ -183,12 +189,14 @@ extension ChatRoom {
             createIndividual(
                 name: "Tina Aalto",
                 avatar: "sample2",
-                members: [member1, member2]
+                members: [member1, member2],
+                unreadCount: 3  // 添加示例未读消息数
             ),
             createGroup(
                 name: "Study Group",
                 avatar: "sample2",
-                members: [member1, member2]
+                members: [member1, member2],
+                unreadCount: 5  // 添加示例未读消息数
             )
         ]
     }()

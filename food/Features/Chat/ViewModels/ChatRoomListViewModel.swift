@@ -106,7 +106,8 @@ final class ChatRoomListViewModel: ObservableObject {
                 type: .individual,
                 avatar: "sample2",
                 lastMessage: tinaMessage,
-                members: [currentMember, tina]
+                members: [currentMember, tina],
+                unreadCount: 1
             ),
             
             ChatRoom(
