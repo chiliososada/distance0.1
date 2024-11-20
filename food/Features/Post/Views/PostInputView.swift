@@ -16,14 +16,15 @@ struct PostInputView: View {
     @Binding var isPresented: Bool
     @Binding var selectedTab: TabRoute
     @FocusState private var focusedField: PostInputViewModel.FocusField?
-    
+
+      
+
     private enum Layout {
         static let spacing: CGFloat = 16
         static let toolbarHeight: CGFloat = 44
         static let titleTopPadding: CGFloat = 20
         static let maxImages = 6
     }
-    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {

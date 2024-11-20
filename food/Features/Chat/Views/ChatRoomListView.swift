@@ -15,6 +15,13 @@ private enum Layout {
 struct ChatRoomListView: View {
     @StateObject private var viewModel = ChatRoomListViewModel()
     @EnvironmentObject private var navigationManager: AppNavigationManager
+   
+    init() {
+      
+        print("ChatRoomListView")
+       
+    }
+    
     
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {

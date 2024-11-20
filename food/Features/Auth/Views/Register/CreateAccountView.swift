@@ -13,6 +13,9 @@ struct CreateAccountView: View {
        @EnvironmentObject var navigationManager: AppNavigationManager
        @EnvironmentObject var authManager: AuthManager
     
+    
+    
+    
     // MARK: - Focus Fields
     enum Field: Hashable {
         case name
@@ -38,6 +41,7 @@ struct CreateAccountView: View {
                emailOrPhone: emailOrPhone,
                authManager: AuthManager()
            ))
+        print("CreatAccountView")
        }
        
     // MARK: - Body

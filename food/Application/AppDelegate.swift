@@ -19,8 +19,9 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
-        // 初始化 Firebase
+        // 初始化 Firebase 服务
         FirebaseApp.configure()
+        // 调用应用程序设置方法
         setupApp()
         return true
     }
@@ -36,6 +37,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         configurationForConnecting connectingSceneSession: UISceneSession,
         options: UIScene.ConnectionOptions
     ) -> UISceneConfiguration {
+        // 创建场景配置，设置代理类为 SceneDelegate
         let sceneConfig = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
         sceneConfig.delegateClass = SceneDelegate.self
         return sceneConfig
@@ -51,10 +53,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
+        // 将设备令牌转换为字符串格式
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
         
-        // 保存推送令牌到UserDefaults
+        // 保存推送令牌到UserDefaults并同步
         UserDefaults.standard.set(token, forKey: AppConstants.UserDefaultsKeys.pushToken)
         UserDefaults.standard.synchronize()
     }
@@ -67,6 +70,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didFailToRegisterForRemoteNotificationsWithError error: Error
     ) {
+        // 打印注册失败的错误信息
         print("Failed to register for remote notifications: \(error.localizedDescription)")
     }
     
@@ -80,6 +84,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        // 处理静默推送通知
         handleSilentPush(userInfo: userInfo, completionHandler: completionHandler)
     }
 }
@@ -88,10 +93,10 @@ class AppDelegate: NSObject, UIApplicationDelegate {
 private extension AppDelegate {
     /// 设置应用程序的各项配置
     func setupApp() {
-        configureNotifications()  // 配置通知
-        setupNetworkMonitoring()  // 设置网络监控
-        setupLogging()           // 设置日志系统
-        registerDefaultsSettings() // 注册默认设置
+        configureNotifications()      // 配置推送通知系统
+        setupNetworkMonitoring()      // 初始化网络监控
+        setupLogging()                // 设置日志记录系统
+        registerDefaultsSettings()    // 注册应用默认设置
     }
     
     /// 配置通知设置
@@ -99,11 +104,14 @@ private extension AppDelegate {
     /// - 设置通知代理
     /// - 注册远程通知
     func configureNotifications() {
+        // 获取通知中心实例
         let center = UNUserNotificationCenter.current()
         center.delegate = self
         
+        // 请求通知权限
         center.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if granted {
+                // 权限获取成功后，在主线程注册远程通知
                 DispatchQueue.main.async {
                     UIApplication.shared.registerForRemoteNotifications()
                 }
@@ -113,6 +121,7 @@ private extension AppDelegate {
     
     /// 设置网络监控
     func setupNetworkMonitoring() {
+        // 启动网络状态监控
         NetworkMonitor.shared.startMonitoring()
     }
     
@@ -120,16 +129,17 @@ private extension AppDelegate {
     /// 根据编译模式设置不同的日志级别
     func setupLogging() {
         #if DEBUG
-        Logger.shared.setLogLevel(.debug)  // 调试模式：显示所有日志
+        Logger.shared.setLogLevel(.debug)  // 调试环境：显示所有日志
         #else
-        Logger.shared.setLogLevel(.error)  // 发布模式：只显示错误日志
+        Logger.shared.setLogLevel(.error)  // 生产环境：只显示错误日志
         #endif
     }
     
     /// 注册应用程序默认设置
     func registerDefaultsSettings() {
+        // 设置应用程序的默认配置
         let defaultSettings: [String: Any] = [
-            "isDarkModeEnabled": false
+            "isDarkModeEnabled": false  // 默认禁用深色模式
         ]
         UserDefaults.standard.register(defaults: defaultSettings)
     }
@@ -147,6 +157,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        // 设置前台通知的显示方式：横幅、角标和声音
         completionHandler([.banner, .badge, .sound])
     }
     
@@ -160,6 +171,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        // 处理用户点击通知的响应
         handleNotificationResponse(response.notification.request.content.userInfo)
         completionHandler()
     }
@@ -167,7 +179,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     /// 处理通知响应
     /// - Parameter userInfo: 通知内容
     private func handleNotificationResponse(_ userInfo: [AnyHashable: Any]) {
-        // 处理通知响应
+        // TODO: 实现具体的通知响应处理逻辑
     }
 }
 
@@ -181,13 +193,15 @@ private extension AppDelegate {
         userInfo: [AnyHashable: Any],
         completionHandler: @escaping (UIBackgroundFetchResult) -> Void
     ) {
+        // 获取推送类型
         guard let type = userInfo["type"] as? String else {
             completionHandler(.noData)
             return
         }
         
+        // 根据推送类型处理不同的业务逻辑
         switch type {
-        case "content_refresh":
+        case "content_refresh":  // 内容刷新类型
             Task {
                 do {
                     try await refreshContent()
@@ -204,7 +218,7 @@ private extension AppDelegate {
     /// 刷新内容
     /// - Throws: 可能抛出网络错误
     func refreshContent() async throws {
-        // 实现内容刷新逻辑
+        // TODO: 实现具体的内容刷新逻辑
     }
 }
 
@@ -216,10 +230,10 @@ class Logger {
     
     /// 日志级别枚举
     enum LogLevel: Int {
-        case debug = 0    // 调试信息
-        case info = 1     // 一般信息
-        case warning = 2  // 警告信息
-        case error = 3    // 错误信息
+        case debug = 0    // 调试信息：详细的开发调试信息
+        case info = 1     // 一般信息：程序正常运行时的信息
+        case warning = 2  // 警告信息：可能的问题或需要注意的情况
+        case error = 3    // 错误信息：程序错误或异常情况
     }
     
     /// 当前日志级别
@@ -238,7 +252,9 @@ class Logger {
     ///   - file: 源文件名
     ///   - line: 行号
     func log(_ message: String, level: LogLevel, file: String = #file, line: Int = #line) {
+        // 只记录级别大于等于当前设置的日志
         guard level.rawValue >= currentLogLevel.rawValue else { return }
+        // 获取文件名并格式化日志输出
         let fileName = (file as NSString).lastPathComponent
         print("[\(fileName):\(line)][\(level)] \(message)")
     }
@@ -247,11 +263,11 @@ class Logger {
 // MARK: - Network Monitor
 /// 网络监控类
 class NetworkMonitor {
-    /// 共享实例
+    /// 共享实例（单例模式）
     static let shared = NetworkMonitor()
     
     /// 开始网络监控
     func startMonitoring() {
-        // 实现网络监控逻辑
+        // TODO: 实现具体的网络监控逻辑
     }
 }

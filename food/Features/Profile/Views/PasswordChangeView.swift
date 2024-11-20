@@ -58,6 +58,14 @@ struct PasswordField: View {
 }
 
 struct PasswordChangeView: View {
+    
+    init() {
+      
+        print("PasswordChangeView")
+       
+    }
+    
+    
     @Environment(\.dismiss) private var dismiss
      @EnvironmentObject var navigationManager: AppNavigationManager
      @EnvironmentObject var authManager: AuthManager

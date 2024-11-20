@@ -5,7 +5,11 @@ import MapKit
 // MARK: - Main View
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
-    
+    init() {
+      
+        print("ProfileView")
+       
+    }
     var body: some View {
         ZStack {
             // 背景层

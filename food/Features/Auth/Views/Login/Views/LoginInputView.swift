@@ -7,7 +7,11 @@ struct LoginInputView: View {
     @State private var navigateToNextStep = false
     
     let showBackButton: Bool
-    
+    // 自定义的 init 方法 可以删除用于测试导航
+      init(showBackButton: Bool) {
+          self.showBackButton = showBackButton
+          print("LoginInputView")
+      }
     var body: some View {
         ScrollView {
             VStack(spacing: 30) {

@@ -23,6 +23,7 @@ struct LoginPasswordView: View {
             emailOrUsername: emailOrUsername,
             authManager: AuthManager()
         ))
+        print("LoginPasswordVeiw")
     }
     
     // MARK: - Body

@@ -17,6 +17,7 @@ struct ChatSettingsView: View {
         
         init(chatRoom: ChatRoom) {
             _viewModel = StateObject(wrappedValue: ChatSettingsViewModel(chatRoom: chatRoom))
+            print("ChatSettingsView")
         }
         
         var body: some View {

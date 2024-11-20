@@ -112,6 +112,11 @@ struct ProfileEditorView: View {
     @Environment(\.presentationMode) var presentationMode
     @StateObject private var profileState = ProfileEditState()
     @EnvironmentObject var authManager: AuthManager
+    init() {
+      
+        print("ProfileEditorView")
+       
+    }
     var body: some View {
           VStack {
               ScrollView {

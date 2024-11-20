@@ -28,6 +28,7 @@ struct VerificationView: View {
             user: currentUser,
             email: userEmail
         ))
+        print("VerficvationView")
     }
     
     // MARK: - Body

@@ -5,7 +5,11 @@ struct RegisterView: View {
     @StateObject private var viewModel = RegisterViewModel()
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var navigationManager: AppNavigationManager
-    
+    init() {
+      
+        print("RegisterView")
+       
+    }
     // MARK: - Layout Constants
     private enum Layout {
         static let spacing: CGFloat = 20

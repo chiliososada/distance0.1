@@ -74,6 +74,11 @@ struct HomeLoginView: View {
     let velocity: CGFloat = 50
     @EnvironmentObject var tabBarManager: TabBarManager
     @EnvironmentObject var navigationManager: AppNavigationManager
+    init() {
+      
+        print("HomeLoginView")
+       
+    }
     var body: some View {
         
             VStack(spacing: Layout.spacing * 2) {

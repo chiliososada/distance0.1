@@ -5,6 +5,12 @@ struct NearbyView: View {
     @StateObject private var viewModel = NearbyViewModel()
     @EnvironmentObject private var navigationManager: AppNavigationManager
     @EnvironmentObject private var tabBarManager: TabBarManager  // 添加 TabBarManager
+    
+    
+     init() {
+         print("NearbyView")
+     }
+    
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {  // 添加 NavigationStack
             ZStack {

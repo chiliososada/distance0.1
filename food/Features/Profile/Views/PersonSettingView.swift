@@ -15,6 +15,11 @@ struct PersonSettingsView: View {
             navigationManager: .shared,
             tabBarManager: .init()
         ))
+      
+          
+            print("PersonSettingsView")
+           
+      
     }
     
     var body: some View {

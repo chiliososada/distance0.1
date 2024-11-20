@@ -4,6 +4,14 @@ import SwiftUI
 
 // MARK: - HomeTabContentView
 struct HomeTabContentView: View {
+    
+    init() {
+      
+        print("HomeTabContentView")
+       
+    }
+    
+    
     @StateObject private var viewModel = HomeTabContentViewModel()
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @EnvironmentObject private var navigationManager: AppNavigationManager
