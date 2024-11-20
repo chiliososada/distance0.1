@@ -89,20 +89,6 @@ final class PersonSettingsViewModel: ObservableObject {
         navigationManager.resetNavigation()
         tabBarManager.resetNavigationState()
         
-        // 重置窗口根视图
-        await MainActor.run {
-            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-               let window = windowScene.windows.first {
-                let contentView = ContentView()
-                    .environmentObject(authManager)
-                    .environmentObject(tabBarManager)
-                    .environmentObject(navigationManager)
-                    .environmentObject(LocationManager.shared)
-                
-                window.rootViewController = UIHostingController(rootView: contentView)
-                window.makeKeyAndVisible()
-            }
-        }
     }
     
     /// 处理认证错误

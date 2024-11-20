@@ -11,31 +11,14 @@ import SwiftUI
 // MARK: - RecipeDetailView Optimizations
 struct PostDetailView: View {
     let post: LocationPost
-    
-    
-    init(post: LocationPost) {
-           self.post = post
-           print("PostDetailView initialized with:")
-           print("- Title: \(post.title ?? "nil")")
-           print("- Author: \(post.authorName)")
-           print("- Images: \(post.imageNames)")
-           print("- Location: \(post.locationName)")
-       }
-    
-    
-    
-    
     @State private var currentImageIndex = 0
     @State private var isPressed = false
-    @EnvironmentObject var tabBarManager: TabBarManager
     @EnvironmentObject var navigationManager: AppNavigationManager
-    @Environment(\.presentationMode) var presentationMode
+    
     var body: some View {
         ZStack(alignment: .top) {
-            // Content
             ScrollView {
                 VStack(spacing: 0) {
-                    // Image Carousel without navigation buttons
                     ImageCarouselContent(
                         images: post.imageNames,
                         currentIndex: $currentImageIndex
@@ -45,73 +28,41 @@ struct PostDetailView: View {
                 }
             }
             
-            // Floating Join Button
             FloatingJoinButton(
-                           isPressed: $isPressed,  action: handleJoinChat
-//                           action: {
-//                               // 使用navigationManager直接导航到聊天
-//                               navigationManager.navigateToChat(from: recipe)
-//                           }
-                       )
+                isPressed: $isPressed,
+                action: handleJoinChat
+            )
         }
         .navigationBarTitle(post.formattedDistance, displayMode: .inline)
         .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
-                Button(action: handleBack) {
+                Button(action: { navigationManager.goBack() }) {
                     Image(systemName: "chevron.left")
                         .font(.title3)
                         .foregroundColor(.black)
-                      
                         .background(Color.white)
                         .cornerRadius(8)
                 }
             }
+            
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: {
-                    // 处理分享功能
-                }) {
+                Button(action: {}) {
                     Image(systemName: "square.and.arrow.up")
                         .font(.title3)
                         .foregroundColor(.black)
-                       
                         .background(Color.white)
                         .cornerRadius(8)
                 }
             }
         }
-            .onAppear {
-                   tabBarManager.isNavigatingInTab = true
-               }
-               .onDisappear {
-                   if navigationManager.navigationPath.count == 0 {
-                       tabBarManager.isNavigatingInTab = false
-                   }
-               }
-
-//        .hideTabBarOnAppear(tabBarManager)
-//        .onAppear { tabBarManager.isViewTabBarHidden = true }
-//        .onDisappear { tabBarManager.isViewTabBarHidden = false }
     }
-    private func handleBack() {
-        
-        navigationManager.goBack()
 
-        }
-       @State private var showError = false
-       @State private var errorMessage = ""
-  
     
     private func handleJoinChat() {
-        
-        let chatRoom = createChatRoom()
-        
-        // 保持 TabBar 隐藏状态
-        tabBarManager.isNavigatingInTab = true
-        // 直接导航到聊天详情页面
-        
-        navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
-    }
+           let chatRoom = createChatRoom()
+           navigationManager.navigate(to: .chatDetail(chatRoom: chatRoom))
+       }
     
     private func createChatRoom() -> ChatRoom {
         print("Creating chat room from post: \(post.title ?? "")")

@@ -5,20 +5,20 @@ import MapKit
 // MARK: - Main View
 struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
-    init() {
-      
-        print("ProfileView")
-       
-    }
+    
     var body: some View {
         ZStack {
+            // 背景色层，确保填充整个屏幕包括安全区
+            Color.white
+                .ignoresSafeArea()
+            
             // 背景层
             if let mapImage = viewModel.mapImage {
                 Image(uiImage: mapImage)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .edgesIgnoringSafeArea(.all)
+                    .ignoresSafeArea()
                     .opacity(0.3)
             }
             
@@ -28,16 +28,16 @@ struct ProfileView: View {
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
-            
+           
+            // 内容层
             ScrollView {
                 LazyVStack(spacing: 10) {
-                    //Color.clear.frame(height: 44)
                     MapSnapshotSection(
-                                         mapImage: viewModel.mapPreviewImage,
-                                         isLoading: viewModel.isLoadingMap,
-                                         offset: viewModel.offset,
-                                         profile: viewModel.userProfile
-                                     )
+                        mapImage: viewModel.mapPreviewImage,
+                        isLoading: viewModel.isLoadingMap,
+                        offset: viewModel.offset,
+                        profile: viewModel.userProfile
+                    )
                     
                     UserProfileSection(profile: viewModel.userProfile)
                     
@@ -63,6 +63,8 @@ struct ProfileView: View {
             }
             .coordinateSpace(name: "scroll")
         }
+        // 这里设置为隐藏导航栏，因为这个页面用自定义布局
+        .toolbar(.hidden, for: .navigationBar)
     }
 }
 

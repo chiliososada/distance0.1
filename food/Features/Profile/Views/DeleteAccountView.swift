@@ -86,25 +86,13 @@ struct DeleteAccountView: View {
         }
     }
     // 重置 UI
-      private func resetUIAfterDeletion() {
-          // 重置导航和标签栏状态
-          accountState.clearFields()
-          tabBarManager.resetNavigationState()
-          navigationManager.resetNavigation()
-          
-          // 重置根视图为 ContentView
-          if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-             let window = windowScene.windows.first {
-              let contentView = ContentView()
-                  .environmentObject(tabBarManager)
-                  .environmentObject(authManager)
-                  .environmentObject(navigationManager)
-                  .environmentObject(LocationManager.shared)
-              
-              window.rootViewController = UIHostingController(rootView: contentView)
-              window.makeKeyAndVisible()
-          }
-      }
+    private func resetUIAfterDeletion() {
+        // 只保留重置状态的部分
+        accountState.clearFields()
+        tabBarManager.resetNavigationState()
+        navigationManager.resetNavigation()
+    }
+    
     private var warningMessage: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("⚠️ 警告")

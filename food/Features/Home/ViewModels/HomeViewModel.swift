@@ -1,100 +1,122 @@
-//
-//  HomeViewModel.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/05.
-//
-
 import SwiftUI
 import CoreLocation
+import Combine
 
 final class HomeViewModel: ObservableObject {
+    // MARK: - Published Properties
     @Published var selectedTab = 0
     @Published var isShowingPostInputView = false
     @Published var isViewTabBarHidden = false
-    @Published var showMenu = false
+   
     @Published var offset: CGFloat = 0
     @Published var lastStoredOffset: CGFloat = 0
     @Published var search: String = ""
-    @Published var userLocationText = ""
-    @Published var locationManager = LocationManager.shared
-    @Published var isNavigationBarHidden: Bool = false
-    @Published var tabState: Visibility = .visible
-    
+    @Published var userLocationText: String = "Loading..."
+   
+    @Published var tabState: Visibility = .visible {
+        didSet {
+            print("Tab state changed to: \(tabState)")
+            // 不在这里设置 isNavigationBarHidden，让 View 层负责这个逻辑
+        }
+    }
+      
+    @Published var isNavigationBarHidden: Bool = false {
+        didSet {
+            print("Navigation bar hidden state changed to: \(isNavigationBarHidden)")
+        }
+    }
+      
+    @Published var showMenu: Bool = false {
+        didSet {
+            print("Menu state changed to: \(showMenu)")
+        }
+    }
+
+    // MARK: - Private Properties
+    private var cancellables = Set<AnyCancellable>()
     private var isInteracting = false
-    private var previousLocation: CLLocation?
+    private let locationManager: LocationManager
     
+    // MARK: - Constants
     let sideBarWidth: CGFloat = UIScreen.main.bounds.width * 0.7
     
+    // MARK: - Computed Properties
     var isHomeTab: Bool {
         selectedTab == 0
     }
     
+    // MARK: - Initialization
     init() {
-        isNavigationBarHidden = false
-        tabState = .visible
-        setupLocationUpdates()
+        print("HomeViewModel initialized")
+        self.locationManager = GlobalManagers.shared.locationManager
+        setupSubscriptions()
     }
     
     // MARK: - Setup Methods
-    private func setupLocationUpdates() {
-        // 监听位置更新
-        locationManager.locationUpdated = { [weak self] coordinate in
-            self?.handleLocationUpdate(CLLocation(latitude: coordinate.latitude,
-                                                longitude: coordinate.longitude))
-        }
+    private func setupSubscriptions() {
+        locationManager.addressSubject
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.userLocationText, on: self)
+            .store(in: &cancellables)
+        
+        locationManager.$authorizationStatus
+            .sink { [weak self] status in
+                if status == .authorizedWhenInUse || status == .authorizedAlways {
+                    self?.locationManager.startUpdatingLocation()
+                }
+            }
+            .store(in: &cancellables)
+            
+        locationManager.$isLocationServicesEnabled
+            .filter { !$0 }
+            .sink { [weak self] _ in
+                self?.userLocationText = "Location services disabled"
+            }
+            .store(in: &cancellables)
+            
+        // 移除对 tabState 的订阅，因为我们在 View 层处理这个逻辑
+            
+        $showMenu
+            .sink { [weak self] shown in
+                self?.handleMenuStateChange(shown)
+            }
+            .store(in: &cancellables)
     }
     
-    // MARK: - Location Methods
-    private func handleLocationUpdate(_ location: CLLocation) {
-        // 检查是否需要更新（位置变化超过100米）
-        if let previous = previousLocation,
-           location.distance(from: previous) < 1000 {
-            return
-        }
+    // MARK: - State Handlers
+    private func handleMenuStateChange(_ shown: Bool) {
+        guard isHomeTab else { return }
         
-        previousLocation = location
-        
-        // 使用 LocationManager 的 reverseGeocode 方法
-        locationManager.reverseGeocode(coordinate: location.coordinate) { [weak self] placemark in
-            guard let self = self,
-                  let placemark = placemark else { return }
-            
-            var components: [String] = []
-            
-            if let subLocality = placemark.subLocality, !subLocality.isEmpty {
-                components.append(subLocality)
+        withAnimation(.spring()) {
+            if shown && offset == 0 {
+                offset = sideBarWidth
+                lastStoredOffset = offset
+            } else if !shown && offset == sideBarWidth {
+                offset = 0
+                lastStoredOffset = 0
             }
-            if let locality = placemark.locality, !locality.isEmpty {
-                components.append(locality)
-            }
-            if let area = placemark.administrativeArea, !area.isEmpty {
-                components.append(area)
-            }
-            
-            self.userLocationText = components.joined(separator: ", ")
         }
     }
     
     // MARK: - Menu Control Methods
-    func closeMenu() {
+    func toggleMenu() {
         guard !isInteracting else { return }
         isInteracting = true
         
-        withAnimation {
-            showMenu = false
-            offset = 0
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            showMenu.toggle()
         }
         
         resetInteractionState()
     }
     
-    func toggleMenu() {
+    func closeMenu() {
         guard !isInteracting else { return }
         isInteracting = true
         
-        withAnimation {
-            showMenu.toggle()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+            showMenu = false
+            offset = 0
         }
         
         resetInteractionState()
@@ -105,4 +127,34 @@ final class HomeViewModel: ObservableObject {
             self?.isInteracting = false
         }
     }
+    
+    // MARK: - Location Methods
+    func requestLocationUpdate() {
+        locationManager.requestLocationPermissionIfNeeded()
+    }
+    
+    func startUpdatingLocation() {
+        locationManager.startUpdatingLocation()
+    }
+    
+    func stopUpdatingLocation() {
+        locationManager.stopUpdatingLocation()
+    }
+    
+    // MARK: - Cleanup
+    deinit {
+        print("HomeViewModel deinitialized")
+        cancellables.removeAll()
+    }
 }
+
+// MARK: - Preview Helper
+#if DEBUG
+extension HomeViewModel {
+    static func preview() -> HomeViewModel {
+        let viewModel = HomeViewModel()
+        viewModel.userLocationText = "東京都 葛飾区 立石"
+        return viewModel
+    }
+}
+#endif

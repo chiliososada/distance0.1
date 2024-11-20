@@ -2,11 +2,12 @@ import SwiftUI
 
 struct SideMenu: View {
     @Binding var showMenu: Bool
+    @EnvironmentObject private var navigationManager: AppNavigationManager
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // 头像和用户名部分
+            // 头像和用户信息部分
             VStack(alignment: .center, spacing: 14) {
                 Image("sample1")
                     .resizable()
@@ -29,132 +30,104 @@ struct SideMenu: View {
             }
             .padding(.top, horizontalSizeClass == .regular ? 20 : 40)
             
-            // 菜单项
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 10) {
-                    MenuItem(title: "Profile", icon: "person.circle", destination: ProfileEditorView(), showMenu: $showMenu)
-                    MenuItem(title: "Setting", icon: "shield", destination: PersonSettingsView(), showMenu: $showMenu)
-                    
-                    Divider()
-                    
-                    MenuItem(title: "Privacy Policy", icon: "lock.shield", destination: PrivacyPolicyView(), showMenu: $showMenu)
-                    MenuItem(title: "About App", icon: "info.circle", destination: AboutAppView(), showMenu: $showMenu)
+            // 菜单项列表
+            VStack(alignment: .leading, spacing: 24) {
+                Button {
+                    handleNavigation(to: .profileEditor)
+                } label: {
+                    MenuItemView(title: "Profile", icon: "person.circle")
                 }
-                .padding(.horizontal)
-                .padding(.top)
+                .buttonStyle(MenuButtonStyle())
+                
+                Button {
+                    handleNavigation(to: .settings)
+                } label: {
+                    MenuItemView(title: "Setting", icon: "shield")
+                }
+                .buttonStyle(MenuButtonStyle())
+                
+                Divider()
+                    .padding(.vertical, 8)
+                
+                Button {
+                    handleNavigation(to: .privacyPolicy)
+                } label: {
+                    MenuItemView(title: "Privacy Policy", icon: "lock.shield")
+                }
+                .buttonStyle(MenuButtonStyle())
+                
+                Button {
+                    handleNavigation(to: .about)
+                } label: {
+                    MenuItemView(title: "About App", icon: "info.circle")
+                }
+                .buttonStyle(MenuButtonStyle())
             }
+            .padding(.top, 32)
+            .padding(.horizontal)
+            
+            Spacer()
         }
         .padding(.top)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color.white)
     }
+    
+    private func handleNavigation(to route: AppRoute) {
+        print("Navigating to: \(route)") // 调试日志
+        // 先关闭菜单
+        withAnimation(.easeOut(duration: 0.3)) {
+            showMenu = false
+        }
+        // 等待菜单关闭动画完成后再导航
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            navigationManager.resetNavigation()
+            navigationManager.navigate(to: route)
+        }
+    }
 }
 
-
-
-@ViewBuilder
-func MenuItem(title: String, icon: String, destination: some View, showMenu: Binding<Bool>) -> some View {
-    NavigationLink(destination: destination.onAppear {
-        withAnimation {
-            //showMenu.wrappedValue = false // 点击后关闭 SideMenu
-        }
-    }) {
-        HStack {
+// MARK: - Menu Item View
+struct MenuItemView: View {
+    let title: String
+    let icon: String
+    
+    var body: some View {
+        HStack(spacing: 12) {
             Image(systemName: icon)
-                .resizable()
-                .frame(width: 22, height: 22)
-                .foregroundColor(.black)
-
+                .font(.system(size: 20))
+                .foregroundColor(.primary)
+                .frame(width: 24, height: 24)
+            
             Text(title)
-                .font(.headline)
-                .foregroundColor(.black)
-
+                .font(.body)
+                .foregroundColor(.primary)
+            
             Spacer()
-
+            
             Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
+                .font(.system(size: 14))
+                .foregroundColor(.gray.opacity(0.7))
         }
-        .padding()
-        .background(Color.white)
-        .cornerRadius(10)
+        .contentShape(Rectangle()) // 确保整个区域可点击
     }
 }
 
-@ViewBuilder
-func TabButton(title: String, image: String) -> some View {
-
-    NavigationLink {
-
-        Text("\(title) View")
-            .navigationTitle(title)
-
-    } label: {
-        HStack(spacing: 14) {
-            Image(image)
-                .resizable()
-                .renderingMode(.template)
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 22, height: 22)
-
-            Text(title)
-        }
-            .foregroundColor(.primary)
-            .frame(maxWidth: .infinity, alignment: .leading)
+// MARK: - Custom Button Style
+struct MenuButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.vertical, 8)
+            .opacity(configuration.isPressed ? 0.7 : 1.0)
+            .animation(.easeOut(duration: 0.2), value: configuration.isPressed)
     }
 }
 
-
-// Security 页面
-struct SecurityView: View {
-    var body: some View {
-        Text("Security Page")
-            .font(.largeTitle)
-            .navigationTitle("Security") // 设置导航标题
-            .navigationBarTitleDisplayMode(.inline)
+// MARK: - Preview Provider
+struct SideMenu_Previews: PreviewProvider {
+    static var previews: some View {
+        SideMenu(showMenu: .constant(true))
+            .environmentObject(AppNavigationManager.shared)
+            .previewLayout(.sizeThatFits)
     }
 }
-
-// Language 页面
-struct LanguageView: View {
-    var body: some View {
-        Text("Language Page")
-            .font(.largeTitle)
-            .navigationTitle("Language") // 设置导航标题
-            .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// Privacy Policy 页面
-struct PrivacyPolicyView: View {
-    var body: some View {
-        Text("Privacy Policy Page")
-            .font(.largeTitle)
-            .navigationTitle("Privacy Policy") // 设置导航标题
-            .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-// About App 页面
-struct AboutAppView: View {
-    var body: some View {
-        Text("About App Page")
-            .font(.largeTitle)
-            .navigationTitle("About App") // 设置导航标题
-            .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-
-// 获取屏幕大小的扩展方法
-extension View {
-    func getRect() -> CGRect {
-        return UIScreen.main.bounds
-    }
-}
-
-//struct SideMenu_Previews: PreviewProvider {
-//    static var previews: some View {
-//        SideMenu(showMenu: .constant(true)) // 使用常量绑定来预览菜单
-//    }
-//}
-

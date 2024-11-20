@@ -12,9 +12,8 @@ enum AppRoute: Hashable {
     // Auth Flow
     case login(showBackButton: Bool)
     case register
-    case loginPassword(email: String)  // 添加登录密码页面路由
+    case loginPassword(email: String)
     case createAccount(email: String)
-   // case verification
     case passwordChanged
     case forgetPassword
     
@@ -22,6 +21,8 @@ enum AppRoute: Hashable {
     case chatDetail(chatRoom: ChatRoom)
     case profileEditor
     case settings
+    case privacyPolicy
+    case about
     case passwordChange
     case postDetail(post: LocationPost)
     
@@ -59,19 +60,57 @@ final class AppNavigationManager: ObservableObject {
     
     // MARK: - Published Properties
     @Published var navigationPath = NavigationPath() {
-           didSet {
-               print("Navigation path changed: \(navigationPath)")
-           }
-       }
-    @Published var selectedTab: TabRoute = .home
-    @Published var presentedSheet: AppRoute?
-    @Published var isPresentingSheet = false
-    @Published var chatNavigationSource: ChatNavigationSource = .normal
-    @Published var pendingChatRoom: ChatRoom?
-    @Published var isNavigationBarHidden = false
-    @Published var isTabBarHidden = false
+        didSet {
+            print("Navigation path changed: \(navigationPath)")
+        }
+    }
     
-    private init() {}
+    @Published var selectedTab: TabRoute = .home {
+        didSet {
+            print("Selected tab changed to: \(selectedTab)")
+        }
+    }
+    
+    @Published var presentedSheet: AppRoute? {
+        didSet {
+            print("Presented sheet changed to: \(String(describing: presentedSheet))")
+        }
+    }
+    
+    @Published var isPresentingSheet = false {
+        didSet {
+            print("isPresentingSheet changed to: \(isPresentingSheet)")
+        }
+    }
+    
+    @Published var chatNavigationSource: ChatNavigationSource = .normal {
+        didSet {
+            print("Chat navigation source changed")
+        }
+    }
+    
+    @Published var pendingChatRoom: ChatRoom? {
+        didSet {
+            print("Pending chat room \(pendingChatRoom != nil ? "set" : "cleared")")
+        }
+    }
+    
+    @Published var isNavigationBarHidden = false {
+        didSet {
+            print("Navigation bar hidden state changed to: \(isNavigationBarHidden)")
+        }
+    }
+    
+    @Published var isTabBarHidden = false {
+        didSet {
+            print("Tab bar hidden state changed to: \(isTabBarHidden)")
+        }
+    }
+    
+    // MARK: - Initialization
+    private init() {
+        print("AppNavigationManager initialized")
+    }
     
     // MARK: - Core Navigation Methods
     func navigate(to route: AppRoute) {
@@ -80,45 +119,67 @@ final class AppNavigationManager: ObservableObject {
     }
     
     func present(_ route: AppRoute) {
+        print("Presenting sheet: \(route)")
         presentedSheet = route
         isPresentingSheet = true
     }
     
     func dismiss() {
+        print("Dismissing sheet")
         presentedSheet = nil
         isPresentingSheet = false
     }
     
     func popToRoot() {
+        print("Popping to root")
         navigationPath = NavigationPath()
     }
     
     func goBack() {
+        print("Going back")
         if !navigationPath.isEmpty {
             navigationPath.removeLast()
         }
     }
     
     func navigateToTab(_ tab: TabRoute) {
+        print("Navigating to tab: \(tab)")
         selectedTab = tab
     }
     
     func switchTab(to tab: TabRoute) {
+        print("Switching to tab: \(tab)")
         selectedTab = tab
     }
     
     func clearNavigationPath() {
+        print("Clearing navigation path")
         navigationPath = NavigationPath()
     }
     
     func resetNavigation() {
         print("Resetting navigation state")
         navigationPath = NavigationPath()
-        chatNavigationSource = ChatNavigationSource.normal  // 明确指定类型
+        chatNavigationSource = .normal
         selectedTab = .home
         isNavigationBarHidden = false
+        isTabBarHidden = false
         pendingChatRoom = nil
         isPresentingSheet = false
         presentedSheet = nil
     }
+    
+    // MARK: - Cleanup
+    deinit {
+        print("AppNavigationManager deinitialized")
+    }
 }
+
+// MARK: - Preview Helper
+#if DEBUG
+extension AppNavigationManager {
+    static var preview: AppNavigationManager {
+        return AppNavigationManager.shared
+    }
+}
+#endif

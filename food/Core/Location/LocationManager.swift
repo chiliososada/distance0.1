@@ -13,10 +13,15 @@ final class LocationManager: NSObject, ObservableObject {
     @Published private(set) var authorizationStatus: CLAuthorizationStatus = .notDetermined
     @Published private(set) var isLocationServicesEnabled = false
     
-    // MARK: - Private Properties
-    private let locationManager: CLLocationManager
-    private let searchCompleter = MKLocalSearchCompleter()
-    private var searchCompleterDelegate: SearchCompleterDelegate?
+    // MARK: - Subjects
+       let locationSubject = PassthroughSubject<CLLocationCoordinate2D, Never>()
+       let addressSubject = PassthroughSubject<String, Never>()
+       
+       // MARK: - Private Properties
+       private let locationManager: CLLocationManager
+       private let searchCompleter = MKLocalSearchCompleter()
+       private var searchCompleterDelegate: SearchCompleterDelegate?
+       private var cancellables = Set<AnyCancellable>()
     
     // MARK: - Callback Properties
     var locationUpdated: ((CLLocationCoordinate2D) -> Void)?
@@ -25,30 +30,31 @@ final class LocationManager: NSObject, ObservableObject {
     
     // MARK: - Initialization
     private override init() {
-        locationManager = CLLocationManager()
-        super.init()
-        
-        setupLocationManager()
-        setupSearchCompleter()
-    }
+            locationManager = CLLocationManager()
+            super.init()
+            
+            setupLocationManager()
+            setupSearchCompleter()
+            setupAddressUpdates()
+        }
     
     // MARK: - Setup Methods
     private func setupLocationManager() {
-        locationManager.delegate = self
-        locationManager.desiredAccuracy = kCLLocationAccuracyBest
-        
-        // 在后台线程检查位置服务状态
-        DispatchQueue.global().async { [weak self] in
-            let servicesEnabled = CLLocationManager.locationServicesEnabled()
-            DispatchQueue.main.async {
-                self?.isLocationServicesEnabled = servicesEnabled
-            }
-        }
-        
-        // 获取当前授权状态
-        authorizationStatus = locationManager.authorizationStatus
-    }
-    
+           locationManager.delegate = self
+           locationManager.desiredAccuracy = kCLLocationAccuracyBest
+           
+           checkLocationServices()
+           authorizationStatus = locationManager.authorizationStatus
+       }
+    private func setupAddressUpdates() {
+          // 监听位置更新，自动更新地址
+          locationSubject
+              .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
+              .sink { [weak self] coordinate in
+                  self?.updateAddress(for: coordinate)
+              }
+              .store(in: &cancellables)
+      }
     private func setupSearchCompleter() {
         searchCompleterDelegate = SearchCompleterDelegate()
         searchCompleterDelegate?.didUpdateResults = { [weak self] results in
@@ -59,7 +65,34 @@ final class LocationManager: NSObject, ObservableObject {
         }
         searchCompleter.delegate = searchCompleterDelegate
     }
+    private func checkLocationServices() {
+           DispatchQueue.global().async { [weak self] in
+               let servicesEnabled = CLLocationManager.locationServicesEnabled()
+               DispatchQueue.main.async {
+                   self?.isLocationServicesEnabled = servicesEnabled
+               }
+           }
+       }
     
+    private func updateAddress(for coordinate: CLLocationCoordinate2D) {
+          reverseGeocode(coordinate: coordinate) { [weak self] placemark in
+              if let address = self?.formatAddress(from: placemark) {
+                  self?.addressSubject.send(address)
+              }
+          }
+      }
+    private func formatAddress(from placemark: CLPlacemark?) -> String {
+          guard let placemark = placemark else { return "Location Unknown" }
+          
+          return [
+              placemark.subLocality,
+              placemark.locality,
+              placemark.administrativeArea
+          ]
+          .compactMap { $0 }
+          .filter { !$0.isEmpty }
+          .joined(separator: ", ")
+      }
     // MARK: - Public Methods
     func requestLocationPermissionIfNeeded() {
         let currentStatus = locationManager.authorizationStatus
@@ -135,6 +168,7 @@ final class LocationManager: NSObject, ObservableObject {
 
 // MARK: - CLLocationManagerDelegate
 extension LocationManager: CLLocationManagerDelegate {
+  
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
             DispatchQueue.main.async { [weak self] in
                 guard let self = self else { return }
@@ -168,13 +202,15 @@ extension LocationManager: CLLocationManagerDelegate {
         }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
-        
-        DispatchQueue.main.async {
-            self.userLocation = location
-            self.locationUpdated?(location.coordinate)
-        }
-    }
+          guard let location = locations.last else { return }
+          
+          DispatchQueue.main.async { [weak self] in
+              guard let self = self else { return }
+              self.userLocation = location
+              self.locationSubject.send(location.coordinate)
+              self.locationUpdated?(location.coordinate)
+          }
+      }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         DispatchQueue.main.async {

@@ -15,22 +15,32 @@ final class HomeTabContentViewModel: ObservableObject {
     private let debounceInterval: TimeInterval = 0.3
     
     // MARK: - Initialization
-    init(locationService: PostLocationService? = nil) {
-        self.locationService = locationService ?? PostLocationService.shared
+    init() {
+        print("HomeTabContentViewModel initialized")
+        self.locationService = PostLocationService.shared
         setupBindings()
+        
+        // 初始化时加载数据
+        Task {
+            await loadInitialPosts()
+        }
     }
-
+    
     // MARK: - Public Methods
     func loadInitialPosts() async {
+        print("HomeTabContentViewModel: Loading initial posts")
         await fetchPosts()
     }
     
     func refreshPosts() async {
+        print("HomeTabContentViewModel: Refreshing posts")
         await fetchPosts()
     }
     
     func filterPosts(by category: String? = nil, tags: Set<String>? = nil) async {
         guard !isLoading else { return }
+        
+        print("HomeTabContentViewModel: Filtering posts - category: \(category ?? "none"), tags: \(tags?.joined(separator: ", ") ?? "none")")
         
         isLoading = true
         defer { isLoading = false }
@@ -61,9 +71,11 @@ final class HomeTabContentViewModel: ObservableObject {
                 }
             }
             
+            print("HomeTabContentViewModel: Filtered posts count: \(filteredPosts.count)")
             self.posts = filteredPosts
             
         } catch {
+            print("HomeTabContentViewModel: Error filtering posts - \(error.localizedDescription)")
             self.error = error
         }
     }
@@ -73,7 +85,8 @@ final class HomeTabContentViewModel: ObservableObject {
         // 搜索文本变化时自动触发过滤
         $searchText
             .debounce(for: .seconds(debounceInterval), scheduler: RunLoop.main)
-            .sink { [weak self] _ in
+            .sink { [weak self] searchText in
+                print("HomeTabContentViewModel: Search text changed - \(searchText)")
                 Task { [weak self] in
                     await self?.filterPosts()
                 }
@@ -90,23 +103,28 @@ final class HomeTabContentViewModel: ObservableObject {
         do {
             try await locationService.fetchPosts()
             self.posts = locationService.posts
+            print("HomeTabContentViewModel: Fetched \(posts.count) posts")
         } catch {
+            print("HomeTabContentViewModel: Error fetching posts - \(error.localizedDescription)")
             self.error = error
         }
     }
     
     // MARK: - Post Management Methods
     func deletePost(_ post: LocationPost) async {
+        print("HomeTabContentViewModel: Attempting to delete post - \(post.id)")
         // TODO: Implement post deletion through PostLocationService
         // This would require adding deletion functionality to PostLocationService
     }
     
     func updatePost(_ post: LocationPost) async {
+        print("HomeTabContentViewModel: Attempting to update post - \(post.id)")
         // TODO: Implement post updating through PostLocationService
         // This would require adding update functionality to PostLocationService
     }
     
     func createPost(_ post: LocationPost) async {
+        print("HomeTabContentViewModel: Attempting to create new post")
         // TODO: Implement post creation through PostLocationService
         // This would require adding creation functionality to PostLocationService
     }
@@ -114,12 +132,20 @@ final class HomeTabContentViewModel: ObservableObject {
     // MARK: - Helper Methods
     func clearError() {
         error = nil
+        print("HomeTabContentViewModel: Cleared error state")
     }
     
     func reset() {
         posts = []
         error = nil
         searchText = ""
+        print("HomeTabContentViewModel: Reset view model state")
+    }
+    
+    // MARK: - Cleanup
+    deinit {
+        print("HomeTabContentViewModel deinitialized")
+        cancellables.removeAll()
     }
 }
 
@@ -128,7 +154,6 @@ extension HomeTabContentViewModel {
     static var preview: HomeTabContentViewModel {
         let viewModel = HomeTabContentViewModel()
         // 可以在这里设置一些预览用的模拟数据
-        viewModel.posts = [/* 一些示例数据 */]
         return viewModel
     }
 }

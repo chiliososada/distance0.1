@@ -1,201 +1,150 @@
 import SwiftUI
 import CoreLocation
 
-// MARK: - HomeView
-/// 主页视图，负责展示应用程序的主要界面
 struct HomeView: View {
-    // MARK: - 属性
-    // 初始化方法，打印调试信息
-    init() {
-        print("HomeView")
-    }
-    
-    // 视图模型
+    // MARK: - Properties
     @StateObject private var viewModel = HomeViewModel()
-    // 环境对象，用于管理标签栏状态
-    @EnvironmentObject var tabBarManager: TabBarManager
-    // 环境对象，用于管理导航状态
-    @EnvironmentObject var navigationManager: AppNavigationManager
-    // 获取设备横向尺寸类别，用于适配iPad布局
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @EnvironmentObject private var tabBarManager: TabBarManager
+    @EnvironmentObject private var navigationManager: AppNavigationManager
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
-    // MARK: - 视图主体
+    // MARK: - Body
     var body: some View {
-        // 根据设备尺寸选择不同布局
         Group {
             if horizontalSizeClass == .compact {
-                mainNavigationView  // iPhone布局
+                iPhoneLayout
             } else {
-                iPadLayoutView     // iPad布局
+                iPadLayout
             }
         }
     }
- 
-    // MARK: - 私有视图组件
-    /// iPhone设备的主导航视图
-    private var mainNavigationView: some View {
-        NavigationView {
-            ZStack {
-                HStack(spacing: 0) {
-                    // 侧边菜单
-                    SideMenu(showMenu: $viewModel.showMenu)
-                    VStack(spacing: 0) {
-                        // 标签页内容
-                        tabViewContent
-                            .navigationBarHidden(true)
+    
+    // MARK: - Layouts
+    private var iPhoneLayout: some View {
+            ZStack(alignment: .leading) {
+                VStack(spacing: 0) {
+                    // 自定义导航栏
+                    if navigationManager.selectedTab == .home && !viewModel.isNavigationBarHidden {
+                        CustomNavigationBar(viewModel: viewModel)
                     }
-                    .frame(width: getRect().width)
-                    .overlay(menuOverlay)  // 添加菜单遮罩层
+                    
+                    // 主内容
+                    mainContent
                 }
-                .frame(width: getRect().width + viewModel.sideBarWidth)
-                .offset(x: -viewModel.sideBarWidth / 2)
-                .offset(x: viewModel.offset > 0 ? viewModel.offset : 0)
-            }
-            .navigationViewStyle(StackNavigationViewStyle())
-            .animation(.easeOut, value: viewModel.offset == 0)
-            .onChange(of: viewModel.showMenu) {
-                updateMenuState()  // 更新菜单状态
-            }
-            .ignoresSafeArea(edges: .bottom)
-        }
-    }
-
-    /// iPad设备的分屏布局视图
-    private var iPadLayoutView: some View {
-        NavigationSplitView {
-            // 侧边栏内容
-            SideMenu(showMenu: $viewModel.showMenu)
-                .frame(minWidth: 320, idealWidth: viewModel.sideBarWidth, maxWidth: 400)
                 .background(Color.white)
-        } detail: {
-            // 主要内容区域
-            VStack(spacing: 0) {
-                tabViewContent
-                    .navigationBarHidden(viewModel.isNavigationBarHidden)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.white)
-            .ignoresSafeArea(edges: .bottom)
-        }
-        .navigationSplitViewStyle(.balanced)
-    }
-
-    /// 菜单遮罩层视图
-    private var menuOverlay: some View {
-        Rectangle()
-            .fill(Color.primary.opacity(Double(viewModel.offset / viewModel.sideBarWidth / 5)))
-            .ignoresSafeArea(.container, edges: .vertical)
-            .onTapGesture { viewModel.closeMenu() }  // 点击遮罩关闭菜单
-    }
-    
-    /// 更新菜单状态
-    private func updateMenuState() {
-        guard viewModel.isHomeTab else { return }
-        
-        // 打开菜单时的状态更新
-        if viewModel.showMenu && viewModel.offset == 0 {
-            viewModel.offset = viewModel.sideBarWidth
-            viewModel.lastStoredOffset = viewModel.offset
-        }
-        
-        // 关闭菜单时的状态更新
-        if !viewModel.showMenu && viewModel.offset == viewModel.sideBarWidth {
-            viewModel.offset = 0
-            viewModel.lastStoredOffset = 0
-        }
-    }
-    
-    // MARK: - 标签页内容
-    /// 标签页视图内容
-    private var tabViewContent: some View {
-        VStack {
-            TabView(selection: $navigationManager.selectedTab) {
-                // 主页标签
-                homeTab
-                    .tabItem { Image(systemName: "house.fill") }
-                    .tag(TabRoute.home)
-                
-                // 附近标签
-                NearbyView()
-                    .tabItem { Image(systemName: "location.fill") }
-                    .tag(TabRoute.nearby)
-                
-                // 发布标签
-                plusTab
-                    .tabItem { Image(systemName: "plus.circle.fill") }
-                    .tag(TabRoute.post)
-                
-                // 聊天标签
-                ChatRoomListView()
-                    .tabItem { Image(systemName: "message.fill") }
-                    .tag(TabRoute.chat)
-                
-                // 个人资料标签
-                ProfileView()
-                    .tabItem { Image(systemName: "person.fill") }
-                    .tag(TabRoute.profile)
-            }
-            .accentColor(.black)
-            .edgesIgnoringSafeArea(.bottom)
-        }
-    }
-    
-    /// 主页标签内容
-    private var homeTab: some View {
-        NavigationStack(path: $navigationManager.navigationPath) {
-            VStack(spacing: 0) {
-                // 搜索和筛选视图
-                SearchAndFilterView(search: $viewModel.search)
-                    .padding(.bottom, 10)
-                // 滚动内容视图
-                TabStateScrollView(
-                    axis: .vertical,
-                    showsIndicator: false,
-                    tabState: $viewModel.tabState,
-                    isNavigationBarHidden: $viewModel.isNavigationBarHidden
-                ) {
-                    HomeTabContentView()
-                        .navigationBarHidden(viewModel.isNavigationBarHidden)
-                        .toolbar {
-                            ToolbarItem(placement: .navigationBarLeading) {
-                                leadingNavBarItem  // 左侧导航栏按钮
+                .frame(width: getRect().width)
+                .overlay {
+                    if viewModel.showMenu {
+                        Color.black
+                            .opacity(0.2)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                withAnimation {
+                                    viewModel.closeMenu()
+                                }
                             }
-                            ToolbarItem(placement: .navigationBarTrailing) {
-                                trailingNavBarItem // 右侧导航栏按钮
-                            }
-                        }
+                    }
+                }
+                .offset(x: viewModel.showMenu ? viewModel.sideBarWidth : 0)
+                
+                if viewModel.showMenu {
+                    SideMenu(showMenu: $viewModel.showMenu)
+                        .frame(width: viewModel.sideBarWidth)
+                        .transition(.move(edge: .leading))
                 }
             }
-            // 导航目标配置
-            .navigationDestination(for: AppRoute.self) { route in
-                switch route {
-                case .chatDetail(let chatRoom):
-                    ChatDetailView(chatRoom: chatRoom)
-                case .postDetail(let post):
-                    PostDetailView(post: post)
-                case .settings:
-                    PersonSettingsView()
-                case .profileEditor:
-                    ProfileEditorView()
-                default:
-                    EmptyView()
-                }
-            }
-            // 模态页面配置
+            .animation(.easeOut(duration: 0.3), value: viewModel.showMenu)
+            .navigationBarHidden(true) // 隐藏系统导航栏
             .sheet(isPresented: $navigationManager.isPresentingSheet) {
                 if let route = navigationManager.presentedSheet {
                     sheetView(for: route)
                 }
             }
+           
         }
-        .toolbar(
-            (viewModel.tabState == .hidden || tabBarManager.isViewTabBarHidden || tabBarManager.isNavigatingInTab) ? .hidden : .visible,
-            for: .tabBar
-        )
-        .animation(.easeInOut(duration: 0.2), value: viewModel.tabState == .hidden)
+    
+    private var iPadLayout: some View {
+        NavigationSplitView {
+            SideMenu(showMenu: $viewModel.showMenu)
+                .frame(minWidth: 320, idealWidth: viewModel.sideBarWidth, maxWidth: 400)
+                .background(Color.white)
+        } detail: {
+            VStack(spacing: 0) {
+                if navigationManager.selectedTab == .home && !viewModel.isNavigationBarHidden {
+                    CustomNavigationBar(viewModel: viewModel)
+                }
+                mainContent
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.white)
+        }
+        .navigationSplitViewStyle(.balanced)
     }
     
-    /// 根据路由创建模态视图
+    // MARK: - Main Content
+   
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            TabView(selection: $navigationManager.selectedTab) {
+                homeTabContent
+                    .tag(TabRoute.home)
+                
+                NearbyView()
+                    .tag(TabRoute.nearby)
+                    .toolbar(.hidden, for: .navigationBar)
+                  
+                postTab
+                    .tag(TabRoute.post)
+                    .toolbar(.hidden, for: .navigationBar)
+                
+                ChatRoomListView()
+                    .tag(TabRoute.chat)
+                    .toolbar(.hidden, for: .navigationBar)
+                
+                ProfileView()
+                    .tag(TabRoute.profile)
+                    .toolbar(.hidden, for: .navigationBar)
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !tabBarManager.isNavigatingInTab {
+                TabBar(selectedTab: $navigationManager.selectedTab)
+                    .transition(.move(edge: .bottom))
+                    .frame(height: 35)
+            }
+        }
+        .ignoresSafeArea(edges: .top)
+    }
+    
+    private var homeTabContent: some View {
+        VStack(spacing: 1) {
+            SearchAndFilterView(search: $viewModel.search)
+                .padding(.bottom, 8)
+                .padding(.top, 2)
+            TabStateScrollView(
+                axis: .vertical,
+                showsIndicator: false,
+                tabState: $viewModel.tabState,
+                isNavigationBarHidden: $viewModel.isNavigationBarHidden
+            ) {
+                HomeTabContentView()
+            }
+        }
+    }
+    
+    private var postTab: some View {
+        Color.clear
+            .onAppear { viewModel.isShowingPostInputView = true }
+            .fullScreenCover(isPresented: $viewModel.isShowingPostInputView) {
+                PostInputView(
+                    isPresented: $viewModel.isShowingPostInputView,
+                    selectedTab: $navigationManager.selectedTab
+                )
+            }
+    }
+    
+    
     @ViewBuilder
     private func sheetView(for route: AppRoute) -> some View {
         switch route {
@@ -210,77 +159,144 @@ struct HomeView: View {
             EmptyView()
         }
     }
-    
-    /// 发布标签内容
-    private var plusTab: some View {
-        Text("")
-            .tabItem { Image(systemName: "plus.circle.fill") }
-            .tag(2)
-            .onAppear { viewModel.isShowingPostInputView = true }
-            .fullScreenCover(isPresented: $viewModel.isShowingPostInputView) {
-                PostInputView(
-                    isPresented: $viewModel.isShowingPostInputView,
-                    selectedTab: $navigationManager.selectedTab
-                )
-            }
-    }
-    
-    /// 左侧导航栏按钮
-    private var leadingNavBarItem: some View {
-        Button(action: viewModel.toggleMenu) {
-            Image(uiImage: #imageLiteral(resourceName: "menu"))
-                .resizable()
-                .frame(width: 20, height: 20)
-                .foregroundColor(.black)
-        }
-    }
-    
-    /// 右侧导航栏按钮（显示位置信息）
-    private var trailingNavBarItem: some View {
-        Button(action: {}) {
-            HStack {
-                Image(systemName: "mappin.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 12, height: 12)
-                    .foregroundColor(.black)
-                Text(viewModel.userLocationText)
-                    .font(.caption2)
-                    .foregroundColor(.black)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-        }
-    }
 }
 
-// MARK: - 视图扩展
-/// 添加一个隐藏标签栏的便利修饰符
-extension View {
-    func hideTabBarOnAppear(_ tabBarManager: TabBarManager) -> some View {
-        self
-            .onAppear {
-                tabBarManager.isNavigatingInTab = true
-            }
-            .onDisappear {
-                tabBarManager.isNavigatingInTab = false
-            }
-    }
+// MARK: - Helper Functions
+func getRect() -> CGRect {
+    UIScreen.main.bounds
 }
 
-// MARK: - 预览
+// MARK: - Previews
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
-            .environmentObject(TabBarManager())
-            .environmentObject(AuthManager())
-            .environmentObject(AppNavigationManager.shared)
-            .environmentObject(LocationManager.shared)
+            .environmentObject(GlobalManagers.preview.tabBarManager)
+            .environmentObject(GlobalManagers.preview.navigationManager)
+            .environmentObject(GlobalManagers.preview.locationManager)
+            .environmentObject(GlobalManagers.preview.authManager)
+    }
+}
+struct TabBar: View {
+    @Binding var selectedTab: TabRoute
+    private let tabHeight: CGFloat = 40  // 定义一个底部固定的高度常量
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(spacing: 0) {
+                TabButton(
+                    title: "",
+                    icon: "house.fill",
+                    isSelected: selectedTab == .home
+                ) {
+                    selectedTab = .home
+                }
+                
+                TabButton(
+                    title: "",
+                    icon: "location.fill",
+                    isSelected: selectedTab == .nearby
+                ) {
+                    selectedTab = .nearby
+                }
+                
+                TabButton(
+                    title: "",
+                    icon: "plus.circle.fill",
+                    isSelected: selectedTab == .post
+                ) {
+                    selectedTab = .post
+                }
+                
+                TabButton(
+                    title: "",
+                    icon: "message.fill",
+                    isSelected: selectedTab == .chat
+                ) {
+                    selectedTab = .chat
+                }
+                
+                TabButton(
+                    title: "",
+                    icon: "person.fill",
+                    isSelected: selectedTab == .profile
+                ) {
+                    selectedTab = .profile
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top)
+            .frame(height: tabHeight)  // 使用固定高度
+        }
+        .background(
+            Color.white
+                .ignoresSafeArea(edges: .bottom)
+        )
     }
 }
 
-// MARK: - 辅助函数
-/// 获取屏幕尺寸
-func getRect() -> CGRect {
-    return UIScreen.main.bounds
+struct TabButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {  // 增加间距
+                Image(systemName: icon)
+                    .font(.system(size: 25))  // 适当调整图标大小
+                    .frame(height: 38)  // 给图标一个合适的高度
+                Text(title)
+                    .font(.caption2)
+            }
+            .foregroundColor(isSelected ? .black : .gray)
+            .padding()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+    }
+}
+
+#Preview {
+    TabBar(selectedTab: .constant(.home))
+}
+// 自定义导航栏组件
+struct CustomNavigationBar: View {
+    @ObservedObject var viewModel: HomeViewModel
+    
+    var body: some View {
+        HStack {
+            // 左侧菜单按钮
+            Button(action: {
+                print("Menu button tapped")
+                viewModel.toggleMenu()
+            }) {
+                Image(uiImage: #imageLiteral(resourceName: "menu"))
+                    .resizable()
+                    .frame(width: 20, height: 20)
+                    .foregroundColor(.black)
+            }
+            
+            Spacer()
+            
+            // 右侧位置按钮
+            Button(action: {
+                print("Location button tapped")
+            }) {
+                HStack {
+                    Image(systemName: "mappin.circle.fill")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 12, height: 12)
+                    Text(viewModel.userLocationText)
+                        .font(.caption2)
+                        .lineLimit(1)
+                }
+                .foregroundColor(.black)
+            }
+        }
+        .padding(.horizontal)
+        .frame(height: 44)
+        .background(Color.white)
+    }
 }

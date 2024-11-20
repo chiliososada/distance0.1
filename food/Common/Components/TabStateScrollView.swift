@@ -5,19 +5,19 @@ struct TabStateScrollView<Content: View>: View {
     var axis: Axis.Set
     var showsIndicator: Bool
     @Binding var tabState: Visibility
-    @Binding var isNavigationBarHidden: Bool  // Add this binding to manage navigation bar visibility
+    @Binding var isNavigationBarHidden: Bool
+    @EnvironmentObject private var tabBarManager: TabBarManager  // 添加这行
     var content: Content
     
     init(axis: Axis.Set, showsIndicator: Bool, tabState: Binding<Visibility>, isNavigationBarHidden: Binding<Bool>, @ViewBuilder content: @escaping () -> Content) {
         self.axis = axis
         self.showsIndicator = showsIndicator
         self._tabState = tabState
-        self._isNavigationBarHidden = isNavigationBarHidden  // Initialize navigation bar visibility state
+        self._isNavigationBarHidden = isNavigationBarHidden
         self.content = content()
     }
     
     var body: some View {
-        /// This Project Supports iOS 16 & iOS 17
         if #available(iOS 17, *) {
             ScrollView(axis) {
                 content
@@ -40,24 +40,28 @@ struct TabStateScrollView<Content: View>: View {
         }
     }
     
-    /// Handling Tab State on Swipe (Moved outside of body)
     func handleTabState(_ gesture: UIPanGestureRecognizer) {
         let velocityY = gesture.velocity(in: gesture.view).y
+        let translation = gesture.translation(in: gesture.view).y
         
-        // Define swipe thresholds
-        let swipeUpThreshold: CGFloat = 60
-        let swipeDownThreshold: CGFloat = 40
+        let swipeUpThreshold: CGFloat = 50
+        let swipeDownThreshold: CGFloat = 30
         
-        if velocityY < 0 {
-            if -(velocityY / 5) > swipeUpThreshold && tabState == .visible {
-                tabState = .hidden
-                isNavigationBarHidden = true  // Hide navigation bar items when tabState is hidden
-            }
-        } else {
-            /// Swiping Down
-            if (velocityY / 5) > swipeDownThreshold && tabState == .hidden {
-                tabState = .visible
-                isNavigationBarHidden = false  // Show navigation bar items when tabState is visible
+        withAnimation(.easeInOut(duration: 0.2)) {
+            if velocityY < 0 {
+                // 向上滑动
+                if -(velocityY / 5) > swipeUpThreshold && tabState == .visible {
+                    tabState = .hidden
+                    isNavigationBarHidden = true
+                    tabBarManager.isNavigatingInTab = true  // 添加这行
+                }
+            } else {
+                // 向下滑动
+                if (velocityY / 5) > swipeDownThreshold && tabState == .hidden {
+                    tabState = .visible
+                    isNavigationBarHidden = false
+                    tabBarManager.isNavigatingInTab = false  // 添加这行
+                }
             }
         }
     }

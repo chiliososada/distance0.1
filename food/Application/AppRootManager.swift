@@ -56,6 +56,8 @@ final class AppRootManager {
         let rootView = makeRootView(for: destination, managers: managers)
         let rootViewController = UIHostingController(rootView: rootView)
         
+        print("AppRootManager: Resetting root view to \(destination)")
+        
         // 使用动画切换根视图
         UIView.transition(
             with: window,
@@ -76,17 +78,24 @@ final class AppRootManager {
             switch destination {
             case .home:
                 HomeView()
+                    .environmentObject(managers.tabBarManager)
+                    .environmentObject(managers.authManager)
+                    .environmentObject(managers.navigationManager)
+                    .environmentObject(managers.locationManager)
             case .verification(let email):
                 VerificationView(email: email)
+                    .environmentObject(managers.tabBarManager)
+                    .environmentObject(managers.authManager)
+                    .environmentObject(managers.navigationManager)
+                    .environmentObject(managers.locationManager)
             case .login:
                 HomeLoginView()
+                    .environmentObject(managers.tabBarManager)
+                    .environmentObject(managers.authManager)
+                    .environmentObject(managers.navigationManager)
+                    .environmentObject(managers.locationManager)
             }
         }
-        // 注入环境对象
-        .environmentObject(managers.tabBarManager)
-        .environmentObject(managers.authManager)
-        .environmentObject(managers.navigationManager)
-        .environmentObject(managers.locationManager)
     }
 }
 

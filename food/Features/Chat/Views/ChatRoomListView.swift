@@ -15,35 +15,17 @@ private enum Layout {
 struct ChatRoomListView: View {
     @StateObject private var viewModel = ChatRoomListViewModel()
     @EnvironmentObject private var navigationManager: AppNavigationManager
-   
     init() {
-      
         print("ChatRoomListView")
-       
     }
-    
-    
     var body: some View {
-        NavigationStack(path: $navigationManager.navigationPath) {
             VStack(spacing: 0) {
                 ListHeaderView(viewModel: viewModel)
                 TabSelectionView(selectedTab: $viewModel.selectedTab)
                 ChatTabView(viewModel: viewModel)
             }
-            .navigationBarHidden(true)
-            .background(Color.white.edgesIgnoringSafeArea(.all))
-            .navigationDestination(for: AppRoute.self) { route in
-                switch route {
-                case .chatDetail(let chatRoom):
-                                    let cachedRoom = chatRoom  // 缓存 chatRoom
-                                    ChatDetailView(chatRoom: cachedRoom)
-                                        .id(cachedRoom.id.uuidString)  // 添加稳定的 ID
-                default:
-                    EmptyView()
-                }
-            }
+            .background(Color.white.ignoresSafeArea())
         }
-    }
 }
 
 // MARK: - Header Components

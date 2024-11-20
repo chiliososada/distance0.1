@@ -1,7 +1,5 @@
 import SwiftUI
 
-// MARK: - View Model
-
 
 // MARK: - Constants
 private enum Layout {
@@ -20,45 +18,29 @@ private enum Layout {
     }
 }
 
-// MARK: - Main View
 struct ChatDetailView: View {
     private let chatRoom: ChatRoom
     @StateObject private var viewModel: ChatDetailViewModel
     @EnvironmentObject var navigationManager: AppNavigationManager
-    @EnvironmentObject var tabBarManager: TabBarManager
-    
-    // 添加一个静态属性来跟踪当前显示的聊天室ID
-    private static var currentChatRoomId: UUID?
     
     init(chatRoom: ChatRoom) {
-        // 检查是否已经显示这个聊天室
-        if Self.currentChatRoomId == chatRoom.id {
-            print("ChatDetailView - Skipping duplicate initialization for room: \(chatRoom.id)")
-            self.chatRoom = chatRoom
-            // 使用已存在的 ViewModel
-            _viewModel = StateObject(wrappedValue: ChatDetailViewModel(chatRoom: chatRoom))
-            return
-        }
-        
-        print("ChatDetailView init - Room: \(chatRoom.name), ID: \(chatRoom.id)")
         self.chatRoom = chatRoom
         _viewModel = StateObject(wrappedValue: ChatDetailViewModel(chatRoom: chatRoom))
     }
     
     var body: some View {
-        VStack(spacing: 1) {
-            // 修改公告部分，默认不显示
-                      Group {
-                          if viewModel.isAnnouncementVisible {
-                              AnnouncementSection(
-                                  isVisible: $viewModel.isAnnouncementVisible
-                              )
-                          } else {
-                              // 只显示切换按钮
-                              ToggleButton(isVisible: $viewModel.isAnnouncementVisible)
-                                  .padding(.vertical, 6)
-                          }
-                      }
+        VStack(spacing: 0) { // 将spacing改为0
+            Group {
+                if viewModel.isAnnouncementVisible {
+                    AnnouncementSection(
+                        isVisible: $viewModel.isAnnouncementVisible
+                    )
+                } else {
+                    ToggleButton(isVisible: $viewModel.isAnnouncementVisible)
+                        
+                }
+            }
+            .padding(.top,1) // 添加一个小的顶部padding
             
             MessagesSection(
                 messages: viewModel.messages,
@@ -67,25 +49,10 @@ struct ChatDetailView: View {
             
             DetailInputSection(viewModel: viewModel)
         }
-        .id(chatRoom.id.uuidString)
-        .onAppear {
-            print("ChatDetailView onAppear - Room: \(chatRoom.name), ID: \(chatRoom.id)")
-            Self.currentChatRoomId = chatRoom.id
-            tabBarManager.isNavigatingInTab = true
-        }
-        .onDisappear {
-            print("ChatDetailView onDisappear - Room: \(chatRoom.name), ID: \(chatRoom.id)")
-            if navigationManager.navigationPath.count == 0 {
-                tabBarManager.isNavigatingInTab = false
-                Self.currentChatRoomId = nil
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
+        .navigationBarBackButtonHidden(true)  
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 BackButton(action: {
-                    Self.currentChatRoomId = nil  // 清除当前ID
                     navigationManager.goBack()
                 })
             }
@@ -114,7 +81,7 @@ struct AnnouncementSection: View {
             if isVisible {
                 AnnouncementView()
                     .transition(.move(edge: .top))
-                    .padding(.vertical, 6)
+                   
             }
             
             ToggleButton(isVisible: $isVisible)
@@ -268,10 +235,6 @@ struct DetailInputSection: View {
         .animation(.easeOut(duration: 0.2), value: viewModel.showMediaOptions)
     }
 }
-
-
-
-
 
 struct AddButton: View {
     let action: () -> Void

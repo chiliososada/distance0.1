@@ -147,18 +147,6 @@ struct LoginPasswordView: View {
                 // 重置导航状态
                 navigationManager.resetNavigation()
                 tabBarManager.resetNavigationState()
-                // 更新窗口根视图
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let window = windowScene.windows.first {
-                    let homeView = HomeView()
-                        .environmentObject(tabBarManager)
-                        .environmentObject(navigationManager)
-                        .environmentObject(authManager)
-                        .environmentObject(LocationManager.shared)
-                    
-                    window.rootViewController = UIHostingController(rootView: homeView)
-                    window.makeKeyAndVisible()
-                }
             }
         }
     }
