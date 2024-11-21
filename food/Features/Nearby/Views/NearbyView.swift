@@ -4,6 +4,9 @@ import MapKit
 struct NearbyView: View {
     @StateObject private var viewModel = NearbyViewModel()
     @EnvironmentObject private var navigationManager: AppNavigationManager
+    init() {
+        print("NearbyView")
+    }
     var body: some View {
         ZStack {
             ClusterMapView(

@@ -1,3 +1,10 @@
+//
+//  TabStateScrollView.swift
+//  food
+//
+//  Created by toyousoft on 2024/11/21.
+//
+
 import SwiftUI
 
 struct TabStateScrollView<Content: View>: View {
@@ -160,5 +167,4 @@ fileprivate struct CustomGesture: UIViewRepresentable {
         }
     }
 }
-
 

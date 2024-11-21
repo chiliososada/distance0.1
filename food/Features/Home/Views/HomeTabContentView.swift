@@ -2,38 +2,6 @@
 import SwiftUI
 
 
-// MARK: - HomeTabContentView
-struct HomeTabContentView: View {
-    private let viewId = UUID().uuidString
-    init() {
-      
-        print("HomeTabContentView initialized with id: \(viewId)")
-       
-    }
-    
-    
-    @StateObject private var viewModel = HomeTabContentViewModel()
-    @Environment(\.horizontalSizeClass) var horizontalSizeClass
-    @EnvironmentObject private var navigationManager: AppNavigationManager
- 
-    var body: some View {
-        let _ = Self._printChanges()  // 添加视图更新打印
-        ScrollView {
-            LazyVStack(spacing: 16, pinnedViews: []) {
-                ForEach(viewModel.posts) { post in
-                    LocationPostButton(post: post) {
-                        navigationManager.navigate(to: .postDetail(post: post))
-                    }
-                    .id(post.id) // 为每个帖子添加唯一ID
-                }
-            }
-            .padding()
-        }
-        .id(viewId)
-        .scrollDismissesKeyboard(.immediately)
-    }
-}
-
 struct LocationPostButton: View {
     let post: LocationPost
     let action: () -> Void
