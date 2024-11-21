@@ -142,6 +142,19 @@ final class AppNavigationManager: ObservableObject {
         }
     }
     
+    @MainActor
+    func navigateToHome() {
+        // 如果已经在主页且tab是home，直接返回
+        if selectedTab == .home && navigationPath.count <= 1 {
+            return
+        }
+        
+        // 否则才执行导航
+        navigationPath = NavigationPath()
+        selectedTab = .home
+    }
+    
+    
     func navigateToTab(_ tab: TabRoute) {
         print("Navigating to tab: \(tab)")
         selectedTab = tab

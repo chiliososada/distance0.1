@@ -65,9 +65,12 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.isCheckingAuth = true
             defer { self.isCheckingAuth = false }
             
+            // 等待认证管理器初始化完成
+            while !managers.authManager.isInitialized {
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+            }
+            
             do {
-                try await Task.sleep(nanoseconds: 200_000_000)
-                
                 if let user = Auth.auth().currentUser {
                     try await user.reload()
                     await self.updateUIForUser(user)
@@ -82,16 +85,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     }
     
     private func updateUIForUser(_ user: User) async {
-        if user.isEmailVerified && managers.authManager.userProfile != nil {
-            // 通过 NavigationManager 更新导航状态
-            managers.navigationManager.resetNavigation()
-            if user.isEmailVerified {
-                managers.navigationManager.navigate(to: .home)
-            } else {
-                managers.navigationManager.navigate(to: .verification(email: user.email ?? ""))
+        if user.isEmailVerified {
+            if managers.authManager.userProfile != nil {
+                // 如果用户已验证且有profile，只需确保在主页
+                if managers.navigationManager.selectedTab != .home {
+                    managers.navigationManager.navigateToHome()
+                }
             }
-        } else if !user.isEmailVerified {
-            resetNavigationState()
+        } else {
+            managers.navigationManager.resetNavigation()
             managers.navigationManager.navigate(to: .verification(email: user.email ?? ""))
         }
     }

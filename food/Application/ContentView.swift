@@ -16,7 +16,7 @@ struct ContentView: View {
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {
             Group {
-                if authManager.isLoading {
+                if  !authManager.isInitialized || authManager.isLoading {
                     loadingView
                 } else if let error = authManager.error {
                     errorView(error)

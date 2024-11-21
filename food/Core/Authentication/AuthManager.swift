@@ -14,6 +14,8 @@ final class AuthManager: ObservableObject {
     private let sessionManager: SessionManager
     private var stateListener: AuthStateDidChangeListenerHandle?
     
+    
+    @Published private(set) var isInitialized = false
     // MARK: - Initialization
     init(sessionManager: SessionManager = .shared) {
         print("AuthManager initialized")
@@ -53,28 +55,28 @@ final class AuthManager: ObservableObject {
     }
     
     private func setupAuthStateListener() {
-        stateListener = auth.addStateDidChangeListener { [weak self] _, user in
-            Task { @MainActor in
-                self?.currentUser = user
-                if let user = user {
-                    // 用户已登录，创建或获取用户档案
-                    if user.isEmailVerified {
-                        do {
-                            let profile = try await self?.createUserProfile(from: user)
-                            self?.userProfile = profile
-                            await self?.sessionManager.updateSession(user: profile)
-                        } catch {
-                            self?.error = AuthError.fromFirebaseError(error)
+            stateListener = auth.addStateDidChangeListener { [weak self] _, user in
+                Task { @MainActor in
+                    self?.currentUser = user
+                    if let user = user {
+                        if user.isEmailVerified {
+                            do {
+                                let profile = try await self?.createUserProfile(from: user)
+                                self?.userProfile = profile
+                                await self?.sessionManager.updateSession(user: profile)
+                            } catch {
+                                self?.error = AuthError.fromFirebaseError(error)
+                            }
                         }
+                    } else {
+                        self?.userProfile = nil
+                        await self?.sessionManager.clearSession()
                     }
-                } else {
-                    // 用户已登出
-                    self?.userProfile = nil
-                    await self?.sessionManager.clearSession()
+                    // 标记初始化完成
+                    self?.isInitialized = true
                 }
             }
         }
-    }
     
     // MARK: - Public Methods
     @MainActor
