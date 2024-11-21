@@ -26,7 +26,6 @@ final class AppRootManager {
         
         // 创建根内容视图并注入所有必需的环境对象
         let contentView = ContentView()
-            .environmentObject(managers.tabBarManager)
             .environmentObject(managers.authManager)
             .environmentObject(managers.navigationManager)
             .environmentObject(managers.locationManager)
@@ -50,8 +49,6 @@ final class AppRootManager {
     ) {
         // 重置导航状态
         managers.navigationManager.resetNavigation()
-        managers.tabBarManager.resetNavigationState()
-        
         // 创建新的根视图
         let rootView = makeRootView(for: destination, managers: managers)
         let rootViewController = UIHostingController(rootView: rootView)
@@ -78,19 +75,17 @@ final class AppRootManager {
             switch destination {
             case .home:
                 HomeView()
-                    .environmentObject(managers.tabBarManager)
                     .environmentObject(managers.authManager)
                     .environmentObject(managers.navigationManager)
                     .environmentObject(managers.locationManager)
             case .verification(let email):
                 VerificationView(email: email)
-                    .environmentObject(managers.tabBarManager)
                     .environmentObject(managers.authManager)
                     .environmentObject(managers.navigationManager)
                     .environmentObject(managers.locationManager)
             case .login:
                 HomeLoginView()
-                    .environmentObject(managers.tabBarManager)
+                  
                     .environmentObject(managers.authManager)
                     .environmentObject(managers.navigationManager)
                     .environmentObject(managers.locationManager)
@@ -101,7 +96,6 @@ final class AppRootManager {
 
 /// 环境管理器集合
 struct EnvironmentManagers {
-    let tabBarManager: TabBarManager
     let authManager: AuthManager
     let navigationManager: AppNavigationManager
     let locationManager: LocationManager

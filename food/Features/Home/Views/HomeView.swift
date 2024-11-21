@@ -4,19 +4,25 @@ import CoreLocation
 struct HomeView: View {
     // MARK: - Properties
     @StateObject private var viewModel = HomeViewModel()
-    @EnvironmentObject private var tabBarManager: TabBarManager
+    @StateObject private var tabBarManager = TabBarManager()  // 本地创建
     @EnvironmentObject private var navigationManager: AppNavigationManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
+    private let homeViewId = "HomeView"
+       
+    init() {
+            print("HomeView init")  // 添加初始化打印
+        }
     // MARK: - Body
     var body: some View {
+        let _ = Self._printChanges()  // 添加视图更新打印
         Group {
             if horizontalSizeClass == .compact {
                 iPhoneLayout
             } else {
                 iPadLayout
             }
-        }
+        }.id(homeViewId) // 添加固定ID
     }
     
     // MARK: - Layouts
@@ -27,9 +33,8 @@ struct HomeView: View {
                     if navigationManager.selectedTab == .home && !viewModel.isNavigationBarHidden {
                         CustomNavigationBar(viewModel: viewModel)
                     }
-                    
                     // 主内容
-                    mainContent
+                    LazyView(mainContent)
                 }
                 .background(Color.white)
                 .frame(width: getRect().width)
@@ -86,32 +91,33 @@ struct HomeView: View {
     private var mainContent: some View {
         VStack(spacing: 0) {
             TabView(selection: $navigationManager.selectedTab) {
-                homeTabContent
+                LazyView(homeTabContent)
                     .tag(TabRoute.home)
                 
-                NearbyView()
+                LazyView(NearbyView())
                     .tag(TabRoute.nearby)
                     .toolbar(.hidden, for: .navigationBar)
                   
-                postTab
+                LazyView(postTab)
                     .tag(TabRoute.post)
                     .toolbar(.hidden, for: .navigationBar)
                 
-                ChatRoomListView()
+                LazyView(ChatRoomListView())
                     .tag(TabRoute.chat)
                     .toolbar(.hidden, for: .navigationBar)
                 
-                ProfileView()
+                LazyView(ProfileView())
                     .tag(TabRoute.profile)
                     .toolbar(.hidden, for: .navigationBar)
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-        }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            if !tabBarManager.isNavigatingInTab {
-                TabBar(selectedTab: $navigationManager.selectedTab)
-                    .transition(.move(edge: .bottom))
-                    .frame(height: 35)
+            .tabViewStyle(.automatic)
+            .animation(.none, value: navigationManager.selectedTab)
+            .safeAreaInset(edge: .bottom) {
+                if !tabBarManager.isNavigatingInTab {
+                    TabBar(selectedTab: $navigationManager.selectedTab)
+                        .transition(.identity) // 移除过渡动画
+                        .animation(.spring(response: 0.3, dampingFraction: 1), value: tabBarManager.isNavigatingInTab) // 统一动画
+                }
             }
         }
         .ignoresSafeArea(edges: .top)
@@ -125,10 +131,16 @@ struct HomeView: View {
             TabStateScrollView(
                 axis: .vertical,
                 showsIndicator: false,
-                tabState: $viewModel.tabState,
-                isNavigationBarHidden: $viewModel.isNavigationBarHidden
+                onStateChange: { isVisible in
+                    withAnimation(.spring(response: 0.3, dampingFraction: 1)) {  // 使用相同的动画参数
+                        viewModel.tabState = isVisible ? .visible : .hidden
+                        viewModel.isNavigationBarHidden = !isVisible
+                        tabBarManager.isNavigatingInTab = !isVisible
+                    }
+                }
             ) {
                 HomeTabContentView()
+                    .id("HomeTabContent")
             }
         }
     }
@@ -170,7 +182,6 @@ func getRect() -> CGRect {
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
-            .environmentObject(GlobalManagers.preview.tabBarManager)
             .environmentObject(GlobalManagers.preview.navigationManager)
             .environmentObject(GlobalManagers.preview.locationManager)
             .environmentObject(GlobalManagers.preview.authManager)
@@ -178,7 +189,8 @@ struct HomeView_Previews: PreviewProvider {
 }
 struct TabBar: View {
     @Binding var selectedTab: TabRoute
-    private let tabHeight: CGFloat = 40  // 定义一个底部固定的高度常量
+    // 修改为系统标准高度
+    private let tabHeight: CGFloat = 49
     
     var body: some View {
         VStack(spacing: 0) {
@@ -224,8 +236,7 @@ struct TabBar: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.top)
-            .frame(height: tabHeight)  // 使用固定高度
+            .frame(height: tabHeight)  // 使用系统标准高度
         }
         .background(
             Color.white
@@ -233,7 +244,6 @@ struct TabBar: View {
         )
     }
 }
-
 struct TabButton: View {
     let title: String
     let icon: String
@@ -242,18 +252,17 @@ struct TabButton: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 6) {  // 增加间距
+            VStack(spacing: 4) {  // 减小间距
                 Image(systemName: icon)
-                    .font(.system(size: 25))  // 适当调整图标大小
-                    .frame(height: 38)  // 给图标一个合适的高度
+                    .font(.system(size: 24))
+                    .frame(height: 24)  // 调整图标frame
                 Text(title)
                     .font(.caption2)
             }
             .foregroundColor(isSelected ? .black : .gray)
-            .padding()
+            .frame(maxWidth: .infinity)
+            .contentShape(Rectangle())
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .contentShape(Rectangle())
     }
 }
 
@@ -298,5 +307,18 @@ struct CustomNavigationBar: View {
         .padding(.horizontal)
         .frame(height: 44)
         .background(Color.white)
+    }
+}
+
+
+struct LazyView<Content: View>: View {
+    let build: () -> Content
+    
+    init(_ build: @autoclosure @escaping () -> Content) {
+        self.build = build
+    }
+    
+    var body: Content {
+        build()
     }
 }

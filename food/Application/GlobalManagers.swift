@@ -11,11 +11,11 @@ import Foundation
 final class GlobalManagers: ObservableObject {
     static let shared = GlobalManagers()
     
-    // 如果需要观察这些管理器的变化，将它们标记为 @Published
-    @Published var tabBarManager: TabBarManager
-    @Published var authManager: AuthManager
-    @Published var navigationManager: AppNavigationManager
-    @Published var locationManager: LocationManager
+    // 改为 lazy var 避免过早初始化
+      
+       private(set) lazy var navigationManager = AppNavigationManager.shared
+       private(set) lazy var locationManager = LocationManager.shared
+       private(set) lazy var authManager = AuthManager()
     
     private init() {
         print("GlobalManagers initialized")
@@ -26,16 +26,10 @@ final class GlobalManagers: ObservableObject {
             print("Firebase configured in GlobalManagers")
         }
         
-        // 初始化各个管理器
-        self.tabBarManager = TabBarManager()
-        self.navigationManager = AppNavigationManager.shared
-        self.locationManager = LocationManager.shared
-        self.authManager = AuthManager()
     }
     
     var environmentManagers: EnvironmentManagers {
         EnvironmentManagers(
-            tabBarManager: tabBarManager,
             authManager: authManager,
             navigationManager: navigationManager,
             locationManager: locationManager

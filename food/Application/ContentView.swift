@@ -3,45 +3,53 @@ import FirebaseAuth
 
 struct ContentView: View {
     // MARK: - Environment Objects
-    @EnvironmentObject private var tabBarManager: TabBarManager
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var navigationManager: AppNavigationManager
     @EnvironmentObject private var locationManager: LocationManager
     
+    @State private var homeView: HomeView? = nil
+    
     // MARK: - Main View
     var body: some View {
         NavigationStack(path: $navigationManager.navigationPath) {
-            mainContent
-                .navigationDestination(for: AppRoute.self) { route in
-                    viewForRoute(route)
+            Group {
+                if authManager.isLoading {
+                    loadingView
+                } else if let error = authManager.error {
+                    errorView(error)
+                } else if let user = authManager.currentUser {
+                    if user.isEmailVerified {
+                        if authManager.userProfile != nil {
+                            cachedHomeView
+                        } else {
+                            loadingView
+                        }
+                    } else {
+                        VerificationView(email: user.email ?? "")
+                    }
+                } else {
+                    HomeLoginView()
                 }
-                .sheet(isPresented: $navigationManager.isPresentingSheet) {
-                    sheetForRoute(navigationManager.presentedSheet)
-                }
+            }
+            .navigationDestination(for: AppRoute.self) { route in
+                viewForRoute(route)
+            }
+            .sheet(isPresented: $navigationManager.isPresentingSheet) {
+                sheetForRoute(navigationManager.presentedSheet)
+            }
         }
     }
     
-    // MARK: - Content Views
-    @ViewBuilder
-    private var mainContent: some View {
-        if authManager.isLoading {
-            loadingView
-        } else if let error = authManager.error {
-            errorView(error)
-        } else if let user = authManager.currentUser {
-            if user.isEmailVerified {
-                if authManager.userProfile != nil {
-                    HomeView()
-                      
-                } else {
-                    loadingView
-                }
+    private var cachedHomeView: some View {
+        ZStack {
+            if homeView == nil {
+                HomeView()
+                    .onAppear { homeView = HomeView() }
             } else {
-                VerificationView(email: user.email ?? "")
+                homeView
             }
-        } else {
-            HomeLoginView()
         }
+        .id("HomeView")
     }
     
     // MARK: - Route Handlers
@@ -122,7 +130,6 @@ struct ContentView: View {
 struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         ContentView()
-            .environmentObject(GlobalManagers.preview.tabBarManager)
             .environmentObject(GlobalManagers.preview.authManager)
             .environmentObject(GlobalManagers.preview.navigationManager)
             .environmentObject(GlobalManagers.preview.locationManager)

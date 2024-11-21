@@ -14,7 +14,11 @@ struct PostDetailView: View {
     @State private var currentImageIndex = 0
     @State private var isPressed = false
     @EnvironmentObject var navigationManager: AppNavigationManager
-    
+
+       init(post: LocationPost) {
+           print("PostDetailView")
+           self.post = post
+       }
     var body: some View {
         ZStack(alignment: .top) {
             ScrollView {

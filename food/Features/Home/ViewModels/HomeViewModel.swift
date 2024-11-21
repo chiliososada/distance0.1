@@ -6,31 +6,35 @@ final class HomeViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var selectedTab = 0
     @Published var isShowingPostInputView = false
-    @Published var isViewTabBarHidden = false
+   var isViewTabBarHidden = false
    
-    @Published var offset: CGFloat = 0
-    @Published var lastStoredOffset: CGFloat = 0
+   var offset: CGFloat = 0
+   var lastStoredOffset: CGFloat = 0
     @Published var search: String = ""
-    @Published var userLocationText: String = "Loading..."
+   var userLocationText: String = "Loading..."
    
-    @Published var tabState: Visibility = .visible {
-        didSet {
-            print("Tab state changed to: \(tabState)")
-            // 不在这里设置 isNavigationBarHidden，让 View 层负责这个逻辑
-        }
-    }
-      
-    @Published var isNavigationBarHidden: Bool = false {
-        didSet {
-            print("Navigation bar hidden state changed to: \(isNavigationBarHidden)")
-        }
-    }
-      
-    @Published var showMenu: Bool = false {
-        didSet {
-            print("Menu state changed to: \(showMenu)")
-        }
-    }
+    
+    
+    
+    
+    var tabState: Visibility = .visible {
+           didSet {
+               print("Tab state changed to: \(tabState)")
+           }
+       }
+         
+        var isNavigationBarHidden: Bool = false {
+           didSet {
+               print("Navigation bar hidden state changed to: \(isNavigationBarHidden)")
+           }
+       }
+         
+       @Published var showMenu: Bool = false {
+           didSet {
+               print("Menu state changed to: \(showMenu)")
+               handleMenuStateChange(showMenu)
+           }
+       }
 
     // MARK: - Private Properties
     private var cancellables = Set<AnyCancellable>()

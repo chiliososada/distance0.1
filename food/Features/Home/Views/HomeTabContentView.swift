@@ -15,7 +15,7 @@ struct HomeTabContentView: View {
     @StateObject private var viewModel = HomeTabContentViewModel()
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @EnvironmentObject private var navigationManager: AppNavigationManager
-    
+    private let contentId = "HomeTabContent"
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 16, pinnedViews: []) {
@@ -23,10 +23,12 @@ struct HomeTabContentView: View {
                     LocationPostButton(post: post) {
                         navigationManager.navigate(to: .postDetail(post: post))
                     }
+                    .id(post.id) // 为每个帖子添加唯一ID
                 }
             }
             .padding()
         }
+        .id(contentId)
         .scrollDismissesKeyboard(.immediately)
     }
 }
