@@ -3,49 +3,52 @@ import SwiftUI
 import FirebaseAuth
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+    static var shared: SceneDelegate?
     var window: UIWindow?
-    private let managers = GlobalManagers.shared.environmentManagers
+    private let managers = GlobalManagers.shared
     private var isCheckingAuth = false
     private var authCheckTask: Task<Void, Never>?
+    var scenePhase: ScenePhase = .inactive
     
     func scene(
         _ scene: UIScene,
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
-        guard let windowScene = scene as? UIWindowScene else { return }
+       
+        Self.shared = self
         
-        if window == nil {
-            window = AppRootManager.shared.setupRootView(
-                for: windowScene,
-                managers: managers
-            )
-        }
-        
+        // 场景初始化时进行认证检查
         checkAuth()
     }
     
+    // MARK: - Scene Lifecycle
     func sceneDidBecomeActive(_ scene: UIScene) {
+        scenePhase = .active
         handleScenePhase(.active)
-        checkAuth()
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
+        scenePhase = .inactive
         handleScenePhase(.inactive)
     }
     
     func sceneDidEnterBackground(_ scene: UIScene) {
+        scenePhase = .background
         handleScenePhase(.background)
     }
     
+    // MARK: - Private Methods
     private func handleScenePhase(_ phase: ScenePhase) {
         switch phase {
         case .active:
-            managers.locationManager.requestLocationPermissionIfNeeded()
+            break
         case .inactive:
             UserDefaults.standard.synchronize()
         case .background:
-            managers.locationManager.stopUpdatingLocation()
+            if managers.isLocationManagerInitialized() {
+                managers.locationManager.stopUpdatingLocation()
+            }
             authCheckTask?.cancel()
         @unknown default:
             break
@@ -56,34 +59,37 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard !isCheckingAuth else { return }
         
         authCheckTask?.cancel()
-        authCheckTask = Task { @MainActor in
-            isCheckingAuth = true
-            defer { isCheckingAuth = false }
+        authCheckTask = Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            
+            self.isCheckingAuth = true
+            defer { self.isCheckingAuth = false }
             
             do {
-                // 减少延迟时间，或根据场景选择是否需要延迟
                 try await Task.sleep(nanoseconds: 200_000_000)
                 
                 if let user = Auth.auth().currentUser {
                     try await user.reload()
-                    await updateUIForUser(user)
+                    await self.updateUIForUser(user)
                 } else {
-                    resetNavigationState()
+                    self.resetNavigationState()
                 }
             } catch {
                 print("Auth check error: \(error.localizedDescription)")
-                resetNavigationState()
+                self.resetNavigationState()
             }
         }
     }
-
+    
     private func updateUIForUser(_ user: User) async {
         if user.isEmailVerified && managers.authManager.userProfile != nil {
-            guard let window = window,
-                  window.rootViewController?.children.first is UIHostingController<VerificationView> else {
-                return
+            // 通过 NavigationManager 更新导航状态
+            managers.navigationManager.resetNavigation()
+            if user.isEmailVerified {
+                managers.navigationManager.navigate(to: .home)
+            } else {
+                managers.navigationManager.navigate(to: .verification(email: user.email ?? ""))
             }
-            AppRootManager.shared.resetRootView(window: window, to: .home, managers: managers)
         } else if !user.isEmailVerified {
             resetNavigationState()
             managers.navigationManager.navigate(to: .verification(email: user.email ?? ""))

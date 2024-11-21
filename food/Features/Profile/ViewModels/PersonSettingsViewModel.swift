@@ -15,19 +15,16 @@ final class PersonSettingsViewModel: ObservableObject {
     // MARK: - Dependencies
     private let authManager: AuthManager
     private let navigationManager: AppNavigationManager
-    private let tabBarManager: TabBarManager
     private let sessionManager: SessionManager
     
     // MARK: - Initialization
     init(
         authManager: AuthManager,
         navigationManager: AppNavigationManager = .shared,
-        tabBarManager: TabBarManager,
         sessionManager: SessionManager = .shared
     ) {
         self.authManager = authManager
         self.navigationManager = navigationManager
-        self.tabBarManager = tabBarManager
         self.sessionManager = sessionManager
     }
     
@@ -87,7 +84,6 @@ final class PersonSettingsViewModel: ObservableObject {
     private func resetUI() async {
         // 重置导航状态
         navigationManager.resetNavigation()
-        tabBarManager.resetNavigationState()
         
     }
     
@@ -104,7 +100,6 @@ struct PersonSettingsView_Previews: PreviewProvider {
         NavigationStack {
             PersonSettingsView()
                 .environmentObject(AuthManager())
-                .environmentObject(TabBarManager())
                 .environmentObject(AppNavigationManager.shared)
                 .environmentObject(LocationManager.shared)
         }

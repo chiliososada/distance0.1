@@ -5,9 +5,12 @@ struct ContentView: View {
     // MARK: - Environment Objects
     @EnvironmentObject private var authManager: AuthManager
     @EnvironmentObject private var navigationManager: AppNavigationManager
-    @EnvironmentObject private var locationManager: LocationManager
     
-    @State private var homeView: HomeView? = nil
+    private let viewId = UUID().uuidString
+    
+    init() {
+        print("ContentView initialized with id: \(viewId)")
+    }
     
     // MARK: - Main View
     var body: some View {
@@ -20,7 +23,7 @@ struct ContentView: View {
                 } else if let user = authManager.currentUser {
                     if user.isEmailVerified {
                         if authManager.userProfile != nil {
-                            cachedHomeView
+                            HomeView()
                         } else {
                             loadingView
                         }
@@ -38,18 +41,6 @@ struct ContentView: View {
                 sheetForRoute(navigationManager.presentedSheet)
             }
         }
-    }
-    
-    private var cachedHomeView: some View {
-        ZStack {
-            if homeView == nil {
-                HomeView()
-                    .onAppear { homeView = HomeView() }
-            } else {
-                homeView
-            }
-        }
-        .id("HomeView")
     }
     
     // MARK: - Route Handlers
@@ -78,6 +69,8 @@ struct ContentView: View {
             PersonSettingsView()
         case .passwordChange:
             PasswordChangeView()
+        case .home:
+            HomeView()
         case .postDetail(let post):
             PostDetailView(post: post)
         default:
@@ -135,3 +128,4 @@ struct ContentView_Previews: PreviewProvider {
             .environmentObject(GlobalManagers.preview.locationManager)
     }
 }
+

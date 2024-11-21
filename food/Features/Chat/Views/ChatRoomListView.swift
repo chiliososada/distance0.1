@@ -302,6 +302,5 @@ struct ChatRoomListView_Previews: PreviewProvider {
     static var previews: some View {
         ChatRoomListView()
             .environmentObject(AppNavigationManager.shared)
-            .environmentObject(TabBarManager())
     }
 }

@@ -28,7 +28,6 @@ final class DeleteAccountState: ObservableObject {
 struct DeleteAccountView: View {
     @Environment(\.presentationMode) var presentationMode
     @EnvironmentObject var navigationManager: AppNavigationManager
-    @EnvironmentObject var tabBarManager: TabBarManager
     @EnvironmentObject var authManager: AuthManager
     @StateObject private var accountState = DeleteAccountState()
     var body: some View {
@@ -89,7 +88,6 @@ struct DeleteAccountView: View {
     private func resetUIAfterDeletion() {
         // 只保留重置状态的部分
         accountState.clearFields()
-        tabBarManager.resetNavigationState()
         navigationManager.resetNavigation()
     }
     
@@ -176,7 +174,6 @@ struct DeleteAccountView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             DeleteAccountView()
-                .environmentObject(TabBarManager())
                 .environmentObject(AuthManager())
                 .environmentObject(AppNavigationManager.shared)
                 .environmentObject(LocationManager.shared)

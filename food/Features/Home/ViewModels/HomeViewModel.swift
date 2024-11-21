@@ -6,7 +6,7 @@ final class HomeViewModel: ObservableObject {
     // MARK: - Published Properties
     @Published var selectedTab = 0
     @Published var isShowingPostInputView = false
-   var isViewTabBarHidden = false
+//   var isViewTabBarHidden = false
    
    var offset: CGFloat = 0
    var lastStoredOffset: CGFloat = 0
@@ -14,7 +14,41 @@ final class HomeViewModel: ObservableObject {
    var userLocationText: String = "Loading..."
    
     
-    
+    // 添加原 TabBarManager 的状态
+       @Published var isNavigatingInTab: Bool = false {
+           didSet {
+               print("TabBar: isNavigatingInTab changed to \(isNavigatingInTab)")
+           }
+       }
+       
+       @Published var isViewTabBarHidden: Bool = false {
+           didSet {
+               print("TabBar: isViewTabBarHidden changed to \(isViewTabBarHidden)")
+           }
+       }
+       
+       // 添加原 TabBarManager 的方法
+       func hideTabBar() {
+           print("TabBar: Hiding tab bar")
+           isNavigatingInTab = true
+       }
+
+       func showTabBar() {
+           print("TabBar: Showing tab bar")
+           isNavigatingInTab = false
+           isViewTabBarHidden = false
+       }
+       
+       func setTabNavigationState(_ isNavigating: Bool) {
+           print("TabBar: Setting navigation state to \(isNavigating)")
+           isNavigatingInTab = isNavigating
+       }
+           
+       func resetTabState() {
+           print("TabBar: Resetting navigation state")
+           isNavigatingInTab = false
+           isViewTabBarHidden = false
+       }
     
     
     var tabState: Visibility = .visible {

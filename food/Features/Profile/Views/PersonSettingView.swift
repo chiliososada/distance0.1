@@ -4,7 +4,6 @@ struct PersonSettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var authManager: AuthManager
     @EnvironmentObject var navigationManager: AppNavigationManager
-    @EnvironmentObject var tabBarManager: TabBarManager
     @StateObject private var settingsState: PersonSettingsViewModel
     @State private var showLogoutConfirmation = false
     
@@ -12,8 +11,7 @@ struct PersonSettingsView: View {
         // 使用环境对象，所以不需要在这里创建新实例
         _settingsState = StateObject(wrappedValue: PersonSettingsViewModel(
             authManager: .init(),
-            navigationManager: .shared,
-            tabBarManager: .init()
+            navigationManager: .shared
         ))
       
           
@@ -123,7 +121,6 @@ struct SettingsView_Previews: PreviewProvider {
         NavigationStack {
             PersonSettingsView()
                 .environmentObject(AuthManager())
-                .environmentObject(TabBarManager())
                 .environmentObject(AppNavigationManager.shared)
                 .environmentObject(LocationManager.shared)
         }

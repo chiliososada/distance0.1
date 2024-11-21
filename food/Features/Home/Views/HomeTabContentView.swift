@@ -4,10 +4,10 @@ import SwiftUI
 
 // MARK: - HomeTabContentView
 struct HomeTabContentView: View {
-    
+    private let viewId = UUID().uuidString
     init() {
       
-        print("HomeTabContentView")
+        print("HomeTabContentView initialized with id: \(viewId)")
        
     }
     
@@ -15,8 +15,9 @@ struct HomeTabContentView: View {
     @StateObject private var viewModel = HomeTabContentViewModel()
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @EnvironmentObject private var navigationManager: AppNavigationManager
-    private let contentId = "HomeTabContent"
+ 
     var body: some View {
+        let _ = Self._printChanges()  // 添加视图更新打印
         ScrollView {
             LazyVStack(spacing: 16, pinnedViews: []) {
                 ForEach(viewModel.posts) { post in
@@ -28,7 +29,7 @@ struct HomeTabContentView: View {
             }
             .padding()
         }
-        .id(contentId)
+        .id(viewId)
         .scrollDismissesKeyboard(.immediately)
     }
 }

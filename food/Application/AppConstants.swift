@@ -5,12 +5,6 @@
 //  Created by toyousoft on 2024/11/10.
 //
 
-//
-//  AppConstants.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/10.
-//
 
 import Foundation
 

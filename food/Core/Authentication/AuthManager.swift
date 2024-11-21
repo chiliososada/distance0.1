@@ -16,6 +16,7 @@ final class AuthManager: ObservableObject {
     
     // MARK: - Initialization
     init(sessionManager: SessionManager = .shared) {
+        print("AuthManager initialized")
         self.sessionManager = sessionManager
         setupAuthStateListener()
     }

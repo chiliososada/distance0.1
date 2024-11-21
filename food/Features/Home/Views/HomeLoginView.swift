@@ -68,15 +68,19 @@ final class ProfileCardViewModel: ObservableObject {
         )
     ]
 }
-
+extension HomeLoginView: Equatable {
+    static func == (lhs: HomeLoginView, rhs: HomeLoginView) -> Bool {
+        return lhs.viewId == rhs.viewId
+    }
+}
 // MARK: - Main View
 struct HomeLoginView: View {
     let velocity: CGFloat = 50
-    @EnvironmentObject var tabBarManager: TabBarManager
     @EnvironmentObject var navigationManager: AppNavigationManager
+    private let viewId = "HomeLoginView"
     init() {
       
-        print("HomeLoginView")
+        print("HomeLoginView init with id: \(UUID().uuidString)")
        
     }
     var body: some View {
@@ -87,6 +91,7 @@ struct HomeLoginView: View {
                 ButtonSection()
                 MarqueeSection()
             }
+            .id(viewId)  // 使用固定ID
     }
 }
 
@@ -354,7 +359,6 @@ extension View {
 struct HomeLoginView_Previews: PreviewProvider {
     static var previews: some View {
         HomeLoginView()
-            .environmentObject(TabBarManager())
             .environmentObject(AppNavigationManager.shared)
     }
 }

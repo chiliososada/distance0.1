@@ -282,7 +282,6 @@ struct PostDetailView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationView {
             PostDetailView(post: previewPost)
-                .environmentObject(TabBarManager())
                 .environmentObject(AppNavigationManager.shared)
         }
     }

@@ -8,7 +8,6 @@ struct CreateAccountView: View {
        @Environment(\.dismiss) private var dismiss
        @StateObject private var viewModel: CreateAccountViewModel
        @Environment(\.presentationMode) var presentationMode
-       @EnvironmentObject var tabBarManager: TabBarManager
        @FocusState private var focusedField: Field?
        @EnvironmentObject var navigationManager: AppNavigationManager
        @EnvironmentObject var authManager: AuthManager
@@ -285,7 +284,7 @@ struct CreateAccountView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             CreateAccountView(emailOrPhone: "example@example.com")
-                .environmentObject(TabBarManager())
+
         }
     }
 }

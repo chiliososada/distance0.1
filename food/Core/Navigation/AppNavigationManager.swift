@@ -25,7 +25,7 @@ enum AppRoute: Hashable {
     case about
     case passwordChange
     case postDetail(post: LocationPost)
-    
+    case home
     // Sheet Presentations
     case postInput
     case searchFilter
@@ -108,9 +108,9 @@ final class AppNavigationManager: ObservableObject {
     }
     
     // MARK: - Initialization
-    private init() {
-        print("AppNavigationManager initialized")
-    }
+    init() {
+            print("AppNavigationManager initialized")
+        }
     
     // MARK: - Core Navigation Methods
     func navigate(to route: AppRoute) {

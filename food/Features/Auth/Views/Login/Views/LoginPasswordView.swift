@@ -6,7 +6,7 @@ struct LoginPasswordView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var navigationManager: AppNavigationManager
     @EnvironmentObject var authManager: AuthManager
-    @EnvironmentObject var tabBarManager: TabBarManager
+
     
     // MARK: - Layout Constants
     private enum Layout {
@@ -146,7 +146,7 @@ struct LoginPasswordView: View {
             if viewModel.loginSuccess {
                 // 重置导航状态
                 navigationManager.resetNavigation()
-                tabBarManager.resetNavigationState()
+              
             }
         }
     }
@@ -159,7 +159,6 @@ struct LoginPasswordView_Previews: PreviewProvider {
             LoginPasswordView(emailOrUsername: "example@example.com")
                 .environmentObject(AppNavigationManager.shared)
                 .environmentObject(AuthManager())
-                .environmentObject(TabBarManager())
         }
     }
 }

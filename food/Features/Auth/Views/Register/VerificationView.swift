@@ -6,7 +6,6 @@ struct VerificationView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject private var viewModel: VerificationViewModel
     @EnvironmentObject var navigationManager: AppNavigationManager
-    @EnvironmentObject var tabBarManager: TabBarManager
     @EnvironmentObject var authManager: AuthManager
     let email: String
     
@@ -167,7 +166,6 @@ struct VerificationView: View {
                     print("Email verification successful")
                     // 只需重置导航状态
                     navigationManager.resetNavigation()
-                    tabBarManager.resetNavigationState()
                 } else {
                     print("Email verification failed")
                     viewModel.showError = true
@@ -187,7 +185,6 @@ struct VerificationView_Previews: PreviewProvider {
     static var previews: some View {
         NavigationStack {
             VerificationView(email: "example@example.com")
-                .environmentObject(TabBarManager())
                 .environmentObject(AppNavigationManager.shared)
                 .environmentObject(AuthManager())
         }

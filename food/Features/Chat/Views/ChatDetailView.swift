@@ -304,11 +304,6 @@ extension View {
             }
     }
     
-    func tabBarVisibility(_ manager: TabBarManager) -> some View {
-        self.onAppear { manager.isViewTabBarHidden = true }
-            .onDisappear { manager.isViewTabBarHidden = false }
-    }
-    
     func memberListSheet(isPresented: Binding<Bool>, chatRoom: ChatRoom) -> some View {
         self.sheet(isPresented: isPresented) {
             ZStack {
@@ -363,7 +358,6 @@ struct ChatDetailView_Previews: PreviewProvider {
         NavigationStack {  // 使用 NavigationStack 替代 NavigationView
             ChatDetailView(chatRoom: .preview)  // 直接使用 ChatRoom.preview
                 .environmentObject(AppNavigationManager.shared)  // 添加 navigationManager
-                .environmentObject(TabBarManager())
         }
     }
 }

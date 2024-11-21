@@ -4,7 +4,6 @@ import CoreLocation
 struct HomeView: View {
     // MARK: - Properties
     @StateObject private var viewModel = HomeViewModel()
-    @StateObject private var tabBarManager = TabBarManager()  // 本地创建
     @EnvironmentObject private var navigationManager: AppNavigationManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
@@ -113,10 +112,10 @@ struct HomeView: View {
             .tabViewStyle(.automatic)
             .animation(.none, value: navigationManager.selectedTab)
             .safeAreaInset(edge: .bottom) {
-                if !tabBarManager.isNavigatingInTab {
+                if !viewModel.isNavigatingInTab {
                     TabBar(selectedTab: $navigationManager.selectedTab)
                         .transition(.identity) // 移除过渡动画
-                        .animation(.spring(response: 0.3, dampingFraction: 1), value: tabBarManager.isNavigatingInTab) // 统一动画
+                        .animation(.spring(response: 0.3, dampingFraction: 1), value: viewModel.isNavigatingInTab) // 统一动画
                 }
             }
         }
@@ -135,7 +134,7 @@ struct HomeView: View {
                     withAnimation(.spring(response: 0.3, dampingFraction: 1)) {  // 使用相同的动画参数
                         viewModel.tabState = isVisible ? .visible : .hidden
                         viewModel.isNavigationBarHidden = !isVisible
-                        tabBarManager.isNavigatingInTab = !isVisible
+                        viewModel.isNavigatingInTab = !isVisible
                     }
                 }
             ) {
