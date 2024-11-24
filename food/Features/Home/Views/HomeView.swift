@@ -1,60 +1,31 @@
 import SwiftUI
 import CoreLocation
 
+// MARK: - HomeView
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject private var navigationManager: AppNavigationManager
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     
-    private let homeViewId = "HomeView"
-    
-    init() {
-        print("HomeView init")
-    }
-    
     var body: some View {
-        let _ = Self._printChanges()
-        Group {
+        ZStack {
             if horizontalSizeClass == .compact {
-                iPhoneLayout
+                LazyView(TabContainerView())
+                    .disabled(navigationManager.isShowingMenu)
             } else {
-                iPadLayout
+                LazyView(iPadLayout)
             }
-        }.id(homeViewId)
-    }
-    
-    private var iPhoneLayout: some View {
-        ZStack(alignment: .leading) {
-            VStack(spacing: 0) {
-                if navigationManager.selectedTab == .home && !viewModel.isNavigationBarHidden {
-                    CustomNavigationBar(viewModel: viewModel)
-                }
-                mainContent
-            }
-            .background(Color.white)
-            .frame(width: getRect().width)
-            .overlay {
-                if viewModel.showMenu {
-                    Color.black
-                        .opacity(0.2)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            withAnimation {
-                                viewModel.closeMenu()
-                            }
-                        }
-                }
-            }
-            .offset(x: viewModel.showMenu ? viewModel.sideBarWidth : 0)
             
-            if viewModel.showMenu {
-                SideMenu(showMenu: $viewModel.showMenu)
-                    .frame(width: viewModel.sideBarWidth)
-                    .transition(.move(edge: .leading))
+            if navigationManager.isShowingMenu {
+                MenuOverlay(
+                    isShowing: .init(
+                        get: { navigationManager.isShowingMenu },
+                        set: { navigationManager.isShowingMenu = $0 }
+                    ),
+                    onClose: navigationManager.closeMenu
+                )
             }
         }
-        .animation(.easeOut(duration: 0.3), value: viewModel.showMenu)
-        .navigationBarHidden(true)
         .sheet(isPresented: $navigationManager.isPresentingSheet) {
             if let route = navigationManager.presentedSheet {
                 sheetView(for: route)
@@ -64,89 +35,13 @@ struct HomeView: View {
     
     private var iPadLayout: some View {
         NavigationSplitView {
-            SideMenu(showMenu: $viewModel.showMenu)
-                .frame(minWidth: 320, idealWidth: viewModel.sideBarWidth, maxWidth: 400)
+            SideMenu(showMenu: .constant(true))
+                .frame(minWidth: 320, idealWidth: UIScreen.main.bounds.width * 0.7, maxWidth: 400)
                 .background(Color.white)
         } detail: {
-            VStack(spacing: 0) {
-                if navigationManager.selectedTab == .home && !viewModel.isNavigationBarHidden {
-                    CustomNavigationBar(viewModel: viewModel)
-                }
-                mainContent
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.white)
+            LazyView(TabContainerView())
         }
         .navigationSplitViewStyle(.balanced)
-    }
-    
-    private var mainContent: some View {
-        TabView(selection: $navigationManager.selectedTab) {
-            homeTabContent
-                .tag(TabRoute.home)
-                .tabItem {
-                    Image(systemName: "house.fill")
-                }
-            
-            NearbyView()
-                .tag(TabRoute.nearby)
-                .toolbar(.hidden, for: .navigationBar)
-                .tabItem {
-                    Image(systemName: "location.fill")
-                }
-            
-            postTab
-                .tag(TabRoute.post)
-                .toolbar(.hidden, for: .navigationBar)
-                .tabItem {
-                    Image(systemName: "plus.circle.fill")
-                }
-            
-            ChatRoomListView()
-                .tag(TabRoute.chat)
-                .toolbar(.hidden, for: .navigationBar)
-                .tabItem {
-                    Image(systemName: "message.fill")
-                }
-            
-            ProfileView()
-                .tag(TabRoute.profile)
-                .toolbar(.hidden, for: .navigationBar)
-                .tabItem {
-                    Image(systemName: "person.fill")
-                }
-        }
-    }
-    
-    private var homeTabContent: some View {
-        VStack(spacing: 1) {
-            SearchAndFilterView(search: $viewModel.search)
-                .padding(.bottom, 8)
-                .padding(.top, 2)
-            
-            ScrollView {
-                LazyVStack(spacing: 16, pinnedViews: []) {
-                    ForEach(viewModel.posts) { post in
-                        LocationPostButton(post: post) {
-                            navigationManager.navigate(to: .postDetail(post: post))
-                        }
-                        .id(post.id)
-                    }
-                }
-                .padding()
-            }
-        }
-    }
-    
-    private var postTab: some View {
-        Color.clear
-            .onAppear { viewModel.isShowingPostInputView = true }
-            .fullScreenCover(isPresented: $viewModel.isShowingPostInputView) {
-                PostInputView(
-                    isPresented: $viewModel.isShowingPostInputView,
-                    selectedTab: $navigationManager.selectedTab
-                )
-            }
     }
     
     @ViewBuilder
@@ -165,10 +60,106 @@ struct HomeView: View {
     }
 }
 
-func getRect() -> CGRect {
-    UIScreen.main.bounds
+// MARK: - TabContainerView
+struct TabContainerView: View {
+    @EnvironmentObject private var navigationManager: AppNavigationManager
+    
+    var body: some View {
+        TabView(selection: $navigationManager.selectedTab) {
+            LazyView(HomeTabView(onMenuTap: navigationManager.toggleMenu))
+                .tag(TabRoute.home)
+                .tabItem {
+                    Image(systemName: "house.fill")
+                }
+            
+            LazyView(NearbyView())
+                .tag(TabRoute.nearby)
+                .toolbar(.hidden, for: .navigationBar)
+                .tabItem {
+                    Image(systemName: "location.fill")
+                }
+            
+            LazyView(PostTabContainer())
+                .tag(TabRoute.post)
+                .toolbar(.hidden, for: .navigationBar)
+                .tabItem {
+                    Image(systemName: "plus.circle.fill")
+                }
+            
+            LazyView(ChatRoomListView())
+                .tag(TabRoute.chat)
+                .toolbar(.hidden, for: .navigationBar)
+                .tabItem {
+                    Image(systemName: "message.fill")
+                }
+            
+            LazyView(ProfileView())
+                .tag(TabRoute.profile)
+                .toolbar(.hidden, for: .navigationBar)
+                .tabItem {
+                    Image(systemName: "person.fill")
+                }
+        }
+    }
 }
 
+// MARK: - PostTabContainer
+struct PostTabContainer: View {
+    @StateObject private var viewModel = HomeViewModel()
+    @EnvironmentObject private var navigationManager: AppNavigationManager
+    
+    var body: some View {
+        Color.clear
+            .onAppear { viewModel.isShowingPostInputView = true }
+            .fullScreenCover(isPresented: $viewModel.isShowingPostInputView) {
+                PostInputView(
+                    isPresented: $viewModel.isShowingPostInputView,
+                    selectedTab: $navigationManager.selectedTab
+                )
+            }
+    }
+}
+
+// MARK: - MenuOverlay
+struct MenuOverlay: View {
+    @Binding var isShowing: Bool
+    let onClose: () -> Void
+    
+    var body: some View {
+        GeometryReader { geometry in
+            Color.black
+                .opacity(isShowing ? 0.2 : 0)
+                .ignoresSafeArea(edges: .all)
+                .onTapGesture(perform: onClose)
+                .overlay(
+                    HStack(spacing: 0) {
+                        SideMenu(showMenu: $isShowing)
+                            .frame(width: min(geometry.size.width * 0.7, 300))
+                            .background(Color.white)
+                            .offset(x: isShowing ? 0 : -300)
+                        Spacer()
+                    }
+                )
+        }
+        .animation(.spring(), value: isShowing)
+        .allowsHitTesting(isShowing)
+    }
+}
+
+// MARK: - LazyView
+struct LazyView<Content: View>: View {
+    let build: () -> Content
+    
+    init(_ build: @autoclosure @escaping () -> Content) {
+        self.build = build
+    }
+    
+    var body: Content {
+        build()
+    }
+}
+
+// MARK: - Preview Provider
 struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
@@ -178,40 +169,6 @@ struct HomeView_Previews: PreviewProvider {
     }
 }
 
-struct CustomNavigationBar: View {
-    @ObservedObject var viewModel: HomeViewModel
-    
-    var body: some View {
-        HStack {
-            Button(action: {
-                print("Menu button tapped")
-                viewModel.toggleMenu()
-            }) {
-                Image(uiImage: #imageLiteral(resourceName: "menu"))
-                    .resizable()
-                    .frame(width: 20, height: 20)
-                    .foregroundColor(.black)
-            }
-            
-            Spacer()
-            
-            Button(action: {
-                print("Location button tapped")
-            }) {
-                HStack {
-                    Image(systemName: "mappin.circle.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 12, height: 12)
-                    Text(viewModel.userLocationText)
-                        .font(.caption2)
-                        .lineLimit(1)
-                }
-                .foregroundColor(.black)
-            }
-        }
-        .padding(.horizontal)
-        .frame(height: 44)
-        .background(Color.white)
-    }
+func getRect() -> CGRect {
+    UIScreen.main.bounds
 }

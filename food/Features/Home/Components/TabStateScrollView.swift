@@ -90,8 +90,8 @@ struct TabStateScrollView<Content: View>: View {
     }
     
     private func handleScrollChange(velocityY: CGFloat) {
-        let swipeUpThreshold: CGFloat = 50
-        let swipeDownThreshold: CGFloat = 30
+        let swipeUpThreshold: CGFloat = 40
+        let swipeDownThreshold: CGFloat = 25
         
         withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
             if velocityY < 0 {

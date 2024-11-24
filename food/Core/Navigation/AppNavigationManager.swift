@@ -95,17 +95,17 @@ final class AppNavigationManager: ObservableObject {
         }
     }
     
-    @Published var isNavigationBarHidden = false {
-        didSet {
-            print("Navigation bar hidden state changed to: \(isNavigationBarHidden)")
-        }
-    }
-    
-    @Published var isTabBarHidden = false {
-        didSet {
-            print("Tab bar hidden state changed to: \(isTabBarHidden)")
-        }
-    }
+//    @Published var isNavigationBarHidden = false {
+//        didSet {
+//            print("Navigation bar hidden state changed to: \(isNavigationBarHidden)")
+//        }
+//    }
+//    
+//    @Published var isTabBarHidden = false {
+//        didSet {
+//            print("Tab bar hidden state changed to: \(isTabBarHidden)")
+//        }
+//    }
     
     // MARK: - Initialization
     init() {
@@ -175,13 +175,25 @@ final class AppNavigationManager: ObservableObject {
         navigationPath = NavigationPath()
         chatNavigationSource = .normal
         selectedTab = .home
-        isNavigationBarHidden = false
-        isTabBarHidden = false
+       // isNavigationBarHidden = false
+       // isTabBarHidden = false
         pendingChatRoom = nil
         isPresentingSheet = false
         presentedSheet = nil
     }
-    
+    @Published var isShowingMenu = false
+      
+      func toggleMenu() {
+          withAnimation(.spring()) {
+              isShowingMenu.toggle()
+          }
+      }
+      
+      func closeMenu() {
+          withAnimation(.spring()) {
+              isShowingMenu = false
+          }
+      }
     // MARK: - Cleanup
     deinit {
         print("AppNavigationManager deinitialized")
