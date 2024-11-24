@@ -54,13 +54,13 @@ struct TabStateScrollView<Content: View>: View {
         // 只要有任何方向的移动就立即响应
         if velocityY < 0 {
             if isVisible {
-                print("👆 向上滑动，隐藏导航栏，velocityY: \(velocityY)")
+//                print("👆 向上滑动，隐藏导航栏，velocityY: \(velocityY)")
                 isVisible = false
                 onStateChange(false)
             }
         } else if velocityY > 0 {
             if !isVisible {
-                print("👇 向下滑动，显示导航栏，velocityY: \(velocityY)")
+//                print("👇 向下滑动，显示导航栏，velocityY: \(velocityY)")
                 isVisible = true
                 onStateChange(true)
             }
