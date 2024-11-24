@@ -16,15 +16,15 @@ struct HomeView: View {
                 LazyView(iPadLayout)
             }
             
-            if navigationManager.isShowingMenu {
-                MenuOverlay(
-                    isShowing: .init(
-                        get: { navigationManager.isShowingMenu },
-                        set: { navigationManager.isShowingMenu = $0 }
-                    ),
-                    onClose: navigationManager.closeMenu
-                )
-            }
+            MenuOverlay(
+                isShowing: .init(
+                    get: { navigationManager.isShowingMenu },
+                    set: { navigationManager.isShowingMenu = $0 }
+                ),
+                onClose: navigationManager.closeMenu
+            )
+            .opacity(navigationManager.isShowingMenu ? 1 : 0)
+            .allowsHitTesting(navigationManager.isShowingMenu)
         }
         .sheet(isPresented: $navigationManager.isPresentingSheet) {
             if let route = navigationManager.presentedSheet {
@@ -127,22 +127,26 @@ struct MenuOverlay: View {
     
     var body: some View {
         GeometryReader { geometry in
-            Color.black
-                .opacity(isShowing ? 0.2 : 0)
-                .ignoresSafeArea(edges: .all)
-                .onTapGesture(perform: onClose)
-                .overlay(
-                    HStack(spacing: 0) {
-                        SideMenu(showMenu: $isShowing)
-                            .frame(width: min(geometry.size.width * 0.7, 300))
-                            .background(Color.white)
-                            .offset(x: isShowing ? 0 : -300)
-                        Spacer()
-                    }
-                )
+            let menuWidth = min(geometry.size.width * 0.7, 300)
+            
+            ZStack {
+                // 背景遮罩
+                Color.black
+                    .opacity(isShowing ? 0.2 : 0)
+                    .ignoresSafeArea(edges: .all)
+                    .onTapGesture(perform: onClose)
+                
+                HStack(spacing: 0) {
+                    SideMenu(showMenu: $isShowing)
+                        .frame(width: menuWidth)
+                        .background(Color.white)
+                        .offset(x: isShowing ? 0 : -menuWidth)
+                    
+                    Spacer()
+                }
+            }
         }
-        .animation(.spring(), value: isShowing)
-        .allowsHitTesting(isShowing)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isShowing)
     }
 }
 
