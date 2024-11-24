@@ -8,15 +8,7 @@ struct TabStateScrollView<Content: View>: View {
     var content: Content
     
     // MARK: - State
-    @State private var lastOffset: CGFloat = 0
-    @State private var currentOffset: CGFloat = 0
     @State private var isVisible: Bool = true
-    @State private var lastScrollDirection: CGFloat = 0
-    @State private var lastUpdateTime: Date = Date()
-    
-    // 调整这些值以获得更好的滚动体验
-    private let minimumScrollDelta: CGFloat = 80 // 降低一点触发阈值
-    private let minimumTimeDelta: TimeInterval = 0.08 // 稍微减少时间间隔
     
     // MARK: - Initialization
     init(
@@ -35,107 +27,91 @@ struct TabStateScrollView<Content: View>: View {
         if #available(iOS 17, *) {
             ScrollView(axis) {
                 content
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .preference(key: ScrollOffsetKey.self, value: proxy.frame(in: .named("scroll")).minY)
-                        }
-                    )
             }
             .scrollIndicators(showsIndicator ? .visible : .hidden)
-            .coordinateSpace(name: "scroll")
-            .onPreferenceChange(ScrollOffsetKey.self) { offset in
-                handleScrollOffset(offset)
-            }
             .background {
                 CustomGesture {
                     handleGestureChange($0)
                 }
+                .id("mainGesture")
             }
         } else {
             ScrollView(axis, showsIndicators: showsIndicator) {
                 content
-                    .background(
-                        GeometryReader { proxy in
-                            Color.clear
-                                .preference(key: ScrollOffsetKey.self, value: proxy.frame(in: .named("scroll")).minY)
-                        }
-                    )
-            }
-            .coordinateSpace(name: "scroll")
-            .onPreferenceChange(ScrollOffsetKey.self) { offset in
-                handleScrollOffset(offset)
             }
             .background {
                 CustomGesture {
                     handleGestureChange($0)
                 }
+                .id("mainGesture")
             }
         }
-    }
-    
-    private func handleScrollOffset(_ offset: CGFloat) {
-        currentOffset = offset
     }
     
     private func handleGestureChange(_ gesture: UIPanGestureRecognizer) {
-        let currentTime = Date()
         let velocityY = gesture.velocity(in: gesture.view).y
         
-        switch gesture.state {
-        case .changed:
-            guard currentTime.timeIntervalSince(lastUpdateTime) >= minimumTimeDelta else { return }
-            
-            let currentDirection: CGFloat = velocityY > 0 ? 1.0 : -1.0
-            
-            if abs(velocityY) > minimumScrollDelta && currentDirection * lastScrollDirection <= 0 {
-                lastScrollDirection = currentDirection
-                let shouldShow = velocityY > 0
-                
-                if shouldShow != isVisible {
-                    isVisible = shouldShow
-                    lastUpdateTime = currentTime
-                    onStateChange(shouldShow)
-                }
+        // 只要有任何方向的移动就立即响应
+        if velocityY < 0 {
+            if isVisible {
+                print("👆 向上滑动，隐藏导航栏，velocityY: \(velocityY)")
+                isVisible = false
+                onStateChange(false)
             }
-            
-        case .ended, .cancelled:
-            lastOffset = currentOffset
-            
-        default:
-            break
+        } else if velocityY > 0 {
+            if !isVisible {
+                print("👇 向下滑动，显示导航栏，velocityY: \(velocityY)")
+                isVisible = true
+                onStateChange(true)
+            }
         }
-    }
-}
-// MARK: - Supporting Types
-fileprivate struct ScrollOffsetKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
     }
 }
 
 // MARK: - Custom Gesture Handler
 fileprivate struct CustomGesture: UIViewRepresentable {
+    static private let gestureKey = "TabStateScrollViewGesture"
     var onChange: (UIPanGestureRecognizer) -> Void
-    private let gestureID = UUID().uuidString
     
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
         view.backgroundColor = .clear
+        
+        // 使用静态属性
+        view.tag = CustomGesture.gestureKey.hashValue
+        
+        let gesture = createGesture(context: context)
+        view.addGestureRecognizer(gesture)
         return view
     }
     
+    private func createGesture(context: Context) -> UIPanGestureRecognizer {
+        let gesture = UIPanGestureRecognizer(target: context.coordinator,
+                                           action: #selector(context.coordinator.gestureChange(gesture:)))
+        gesture.delegate = context.coordinator
+        gesture.name = CustomGesture.gestureKey
+        
+        // 最大化手势识别器的响应性
+        gesture.delaysTouchesBegan = false
+        gesture.delaysTouchesEnded = false
+        gesture.minimumNumberOfTouches = 1
+        gesture.maximumNumberOfTouches = 1
+        
+        return gesture
+    }
+    
     func updateUIView(_ uiView: UIView, context: Context) {
-        DispatchQueue.main.async {
-            if let superView = uiView.superview?.superview {
-                if !(superView.gestureRecognizers?.contains(where: { $0.name == gestureID }) ?? false) {
-                    let gesture = UIPanGestureRecognizer(target: context.coordinator,
-                                                       action: #selector(context.coordinator.gestureChange(gesture:)))
-                    gesture.name = gestureID
-                    gesture.delegate = context.coordinator
-                    superView.addGestureRecognizer(gesture)
-                }
+        // 检查 superView 是否已经处理过
+        if let superView = uiView.superview?.superview {
+            let key = UnsafeRawPointer(bitPattern: CustomGesture.gestureKey.hashValue)!
+            
+            // 使用关联对象检查是否已添加过手势识别器
+            if objc_getAssociatedObject(superView, key) == nil {
+                let gesture = createGesture(context: context)
+                superView.addGestureRecognizer(gesture)
+                
+                // 标记已处理
+                objc_setAssociatedObject(superView, key, true, .OBJC_ASSOCIATION_RETAIN)
             }
         }
     }
@@ -149,18 +125,31 @@ fileprivate struct CustomGesture: UIViewRepresentable {
         
         init(onChange: @escaping (UIPanGestureRecognizer) -> Void) {
             self.onChange = onChange
+            super.init()
         }
         
         @objc
         func gestureChange(gesture: UIPanGestureRecognizer) {
-            onChange(gesture)
+            if gesture.state == .changed {
+                onChange(gesture)
+            }
         }
         
         func gestureRecognizer(
             _ gestureRecognizer: UIGestureRecognizer,
             shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
         ) -> Bool {
-            return otherGestureRecognizer.view is UIScrollView
+            return true
+        }
+        
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                              shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            return false
+        }
+        
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                              shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+            return false
         }
     }
 }
