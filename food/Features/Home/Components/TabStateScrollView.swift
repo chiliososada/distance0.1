@@ -1,22 +1,24 @@
-//
-//  TabStateScrollView.swift
-//  food
-//
-//  Created by toyousoft on 2024/11/21.
-//
-
 import SwiftUI
 
 struct TabStateScrollView<Content: View>: View {
+    // MARK: - Properties
     var axis: Axis.Set
     var showsIndicator: Bool
     var onStateChange: (Bool) -> Void
     var content: Content
     
+    // MARK: - State
     @State private var lastOffset: CGFloat = 0
     @State private var currentOffset: CGFloat = 0
     @State private var isVisible: Bool = true
+    @State private var lastScrollDirection: CGFloat = 0
+    @State private var lastUpdateTime: Date = Date()
     
+    // 调整这些值以获得更好的滚动体验
+    private let minimumScrollDelta: CGFloat = 80 // 降低一点触发阈值
+    private let minimumTimeDelta: TimeInterval = 0.08 // 稍微减少时间间隔
+    
+    // MARK: - Initialization
     init(
         axis: Axis.Set,
         showsIndicator: Bool,
@@ -77,40 +79,34 @@ struct TabStateScrollView<Content: View>: View {
     }
     
     private func handleGestureChange(_ gesture: UIPanGestureRecognizer) {
+        let currentTime = Date()
         let velocityY = gesture.velocity(in: gesture.view).y
         
         switch gesture.state {
         case .changed:
-            handleScrollChange(velocityY: velocityY)
-        case .ended:
+            guard currentTime.timeIntervalSince(lastUpdateTime) >= minimumTimeDelta else { return }
+            
+            let currentDirection: CGFloat = velocityY > 0 ? 1.0 : -1.0
+            
+            if abs(velocityY) > minimumScrollDelta && currentDirection * lastScrollDirection <= 0 {
+                lastScrollDirection = currentDirection
+                let shouldShow = velocityY > 0
+                
+                if shouldShow != isVisible {
+                    isVisible = shouldShow
+                    lastUpdateTime = currentTime
+                    onStateChange(shouldShow)
+                }
+            }
+            
+        case .ended, .cancelled:
             lastOffset = currentOffset
+            
         default:
             break
         }
     }
-    
-    private func handleScrollChange(velocityY: CGFloat) {
-        let swipeUpThreshold: CGFloat = 40
-        let swipeDownThreshold: CGFloat = 25
-        
-        withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-            if velocityY < 0 {
-                // 向上滑动
-                if -(velocityY / 5) > swipeUpThreshold && isVisible {
-                    isVisible = false
-                    onStateChange(false)
-                }
-            } else {
-                // 向下滑动
-                if (velocityY / 5) > swipeDownThreshold && !isVisible {
-                    isVisible = true
-                    onStateChange(true)
-                }
-            }
-        }
-    }
 }
-
 // MARK: - Supporting Types
 fileprivate struct ScrollOffsetKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
@@ -119,6 +115,7 @@ fileprivate struct ScrollOffsetKey: PreferenceKey {
     }
 }
 
+// MARK: - Custom Gesture Handler
 fileprivate struct CustomGesture: UIViewRepresentable {
     var onChange: (UIPanGestureRecognizer) -> Void
     private let gestureID = UUID().uuidString
@@ -167,4 +164,3 @@ fileprivate struct CustomGesture: UIViewRepresentable {
         }
     }
 }
-
