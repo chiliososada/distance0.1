@@ -13,7 +13,7 @@ struct NearbyView: View {
                 dataManager: viewModel.mapDataManager,
                 viewModel: viewModel
             )
-            .ignoresSafeArea()
+            .ignoresSafeArea(edges: [.horizontal, .top]) // 只忽略顶部和水平方向的安全区域
             
             VStack(spacing: 0) {
                 HStack {

@@ -73,13 +73,9 @@ struct HomeTabView: View {
     }
     
     private func handleVisibilityChange(_ isVisible: Bool) {
-      
-        
         withAnimation(.spring(response: 0.3, dampingFraction: 0.7, blendDuration: 0.1)) {
             isNavBarVisible = isVisible
         }
-        
-        
     }
 }
 
