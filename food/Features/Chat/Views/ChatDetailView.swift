@@ -17,7 +17,41 @@ private enum Layout {
         let textGray = Color.gray.opacity(0.3)
     }
 }
-
+// 自定义导航栏
+struct ChatNavigationBar: View {
+    let title: String
+    let onBack: () -> Void
+    let onSettings: () -> Void
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            Button(action: onBack) {
+                Image(systemName: "chevron.left")
+                    .font(.title3)
+                    .foregroundColor(.black)
+                    .padding(8)
+            }
+            
+            Spacer()
+            
+            Text(title)
+                .font(.headline)
+            
+            Spacer()
+            
+            Button(action: onSettings) {
+                Image(systemName: "gearshape")
+                    .resizable()
+                    .frame(width: 22, height: 22)
+                    .foregroundColor(.black)
+                    .padding(8)
+            }
+        }
+        .padding(.horizontal)
+        .frame(height: 44)
+        .background(Color.white)
+    }
+}
 struct ChatDetailView: View {
     private let chatRoom: ChatRoom
     @StateObject private var viewModel: ChatDetailViewModel
@@ -29,43 +63,32 @@ struct ChatDetailView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) { // 将spacing改为0
-            Group {
-                if viewModel.isAnnouncementVisible {
-                    AnnouncementSection(
-                        isVisible: $viewModel.isAnnouncementVisible
-                    )
-                } else {
-                    ToggleButton(isVisible: $viewModel.isAnnouncementVisible)
-                        
-                }
-            }
-            .padding(.top,1) // 添加一个小的顶部padding
-            
-            MessagesSection(
-                messages: viewModel.messages,
-                currentMember: viewModel.currentMember
+        VStack(spacing: 0) {
+            // 自定义导航栏
+            ChatNavigationBar(
+                title: chatRoom.name,
+                onBack: { navigationManager.goBack() },
+                onSettings: { viewModel.showSettings() }
             )
             
-            DetailInputSection(viewModel: viewModel)
-        }
-        .navigationBarBackButtonHidden(true)  
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                BackButton(action: {
-                    navigationManager.goBack()
-                })
-            }
-            ToolbarItem(placement: .navigationBarTrailing) {
-                SettingsButton(action: {
-                    viewModel.showSettings()
-                })
-            }
-            ToolbarItem(placement: .principal) {
-                Text(chatRoom.name)
-                    .font(.headline)
+            // 内容区域
+            VStack(spacing: 0) {
+                if viewModel.isAnnouncementVisible {
+                    AnnouncementSection(isVisible: $viewModel.isAnnouncementVisible)
+                } else {
+                    ToggleButton(isVisible: $viewModel.isAnnouncementVisible)
+                        .padding(.top, 4)
+                }
+                
+                MessagesSection(
+                    messages: viewModel.messages,
+                    currentMember: viewModel.currentMember
+                )
+                
+                DetailInputSection(viewModel: viewModel)
             }
         }
+        .navigationBarHidden(true) // 隐藏系统导航栏
         .memberListSheet(
             isPresented: $viewModel.showMemberList,
             chatRoom: chatRoom
@@ -77,15 +100,14 @@ struct AnnouncementSection: View {
     @Binding var isVisible: Bool
     
     var body: some View {
-        VStack {
-            if isVisible {
-                AnnouncementView()
-                    .transition(.move(edge: .top))
-                   
-            }
+        VStack(spacing: 0) {
+            AnnouncementView()
+                .transition(.move(edge: .top))
             
             ToggleButton(isVisible: $isVisible)
+                .padding(.vertical, 4)
         }
+        .padding(.top, 4) // 只添加顶部小间距
     }
 }
 
@@ -98,7 +120,7 @@ struct ToggleButton: View {
                 isVisible.toggle()
             }
         } label: {
-            HStack {
+            HStack(spacing: 4) {
                 Image(systemName: isVisible ? "chevron.up" : "chevron.down")
                     .font(.system(size: 12))
                 Text(isVisible ? "收起公告" : "展开公告")
