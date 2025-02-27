@@ -7,7 +7,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
     private let managers = GlobalManagers.shared
     private var isCheckingAuth = false
-    private var authCheckTask: Task<Void, Never>?
+    private var sessionCheckTask: Task<Void, Never>?
     var scenePhase: ScenePhase = .inactive
     
     func scene(
@@ -16,14 +16,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         options connectionOptions: UIScene.ConnectionOptions
     ) {
         Self.shared = self
-        checkAuth()
+        guard let windowScene = scene as? UIWindowScene else { return }
+        window = AppRootManager.shared.setupRootView(for: windowScene, managers: managers.environmentManagers)
     }
     
     // MARK: - Scene Lifecycle
     func sceneDidBecomeActive(_ scene: UIScene) {
         scenePhase = .active
         handleScenePhase(.active)
-        checkSession()  // 添加会话检查
+        checkSession()
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
@@ -47,26 +48,46 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             if managers.isLocationManagerInitialized() {
                 managers.locationManager.stopUpdatingLocation()
             }
-            authCheckTask?.cancel()
+            sessionCheckTask?.cancel()
         @unknown default:
             break
         }
     }
     
     private func checkSession() {
-        Task { @MainActor in
+        // 取消之前的任务
+        sessionCheckTask?.cancel()
+        
+        // 创建新的会话检查任务
+        sessionCheckTask = Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            guard !isCheckingAuth else { return }
+            
+            self.isCheckingAuth = true
+            defer { self.isCheckingAuth = false }
+            
+            // 等待认证管理器初始化完成
+            while !managers.authManager.isInitialized {
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                if Task.isCancelled { return }
+            }
+            
             do {
-                let isValid = try await UserService.shared.checkSession()
-                if !isValid {
-                    // 会话无效，重置导航状态并返回登录界面
-                    resetNavigationState()
+                // 使用统一的会话验证方法
+                let isValid = try await managers.authManager.validateCurrentSession()
+                
+                if isValid {
+                    // 会话有效，确保用户在主页
+                    if managers.navigationManager.selectedTab != .home {
+                        managers.navigationManager.navigateToHome()
+                    }
                 } else {
-                    // 会话有效，更新用户状态
-                    try await updateUserStatus(isActive: true)
+                    // 会话无效，重置导航状态
+                    self.resetNavigationState()
                 }
             } catch {
                 print("Session check error: \(error.localizedDescription)")
-                resetNavigationState()
+                self.resetNavigationState()
             }
         }
     }
@@ -75,53 +96,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         try await UserService.shared.updateUserStatus(isActive: isActive)
     }
     
-    private func checkAuth() {
-        guard !isCheckingAuth else { return }
-        
-        authCheckTask?.cancel()
-        authCheckTask = Task { @MainActor [weak self] in
-            guard let self = self else { return }
-            
-            self.isCheckingAuth = true
-            defer { self.isCheckingAuth = false }
-            
-            // 等待认证管理器初始化完成
-            while !managers.authManager.isInitialized {
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
-            }
-            
-            do {
-                // 检查会话是否有效
-                if try await managers.authManager.validateCurrentSession() {
-                    // 如果会话有效，确保在主页
-                    if managers.navigationManager.selectedTab != .home {
-                        managers.navigationManager.navigateToHome()
-                    }
-                } else {
-                    // 会话无效，重置导航
-                    self.resetNavigationState()
-                }
-            } catch {
-                print("Auth check error: \(error.localizedDescription)")
-                self.resetNavigationState()
-            }
-        }
-    }
-    
-    private func updateUIForUser(_ user: User) async {
-        if user.isEmailVerified {
-            if managers.authManager.userProfile != nil {
-                if managers.navigationManager.selectedTab != .home {
-                    managers.navigationManager.navigateToHome()
-                }
-            }
-        } else {
-            managers.navigationManager.resetNavigation()
-            managers.navigationManager.navigate(to: .verification(email: user.email ?? ""))
-        }
-    }
-    
     private func resetNavigationState() {
         managers.navigationManager.resetNavigation()
+        // 如果需要，重定向到登录页面
+        DispatchQueue.main.async {
+            AppRootManager.shared.resetRootView(
+                window: self.window!,
+                to: .login,
+                managers: self.managers.environmentManagers
+            )
+        }
     }
 }

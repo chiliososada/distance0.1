@@ -41,14 +41,38 @@ final class AuthManager: ObservableObject {
     // MARK: - Public Methods
     @MainActor
     func validateCurrentSession() async throws -> Bool {
-        // 检查是否有有效的会话
-        if let profile = sessionManager.getSavedProfile(),
-           sessionManager.isSessionValid() {
-            // 设置当前用户配置文件
-            self.userProfile = profile
-            return true
+        // 首先检查本地令牌是否存在
+        if sessionManager.getAuthToken() == nil {
+            return false  // 如果没有令牌，直接返回false
         }
-        return false
+        
+        do {
+            // 通过API验证会话有效性
+            let isValid = try await UserService.shared.checkSession()
+            
+            if isValid {
+                // 如果会话有效，确保加载用户配置文件
+                if let profile = sessionManager.getSavedProfile() {
+                    self.userProfile = profile
+                    return true
+                } else if sessionManager.shouldRefreshProfile() {
+                    // 如果需要刷新用户配置文件，可以在这里实现
+                    // 目前暂时返回true因为会话本身有效
+                    return true
+                }
+            }
+            
+            // 会话无效，清理本地状态
+            await sessionManager.clearSession()
+            self.userProfile = nil
+            return false
+        } catch {
+            print("Session validation error: \(error.localizedDescription)")
+            // 出现错误时，保守处理为会话无效
+            await sessionManager.clearSession()
+            self.userProfile = nil
+            return false
+        }
     }
     
     @MainActor

@@ -76,32 +76,10 @@ final class SessionManager {
         return userDefaults.string(forKey: AppConstants.UserDefaultsKeys.pushToken)
     }
     
-    /// 判断会话是否有效
+    /// 判断会话是否有效 (简化，仅做基本检查)
     func isSessionValid() -> Bool {
-        // 检查是否存在认证token
-        guard let _ = try? keychain.string(forKey: AppConstants.UserDefaultsKeys.authToken),
-              let lastLogin = userDefaults.object(forKey: AppConstants.UserDefaultsKeys.lastLoginDate) as? Date else {
-            return false
-        }
-        
-        // 检查会话是否过期（例如24小时）
-        let sessionTimeout: TimeInterval = 24 * 60 * 60 // 24小时
-        return Date().timeIntervalSince(lastLogin) < sessionTimeout
-    }
-    
-    /// 刷新会话token
-    func refreshSession() async throws -> Bool {
-        guard let token = try? keychain.string(forKey: AppConstants.UserDefaultsKeys.authToken) else {
-            return false
-        }
-        
-        // 调用后端API刷新token
-        // 这里应该实现实际的API调用
-        
-        // 模拟成功刷新   
-        userDefaults.set(Date(), forKey: AppConstants.UserDefaultsKeys.lastLoginDate)
-        userDefaults.synchronize()
-        return true
+        // 只检查token是否存在，实际有效性由API决定
+        return getAuthToken() != nil
     }
     
     /// 判断用户配置是否需要更新
