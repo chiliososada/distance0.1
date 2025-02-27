@@ -33,19 +33,19 @@ struct ContentView: View {
 //                } else {
 //                    HomeLoginView()
 //                }
-                if !authManager.isInitialized || authManager.isLoading {
-                    loadingView
-                } else if let error = authManager.error {
-                    errorView(error)
-                } else if authManager.userProfile != nil {
-                    // 如果有用户配置文件，说明已登录
-                    HomeView()
-                } else {
-                    // 没有用户配置文件，显示登录视图
-                    HomeLoginView()
-                }
-           }
-                
+
+               
+                               if !authManager.isInitialized || authManager.isLoading {
+                                   loadingView
+                               } else if let error = authManager.error {
+                                   errorView(error)
+                               } else if authManager.userProfile != nil {
+                                   HomeView()
+                               } else {
+                                   // 显示登录视图
+                                   HomeLoginView()
+                               }
+                           }
             .navigationDestination(for: AppRoute.self) { route in
                 viewForRoute(route)
             }

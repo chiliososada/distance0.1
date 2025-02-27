@@ -115,9 +115,12 @@ final class AppNavigationManager: ObservableObject {
     // MARK: - Core Navigation Methods
     func navigate(to route: AppRoute) {
         print("Navigating to route: \(route)")
-        navigationPath.append(route)
+        // 确保在主线程执行
+        DispatchQueue.main.async {
+            self.navigationPath.append(route)
+            print("Navigation path after append: \(self.navigationPath)")
+        }
     }
-    
     func present(_ route: AppRoute) {
         print("Presenting sheet: \(route)")
         presentedSheet = route
