@@ -14,7 +14,7 @@ enum APIEndpoint {
     case postLocation(LocationPost.Draft)
     case fetchPosts(region: MKCoordinateRegion)
     case checkSession
-    
+    case loginWithFirebaseToken(idToken: String)
     // 新增认证相关端点
     case login(email: String, password: String)
     case register(email: String, name: String, password: String)
@@ -28,11 +28,12 @@ enum APIEndpoint {
     
     var method: HTTPMethod {
         switch self {
-        case .updateUserStatus, .postLocation, .login, .register, .updatePassword, .deleteAccount:
+        case .updateUserStatus, .postLocation, .login, .register, .updatePassword, .deleteAccount,.loginWithFirebaseToken:
             return .post
         case .fetchPosts, .checkSession:
             return .get
         }
+        
     }
     
     var path: String {
@@ -46,7 +47,8 @@ enum APIEndpoint {
             return "/api/posts/nearby"
         case .checkSession:
             return "/api/v1/auth/checksession"
-            
+        case .loginWithFirebaseToken:
+            return "/api/v1/auth/login"
         // 新增路径
         case .login:
             return "/api/v1/auth/login"
@@ -62,6 +64,9 @@ enum APIEndpoint {
     var body: Encodable? {
         switch self {
         // 现有请求体...
+        case .loginWithFirebaseToken(let idToken):
+            return ["id_token": idToken]
+                
         case .updateUserStatus(let isActive):
             return ["isActive": isActive]
         case .postLocation(let draft):

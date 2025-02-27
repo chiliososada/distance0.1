@@ -59,39 +59,15 @@ final class APIClient {
     
     // 添加新方法用于Firebase登录流程
     func loginWithFirebaseToken(_ idToken: String) async throws -> UserProfile {
-        guard let url = URL(string: baseURL + "/api/v1/auth/login") else {
-            throw APIError.invalidURL
+        let endpoint = APIEndpoint.loginWithFirebaseToken(idToken: idToken)
+        let authResponse: AuthResponse = try await fetch(endpoint)
+        
+        // 让SessionManager处理token存储
+        if let token = authResponse.token {
+            await SessionManager.shared.updateSessionWithToken(idToken: token, profile: authResponse.user)
         }
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: Any] = ["id_token": idToken]
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
-        
-        guard let httpResponse = response as? HTTPURLResponse,
-              (200...299).contains(httpResponse.statusCode) else {
-            throw APIError.serverError((response as? HTTPURLResponse)?.statusCode ?? 0)
-        }
-        
-        // 解析并返回用户配置文件
-        do {
-            let userProfile = try JSONDecoder().decode(UserProfile.self, from: data)
-            
-            // 保存token（假设响应中包含token）
-            // 这里需要根据你的后端API响应结构调整
-            if let authResponse = try? JSONDecoder().decode(AuthResponse.self, from: data),
-               let token = authResponse.token {
-                try? KeychainWrapper.standard.set(token, forKey: AppConstants.UserDefaultsKeys.authToken)
-            }
-            
-            return userProfile
-        } catch {
-            throw APIError.decodingError(error)
-        }
+        return authResponse.user
     }
 }
 

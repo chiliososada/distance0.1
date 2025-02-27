@@ -98,7 +98,7 @@ final class SessionManager {
         // 调用后端API刷新token
         // 这里应该实现实际的API调用
         
-        // 模拟成功刷新
+        // 模拟成功刷新   
         userDefaults.set(Date(), forKey: AppConstants.UserDefaultsKeys.lastLoginDate)
         userDefaults.synchronize()
         return true
