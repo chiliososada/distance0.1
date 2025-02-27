@@ -1,8 +1,3 @@
-//
-//  UserProfile.swift
-//  food
-//
-
 import Foundation
 
 // MARK: - User Profile Model
@@ -71,28 +66,43 @@ struct UserProfile: Codable, Identifiable {
         case other = "other"
         case preferNotToSay = "preferNotToSay"
         
+        init(from backendGender: String?) {
+            switch backendGender?.lowercased() {
+            case "male", "男":
+                self = .male
+            case "female", "女":
+                self = .female
+            case "other", "其他":
+                self = .other
+            default:
+                self = .preferNotToSay
+            }
+        }
+        
         var localizedString: String {
             switch self {
             case .male: return "男"
             case .female: return "女"
-            case .other: return "その他"
-            case .preferNotToSay: return "回答しない"
+            case .other: return "其他"
+            case .preferNotToSay: return "不透露"
             }
         }
     }
     
     // MARK: - Initialization
-    init(id: String,
-         userName: String,
-         email: String? = nil,
-         phoneNumber: String? = nil,
-         location: String? = nil,
-         bio: String? = nil,
-         avatarUrl: String? = nil,
-         createdAt: Date = Date(),
-         lastUpdated: Date = Date(),
-         settings: Settings,
-         stats: UserStats) {
+    init(
+        id: String,
+        userName: String,
+        email: String? = nil,
+        phoneNumber: String? = nil,
+        location: String? = nil,
+        bio: String? = nil,
+        avatarUrl: String? = nil,
+        createdAt: Date = Date(),
+        lastUpdated: Date = Date(),
+        settings: Settings,
+        stats: UserStats
+    ) {
         self.id = id
         self.userName = userName
         self.email = email
@@ -104,6 +114,41 @@ struct UserProfile: Codable, Identifiable {
         self.lastUpdated = lastUpdated
         self.settings = settings
         self.stats = stats
+    }
+    
+    // 从后端 UserProfile 初始化的构造方法
+    init(backendProfile: BackendUserProfile) {
+        self.init(
+            id: backendProfile.uid,
+            userName: backendProfile.displayName,
+            email: backendProfile.email,
+            phoneNumber: nil,
+            location: nil,
+            bio: backendProfile.bio,
+            avatarUrl: backendProfile.photoUrl,
+            createdAt: Date(),
+            lastUpdated: Date(),
+            settings: Settings(
+                nickname: backendProfile.displayName,
+                bio: backendProfile.bio ?? "",
+                idNumber: backendProfile.uid,
+                gender: Gender(from: backendProfile.gender),
+                birthDate: Date(), // 可能需要从后端获取
+                notificationsEnabled: true,
+                privacySettings: Settings.PrivacySettings(
+                    isProfilePublic: true,
+                    showLocation: true,
+                    showOnlineStatus: true
+                )
+            ),
+            stats: UserStats(
+                participantsCount: 0,
+                viewedTopicsCount: 0,
+                postsCount: 0,
+                followersCount: 0,
+                followingCount: 0
+            )
+        )
     }
     
     // MARK: - Helper Methods
@@ -143,5 +188,26 @@ struct UserProfile: Codable, Identifiable {
                 followingCount: 285
             )
         )
+    }
+}
+
+// 后端返回的用户信息结构体
+struct BackendUserProfile: Codable {
+    let csrfToken: String
+    let uid: String
+    let displayName: String
+    let photoUrl: String?
+    let email: String
+    let gender: String?
+    let bio: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case csrfToken = "csrf_token"
+        case uid
+        case displayName = "display_name"
+        case photoUrl = "photo_url"
+        case email
+        case gender
+        case bio
     }
 }

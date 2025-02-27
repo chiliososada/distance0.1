@@ -62,19 +62,44 @@ final class APIClient {
         let endpoint = APIEndpoint.loginWithFirebaseToken(idToken: idToken)
         let authResponse: AuthResponse = try await fetch(endpoint)
         
-        // 让SessionManager处理token存储
-        if let token = authResponse.token {
-            await SessionManager.shared.updateSessionWithToken(idToken: token, profile: authResponse.user)
-        }
+        // 使用后台返回的 AuthResponse 直接创建 UserProfile
+        let userProfile = UserProfile(backendProfile: BackendUserProfile(
+            csrfToken: authResponse.csrfToken,
+            uid: authResponse.uid,
+            displayName: authResponse.displayName,
+            photoUrl: authResponse.photoUrl,
+            email: authResponse.email,
+            gender: authResponse.gender,
+            bio: authResponse.bio
+        ))
         
-        return authResponse.user
+        // 使用 csrfToken 更新会话
+        await SessionManager.shared.updateSessionWithToken(idToken: authResponse.csrfToken, profile: userProfile)
+        
+        return userProfile
     }
 }
 
-// 添加认证响应模型
+
+
 private struct AuthResponse: Codable {
-    let token: String?
-    let user: UserProfile
+    let csrfToken: String
+    let uid: String
+    let displayName: String
+    let photoUrl: String?
+    let email: String
+    let gender: String?
+    let bio: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case csrfToken = "csrf_token"
+        case uid
+        case displayName = "display_name"
+        case photoUrl = "photo_url"
+        case email
+        case gender
+        case bio
+    }
 }
 
 private struct EmptyResponse: Codable {}
