@@ -17,6 +17,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     ) {
         Self.shared = self
         guard let windowScene = scene as? UIWindowScene else { return }
+        
+        // 委托给AppRootManager设置根视图
         window = AppRootManager.shared.setupRootView(for: windowScene, managers: managers.environmentManagers)
     }
     
@@ -41,13 +43,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func handleScenePhase(_ phase: ScenePhase) {
         switch phase {
         case .active:
+            // 应用激活时的处理
             break
         case .inactive:
+            // 保存用户默认值
             UserDefaults.standard.synchronize()
         case .background:
+            // 停止位置更新
             if managers.isLocationManagerInitialized() {
                 managers.locationManager.stopUpdatingLocation()
             }
+            // 取消会话检查任务
             sessionCheckTask?.cancel()
         @unknown default:
             break
@@ -73,38 +79,26 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             }
             
             do {
-                // 使用统一的会话验证方法
+                // 验证会话
                 let isValid = try await managers.authManager.validateCurrentSession()
                 
-                if isValid {
-                    // 会话有效，确保用户在主页
-                    if managers.navigationManager.selectedTab != .home {
-                        managers.navigationManager.navigateToHome()
-                    }
-                } else {
-                    // 会话无效，重置导航状态
-                    self.resetNavigationState()
+                if !isValid {
+                    // 会话无效，通知AppRootManager重置到登录状态
+                    AppRootManager.shared.resetRootView(
+                        window: self.window!,
+                        to: .login,
+                        managers: self.managers.environmentManagers
+                    )
                 }
             } catch {
                 print("Session check error: \(error.localizedDescription)")
-                self.resetNavigationState()
+                // 错误时也重置到登录状态
+                AppRootManager.shared.resetRootView(
+                    window: self.window!,
+                    to: .login,
+                    managers: self.managers.environmentManagers
+                )
             }
-        }
-    }
-    
-    private func updateUserStatus(isActive: Bool) async throws {
-        try await UserService.shared.updateUserStatus(isActive: isActive)
-    }
-    
-    private func resetNavigationState() {
-        managers.navigationManager.resetNavigation()
-        // 如果需要，重定向到登录页面
-        DispatchQueue.main.async {
-            AppRootManager.shared.resetRootView(
-                window: self.window!,
-                to: .login,
-                managers: self.managers.environmentManagers
-            )
         }
     }
 }

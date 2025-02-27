@@ -17,17 +17,11 @@ final class SessionManager {
         // 保存token到keychain
         try? keychain.set(idToken, forKey: AppConstants.UserDefaultsKeys.authToken)
         
-        // 保存用户配置文件到UserDefaults
-        if let encoded = try? JSONEncoder().encode(profile) {
-            userDefaults.set(encoded, forKey: AppConstants.UserDefaultsKeys.userProfile)
-        }
-        
-        // 记录最后登录时间
-        userDefaults.set(Date(), forKey: AppConstants.UserDefaultsKeys.lastLoginDate)
-        userDefaults.synchronize()
+        // 保存用户配置文件
+        await updateSession(user: profile)
     }
     
-    /// 更新会话信息，主要保存用户配置文件（旧方法，保持兼容）
+    /// 更新会话信息，主要保存用户配置文件
     func updateSession(user: UserProfile?) async {
         if let user = user {
             // 保存用户配置文件到UserDefaults
@@ -78,7 +72,6 @@ final class SessionManager {
     
     /// 判断会话是否有效 (简化，仅做基本检查)
     func isSessionValid() -> Bool {
-        // 只检查token是否存在，实际有效性由API决定
         return getAuthToken() != nil
     }
     

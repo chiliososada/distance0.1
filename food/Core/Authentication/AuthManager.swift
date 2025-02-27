@@ -30,7 +30,7 @@ final class AuthManager: ObservableObject {
                 self.currentUser = user
                 
                 if !self.isInitialized {
-                    // 尝试从会话管理器加载用户配置文件
+                    // 从会话管理器加载用户配置文件
                     self.userProfile = self.sessionManager.getSavedProfile()
                     self.isInitialized = true
                 }
@@ -41,9 +41,9 @@ final class AuthManager: ObservableObject {
     // MARK: - Public Methods
     @MainActor
     func validateCurrentSession() async throws -> Bool {
-        // 首先检查本地令牌是否存在
-        if sessionManager.getAuthToken() == nil {
-            return false  // 如果没有令牌，直接返回false
+        // 检查会话是否有效，只负责使用SessionManager检查和更新状态
+        guard sessionManager.isSessionValid() else {
+            return false
         }
         
         do {
@@ -56,10 +56,14 @@ final class AuthManager: ObservableObject {
                     self.userProfile = profile
                     return true
                 } else if sessionManager.shouldRefreshProfile() {
-                    // 如果需要刷新用户配置文件，可以在这里实现
-                    // 目前暂时返回true因为会话本身有效
+                    // 如果需要刷新用户配置文件
+                    let profile = try await UserService.shared.refreshUserProfile()
+                    await sessionManager.updateSession(user: profile)
+                    self.userProfile = profile
                     return true
                 }
+                
+                return true
             }
             
             // 会话无效，清理本地状态
@@ -97,9 +101,9 @@ final class AuthManager: ObservableObject {
             let idToken = try await result.user.getIDToken()
             
             // 4. 调用后端API进行真正的登录
-            let userProfile = try await signInWithBackend(idToken: idToken)
+            let userProfile = try await UserService.shared.loginWithFirebaseToken(idToken)
             
-            // 5. 存储session信息
+            // 5. 存储session信息 - 委托给SessionManager
             self.userProfile = userProfile
             await sessionManager.updateSessionWithToken(idToken: idToken, profile: userProfile)
             
@@ -146,7 +150,7 @@ final class AuthManager: ObservableObject {
         defer { isLoading = false }
         
         do {
-            // 1. 清除session
+            // 1. 清除session - 委托给SessionManager
             await sessionManager.clearSession()
             
             // 2. 清除本地状态
@@ -170,8 +174,8 @@ final class AuthManager: ObservableObject {
         defer { isLoading = false }
         
         do {
-            // 由于已经不使用Firebase管理认证，需要调用自己的API
-            try await updatePasswordWithBackend(currentPassword: currentPassword, newPassword: newPassword)
+            // 调用后端API
+            try await UserService.shared.updatePassword(currentPassword: currentPassword, newPassword: newPassword)
             
             // 成功后清除session，强制用户重新登录
             await sessionManager.clearSession()
@@ -192,7 +196,7 @@ final class AuthManager: ObservableObject {
         
         do {
             // 调用后端API删除账户
-            try await deleteAccountWithBackend(password: password)
+            try await UserService.shared.deleteAccount(password: password)
             
             // 清除session
             await sessionManager.clearSession()
@@ -209,18 +213,6 @@ final class AuthManager: ObservableObject {
         let changeRequest = user.createProfileChangeRequest()
         changeRequest.displayName = name
         try await changeRequest.commitChanges()
-    }
-    
-    private func signInWithBackend(idToken: String) async throws -> UserProfile {
-        return try await UserService.shared.loginWithFirebaseToken(idToken)
-    }
-    
-    private func updatePasswordWithBackend(currentPassword: String, newPassword: String) async throws {
-        try await UserService.shared.updatePassword(currentPassword: currentPassword, newPassword: newPassword)
-    }
-    
-    private func deleteAccountWithBackend(password: String) async throws {
-        try await UserService.shared.deleteAccount(password: password)
     }
     
     deinit {
