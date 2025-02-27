@@ -8,7 +8,7 @@ final class AuthManager: ObservableObject {
     @Published private(set) var userProfile: UserProfile?
     @Published private(set) var isLoading = false
     @Published private(set) var error: AuthError?
-    
+    static let shared = AuthManager()
     // MARK: - Dependencies
     private let auth = Auth.auth()
     private let sessionManager: SessionManager
@@ -18,11 +18,13 @@ final class AuthManager: ObservableObject {
     @Published private(set) var isInitialized = false
     // MARK: - Initialization
     init(sessionManager: SessionManager = .shared) {
-        print("AuthManager initialized")
-        self.sessionManager = sessionManager
-        setupAuthStateListener()
+           print("AuthManager initialized")
+           self.sessionManager = sessionManager
+           setupAuthStateListener()
+       }
+    func getIdToken() async throws -> String? {
+        try await currentUser?.getIDToken()
     }
-   
     
     @MainActor
     func validateCurrentSession() async throws -> Bool {
@@ -93,6 +95,9 @@ final class AuthManager: ObservableObject {
               if !result.user.isEmailVerified {
                   throw AuthError.emailNotVerified
               }
+              // 获取 ID Token
+                      let token = try await result.user.getIDToken()
+                      print("Firebase ID Token: \(token)")  // 打印 token 用于测试
           } catch {
               self.error = AuthError.fromFirebaseError(error)
               throw self.error!

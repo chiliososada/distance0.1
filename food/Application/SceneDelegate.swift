@@ -15,10 +15,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         willConnectTo session: UISceneSession,
         options connectionOptions: UIScene.ConnectionOptions
     ) {
-       
         Self.shared = self
-        
-        // 场景初始化时进行认证检查
         checkAuth()
     }
     
@@ -26,6 +23,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneDidBecomeActive(_ scene: UIScene) {
         scenePhase = .active
         handleScenePhase(.active)
+        checkSession()  // 添加会话检查
     }
     
     func sceneWillResignActive(_ scene: UIScene) {
@@ -55,6 +53,28 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
     }
     
+    private func checkSession() {
+        Task { @MainActor in
+            do {
+                let isValid = try await UserService.shared.checkSession()
+                if !isValid {
+                    // 会话无效，重置导航状态并返回登录界面
+                    resetNavigationState()
+                } else {
+                    // 会话有效，更新用户状态
+                    try await updateUserStatus(isActive: true)
+                }
+            } catch {
+                print("Session check error: \(error.localizedDescription)")
+                resetNavigationState()
+            }
+        }
+    }
+    
+    private func updateUserStatus(isActive: Bool) async throws {
+        try await UserService.shared.updateUserStatus(isActive: isActive)
+    }
+    
     private func checkAuth() {
         guard !isCheckingAuth else { return }
         
@@ -65,9 +85,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.isCheckingAuth = true
             defer { self.isCheckingAuth = false }
             
-            // 等待认证管理器初始化完成
             while !managers.authManager.isInitialized {
-                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
+                try? await Task.sleep(nanoseconds: 100_000_000)
             }
             
             do {
@@ -87,7 +106,6 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     private func updateUIForUser(_ user: User) async {
         if user.isEmailVerified {
             if managers.authManager.userProfile != nil {
-                // 如果用户已验证且有profile，只需确保在主页
                 if managers.navigationManager.selectedTab != .home {
                     managers.navigationManager.navigateToHome()
                 }
