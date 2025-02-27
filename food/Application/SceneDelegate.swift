@@ -85,15 +85,20 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
             self.isCheckingAuth = true
             defer { self.isCheckingAuth = false }
             
+            // 等待认证管理器初始化完成
             while !managers.authManager.isInitialized {
-                try? await Task.sleep(nanoseconds: 100_000_000)
+                try? await Task.sleep(nanoseconds: 100_000_000) // 100ms
             }
             
             do {
-                if let user = Auth.auth().currentUser {
-                    try await user.reload()
-                    await self.updateUIForUser(user)
+                // 检查会话是否有效
+                if try await managers.authManager.validateCurrentSession() {
+                    // 如果会话有效，确保在主页
+                    if managers.navigationManager.selectedTab != .home {
+                        managers.navigationManager.navigateToHome()
+                    }
                 } else {
+                    // 会话无效，重置导航
                     self.resetNavigationState()
                 }
             } catch {

@@ -56,41 +56,38 @@ final class CreateAccountViewModel: ObservableObject {
     // MARK: - Public Methods
    
     @MainActor
-        func createAccount() async throws {
-            guard validateForm() else { return }
-            isLoading = true
-            defer {
-                        isLoading = false
-            }
-                    
-            
-            do {
-                print("Starting account creation for: \(formData.emailOrPhone)")
-                
-                let registrationData = RegistrationData(
-                    email: formData.emailOrPhone,
-                    password: formData.password,
-                    name: formData.name
-                )
-                
-                // 执行注册
-                try await authManager.signUp(with: registrationData)
-                try? await Task.sleep(nanoseconds: 1_000_000_000)// 给状态一点时间更新
-                // 注册成功后，记录邮箱用于后续验证
-                self.registrationEmail = formData.emailOrPhone
-                
-            } catch let error as AuthError {
-                print("Auth error occurred: \(error.localizedDescription)")
-                handleAuthError(error)
-                throw error
-            } catch {
-                print("Unexpected error: \(error.localizedDescription)")
-                handleError(error)
-                throw error
-            }
-            
+    func createAccount() async throws {
+        guard validateForm() else { return }
+        isLoading = true
+        defer {
             isLoading = false
         }
+        
+        do {
+            print("Starting account creation for: \(formData.emailOrPhone)")
+            
+            let registrationData = RegistrationData(
+                email: formData.emailOrPhone,
+                password: formData.password,
+                name: formData.name
+            )
+            
+            // 执行注册
+            try await authManager.signUp(with: registrationData)
+            
+            // 注册成功后，记录邮箱用于后续验证
+            self.registrationEmail = formData.emailOrPhone
+            
+        } catch let error as AuthError {
+            print("Auth error occurred: \(error.localizedDescription)")
+            handleAuthError(error)
+            throw error
+        } catch {
+            print("Unexpected error: \(error.localizedDescription)")
+            handleError(error)
+            throw error
+        }
+    }           
         
         private func handleAuthError(_ error: AuthError) {
             alertMessage = error.errorDescription ?? "注册失败"

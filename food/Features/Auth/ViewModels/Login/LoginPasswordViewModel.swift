@@ -28,55 +28,43 @@ final class LoginPasswordViewModel: ObservableObject {
         isLoginEnabled = !authData.password.isEmpty
     }
     
-    /// 执行登录操作
-        func login() async {
-            guard validateInput() else { return }
+    func login() async {
+        guard validateInput() else { return }
+        
+        isLoading = true
+        defer { isLoading = false }
+        print("Starting login process for email: \(authData.email)")
+        
+        do {
+            let credentials = AuthCredentials(
+                email: authData.email,
+                password: authData.password
+            )
             
-            isLoading = true
-            defer { isLoading = false }
-            print("Starting login process for email: \(authData.email)")
+            print("Attempting to sign in...")
+            try await authManager.signIn(with: credentials)
             
-            do {
-                let credentials = AuthCredentials(
-                    email: authData.email,
-                    password: authData.password
-                )
-                
-                print("Attempting to sign in...")
-                try await authManager.signIn(with: credentials)
-                
-                // 给Firebase一点时间更新状态
-                try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5秒
-                
-                // 验证登录结果
-                if let user = authManager.currentUser {
-                    if user.isEmailVerified {
-                        print("Login successful, user is verified")
-                        await MainActor.run {
-                            loginSuccess = true
-                        }
-                    } else {
-                        print("Email not verified")
-                        errorMessage = "请先验证您的邮箱"
-                        showError = true
-                    }
-                } else {
-                    print("No user found after sign in")
-                    errorMessage = "登录失败，请稍后重试"
-                    showError = true
+            // 验证登录结果 - 现在检查userProfile而不是currentUser
+            if authManager.userProfile != nil {
+                print("Login successful, session established")
+                await MainActor.run {
+                    loginSuccess = true
                 }
-                
-            } catch let error as AuthError {
-                print("Auth error caught: \(error.localizedDescription)")
-                handleAuthError(error)
-            } catch {
-                print("Unexpected error: \(error.localizedDescription)")
-                errorMessage = "登录失败：\(error.localizedDescription)"
+            } else {
+                print("Session not established")
+                errorMessage = "登录失败，请稍后重试"
                 showError = true
             }
             
-            isLoading = false
+        } catch let error as AuthError {
+            print("Auth error caught: \(error.localizedDescription)")
+            handleAuthError(error)
+        } catch {
+            print("Unexpected error: \(error.localizedDescription)")
+            errorMessage = "登录失败：\(error.localizedDescription)"
+            showError = true
         }
+    }
     
     // MARK: - Private Methods
     

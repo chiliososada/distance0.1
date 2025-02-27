@@ -35,48 +35,61 @@ final class VerificationViewModel: ObservableObject {
     // MARK: - Public Methods
    
     func verifyEmail() async throws -> Bool {
-            print("Starting verification process...")
-            print("Stored userID: \(userID ?? "none")")
-            
-            guard let user = Auth.auth().currentUser else {
-                print("No user found in verifyEmail")
-                errorMessage = "用户未登录"
-                showError = true
-                return false
+        print("Starting verification process...")
+        
+        isLoading = true
+        defer { isLoading = false }
+        
+        do {
+            // 此处需要临时使用Firebase验证邮箱状态
+            if await verifyEmailWithFirebase() {
+                return true
             }
             
-            isLoading = true
-            defer { isLoading = false }
+            errorMessage = "邮箱尚未验证，请查看邮箱并点击验证链接"
+            showError = true
+            return false
             
-            do {
-                // 多次尝试验证
-                for attempt in 1...3 {
-                    print("Verification attempt \(attempt) for user: \(user.uid)")
-                    
-                    try await user.reload()
-                    
-                    // 重新获取用户状态
-                    if let freshUser = Auth.auth().currentUser, freshUser.isEmailVerified {
-                        print("Email verified successfully for user: \(freshUser.uid)")
-                        userID = freshUser.uid
-                        return true
-                    }
-                    
-                    if attempt < 3 {
-                        try await Task.sleep(nanoseconds: 2_000_000_000)
-                    }
-                }
-                
-                errorMessage = "邮箱尚未验证，请查看邮箱并点击验证链接"
-                showError = true
-                return false
-                
-            } catch {
-                print("Verification error: \(error)")
-                handleError(error)
-                return false
-            }
+        } catch {
+            print("Verification error: \(error)")
+            handleError(error)
+            return false
         }
+    }
+
+    // 新增临时验证方法
+    private func verifyEmailWithFirebase() async -> Bool {
+        do {
+            // 为了验证邮箱，需要临时登录Firebase
+            // 注意：这里需要用户重新输入密码
+            if password.isEmpty {
+                errorMessage = "请输入密码进行验证"
+                showError = true
+                return false
+            }
+            
+            let credential = EmailAuthProvider.credential(
+                withEmail: email,
+                password: password
+            )
+            
+            let result = try await Auth.auth().signIn(with: credential)
+            
+            // 检查邮箱是否已验证
+            try await result.user.reload()
+            let isVerified = result.user.isEmailVerified
+            
+            // 无论成功与否，都退出Firebase
+            try? Auth.auth().signOut()
+            
+            return isVerified
+        } catch {
+            return false
+        }
+    }
+
+    // 需要在VerificationViewModel中添加密码属性
+    @Published var password: String = ""
     
     @MainActor
     func resendVerificationEmail() async {

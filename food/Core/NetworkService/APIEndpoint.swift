@@ -9,10 +9,17 @@ enum HTTPMethod: String {
 }
 
 enum APIEndpoint {
+    // 现有端点...
     case updateUserStatus(isActive: Bool)
     case postLocation(LocationPost.Draft)
     case fetchPosts(region: MKCoordinateRegion)
     case checkSession
+    
+    // 新增认证相关端点
+    case login(email: String, password: String)
+    case register(email: String, name: String, password: String)
+    case updatePassword(currentPassword: String, newPassword: String)
+    case deleteAccount(password: String)
     
     var headers: [String: String] {
         var headers = ["Content-Type": "application/json"]
@@ -21,7 +28,7 @@ enum APIEndpoint {
     
     var method: HTTPMethod {
         switch self {
-        case .updateUserStatus, .postLocation:
+        case .updateUserStatus, .postLocation, .login, .register, .updatePassword, .deleteAccount:
             return .post
         case .fetchPosts, .checkSession:
             return .get
@@ -30,6 +37,7 @@ enum APIEndpoint {
     
     var path: String {
         switch self {
+        // 现有路径...
         case .updateUserStatus:
             return "/api/users/status"
         case .postLocation:
@@ -38,11 +46,22 @@ enum APIEndpoint {
             return "/api/posts/nearby"
         case .checkSession:
             return "/api/v1/auth/checksession"
+            
+        // 新增路径
+        case .login:
+            return "/api/v1/auth/login"
+        case .register:
+            return "/api/v1/auth/register"
+        case .updatePassword:
+            return "/api/v1/auth/password"
+        case .deleteAccount:
+            return "/api/v1/auth/account"
         }
     }
     
     var body: Encodable? {
         switch self {
+        // 现有请求体...
         case .updateUserStatus(let isActive):
             return ["isActive": isActive]
         case .postLocation(let draft):
@@ -55,7 +74,17 @@ enum APIEndpoint {
                 "longitudeDelta": region.span.longitudeDelta
             ]
         case .checkSession:
-            return nil  // GET 请求不需要请求体
+            return nil
+            
+        // 新增请求体
+        case .login(let email, let password):
+            return ["email": email, "password": password]
+        case .register(let email, let name, let password):
+            return ["email": email, "name": name, "password": password]
+        case .updatePassword(let currentPassword, let newPassword):
+            return ["currentPassword": currentPassword, "newPassword": newPassword]
+        case .deleteAccount(let password):
+            return ["password": password]
         }
     }
 }

@@ -6,7 +6,9 @@ final class GlobalManagers: ObservableObject {
     
     // 基础管理器
     private(set) lazy var navigationManager = AppNavigationManager.shared
-    private(set) lazy var authManager = AuthManager.shared 
+    
+    // 改为直接创建AuthManager实例，而不是使用.shared
+    private(set) lazy var authManager = AuthManager()
     
     // LocationManager 改为按需获取
     // 改为 internal 访问级别
