@@ -48,10 +48,10 @@ enum APIEndpoint {
         case .checkSession:
             return "/api/v1/auth/checksession"
         case .loginWithFirebaseToken:
-            return "/api/v1/auth/login"
+            return "/api/v1/login"
         // 新增路径
         case .login:
-            return "/api/v1/auth/login"
+            return "/api/v1/login"
         case .register:
             return "/api/v1/auth/register"
         case .updatePassword:

@@ -23,93 +23,133 @@
       <BreakpointProxy
          BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
          <BreakpointContent
-            uuid = "2A5F5054-6AFA-47FE-B81D-00C3410534AC"
+            uuid = "21E2151B-8B53-442C-A524-FC96D70ED668"
             shouldBeEnabled = "Yes"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "food/Application/AppRootManager.swift"
+            filePath = "food/Core/Authentication/AuthManager.swift"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "40"
-            endingLineNumber = "40"
-            landmarkName = "resetRootView(window:to:managers:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "7CF3BA10-D186-41A9-81E0-5B824F4EFFAE"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "food/Application/AppRootManager.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "47"
-            endingLineNumber = "47"
-            landmarkName = "resetRootView(window:to:managers:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "B2E1302A-4274-4604-8DC2-F6C7E2A9F7FF"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "food/Application/AppRootManager.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "50"
-            endingLineNumber = "50"
-            landmarkName = "resetRootView(window:to:managers:)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            uuid = "CD1B6CBF-8369-4931-883B-248D86E41943"
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "food/Application/AppRootManager.swift"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "54"
-            endingLineNumber = "54"
-            landmarkName = "resetRootView(window:to:managers:)"
+            startingLineNumber = "104"
+            endingLineNumber = "104"
+            landmarkName = "signIn(with:)"
             landmarkType = "7">
             <Locations>
                <Location
-                  uuid = "CD1B6CBF-8369-4931-883B-248D86E41943 - eb267b0edbde861c"
+                  uuid = "21E2151B-8B53-442C-A524-FC96D70ED668 - 60e4590f7e32a6e3"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "food.AppRootManager.resetRootView(window: __C.UIWindow, to: food.RootViewDestination, managers: food.EnvironmentManagers) -&gt; ()"
+                  symbolName = "(7) suspend resume partial function for food.AuthManager.signIn(with: food.AuthCredentials) async throws -&gt; ()"
                   moduleName = "food.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Application/AppRootManager.swift"
+                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Core/Authentication/AuthManager.swift"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "54"
-                  endingLineNumber = "54">
+                  startingLineNumber = "104"
+                  endingLineNumber = "104">
                </Location>
                <Location
-                  uuid = "CD1B6CBF-8369-4931-883B-248D86E41943 - eb267b0edbde861c"
+                  uuid = "21E2151B-8B53-442C-A524-FC96D70ED668 - 45387bf09ffeabbd"
                   shouldBeEnabled = "Yes"
                   ignoreCount = "0"
                   continueAfterRunningActions = "No"
-                  symbolName = "food.AppRootManager.resetRootView(window: __C.UIWindow, to: food.RootViewDestination, managers: food.EnvironmentManagers) -&gt; ()"
+                  symbolName = "(8) await resume partial function for food.AuthManager.signIn(with: food.AuthCredentials) async throws -&gt; ()"
                   moduleName = "food.debug.dylib"
                   usesParentBreakpointCondition = "Yes"
-                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Application/AppRootManager.swift"
+                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Core/Authentication/AuthManager.swift"
                   startingColumnNumber = "9223372036854775807"
                   endingColumnNumber = "9223372036854775807"
-                  startingLineNumber = "54"
-                  endingLineNumber = "54">
+                  startingLineNumber = "104"
+                  endingLineNumber = "104">
+               </Location>
+               <Location
+                  uuid = "21E2151B-8B53-442C-A524-FC96D70ED668 - c9960a5a691be2e5"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(9) suspend resume partial function for food.AuthManager.signIn(with: food.AuthCredentials) async throws -&gt; ()"
+                  moduleName = "food.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Core/Authentication/AuthManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "104"
+                  endingLineNumber = "104">
+               </Location>
+               <Location
+                  uuid = "21E2151B-8B53-442C-A524-FC96D70ED668 - 75d3a45aa1f6152b"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(15) suspend resume partial function for food.AuthManager.signIn(with: food.AuthCredentials) async throws -&gt; ()"
+                  moduleName = "food.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Core/Authentication/AuthManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "104"
+                  endingLineNumber = "104">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "BFD43AAA-CB2E-48DF-8B3A-2F1E6BC61E39"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "food/Core/Authentication/AuthManager.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "108"
+            endingLineNumber = "108"
+            landmarkName = "signIn(with:)"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "BFD43AAA-CB2E-48DF-8B3A-2F1E6BC61E39 - c9960a5a691be259"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(9) suspend resume partial function for food.AuthManager.signIn(with: food.AuthCredentials) async throws -&gt; ()"
+                  moduleName = "food.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Core/Authentication/AuthManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "108"
+                  endingLineNumber = "108">
+               </Location>
+               <Location
+                  uuid = "BFD43AAA-CB2E-48DF-8B3A-2F1E6BC61E39 - dcf5d411482a76f5"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(10) await resume partial function for food.AuthManager.signIn(with: food.AuthCredentials) async throws -&gt; ()"
+                  moduleName = "food.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Core/Authentication/AuthManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "108"
+                  endingLineNumber = "108">
+               </Location>
+               <Location
+                  uuid = "BFD43AAA-CB2E-48DF-8B3A-2F1E6BC61E39 - 461722233ad9819b"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(11) suspend resume partial function for food.AuthManager.signIn(with: food.AuthCredentials) async throws -&gt; ()"
+                  moduleName = "food.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/toyousoft/Documents/Food-App-UI-by-using-SwiftUI/food/Core/Authentication/AuthManager.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "108"
+                  endingLineNumber = "108">
                </Location>
             </Locations>
          </BreakpointContent>

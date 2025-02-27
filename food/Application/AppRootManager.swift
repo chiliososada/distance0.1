@@ -13,53 +13,38 @@ final class AppRootManager {
         print("Setting up root view")
         let window = UIWindow(windowScene: windowScene)
         
-        // 判断用户是否已登录
-        let isAuthenticated = managers.authManager.userProfile != nil
-        let destination: RootViewDestination = isAuthenticated ? .home : .login
-        
-        // 创建适当的根视图
+        // 始终使用ContentView作为根视图
         if contentViewController == nil {
-            let rootView = makeRootView(for: destination, managers: managers)
-            contentViewController = UIHostingController(rootView: AnyView(rootView))
+            contentViewController = UIHostingController(
+                rootView: AnyView(
+                    ContentView()
+                        .environmentObject(managers.authManager)
+                        .environmentObject(managers.navigationManager)
+                        .environmentObject(managers.locationManager)
+                )
+            )
         }
         
         window.rootViewController = contentViewController
         window.makeKeyAndVisible()
-        print("Setting up root view finish")
         return window
     }
+
     
     func resetRootView(
         window: UIWindow,
         to destination: RootViewDestination,
         managers: EnvironmentManagers
     ) {
-        print("Resetting root view to: \(destination)")
-        
         // 重置导航状态
         managers.navigationManager.resetNavigation()
         
-        // 创建新的根视图
-        let rootView = AnyView(makeRootView(for: destination, managers: managers))
-        
-        if let existingController = contentViewController {
-            // 更新现有控制器的根视图
-            existingController.rootView = rootView
-        } else {
-            // 创建新的控制器
-            contentViewController = UIHostingController(rootView: rootView)
-        }
-        
-        // 应用转场动画
-        if let controller = contentViewController {
-            UIView.transition(
-                with: window,
-                duration: 0.3,
-                options: .transitionCrossDissolve,
-                animations: {
-                    window.rootViewController = controller
-                }
-            )
+        // 使用ContentView但不创建新实例，只需触发内部状态更新
+        if let authManager = managers.authManager as? AuthManager {
+            // 触发AuthManager的状态更新，ContentView会响应这些变化
+            Task { @MainActor in
+                try? await authManager.validateCurrentSession()
+            }
         }
     }
     
