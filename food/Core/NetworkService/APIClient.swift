@@ -44,6 +44,7 @@ final class APIClient {
             switch httpResponse.statusCode {
             case 200...299:
                 do {
+                    print("httpResponse.statusCode: \(httpResponse.statusCode)")
                     return try JSONDecoder().decode(T.self, from: data)
                 } catch {
                     throw APIError.decodingError(error)
@@ -82,17 +83,22 @@ final class APIClient {
     // 使用Firebase令牌登录的方法
     func loginWithFirebaseToken(_ idToken: String) async throws -> UserProfile {
         let endpoint = APIEndpoint.loginWithFirebaseToken(idToken: idToken)
-        let authResponse: AuthResponse = try await fetch(endpoint)
         
-        // 使用后台返回的 AuthResponse 直接创建 UserProfile
-        let userProfile = UserProfile(backendProfile: BackendUserProfile(
+        let authResponse: AuthResponse = try await fetch(endpoint)
+
+        // 使用后台返回的 AuthResponse 创建 UserProfile
+        var userProfile = UserProfile(backendProfile: BackendUserProfile(
             csrfToken: authResponse.csrfToken,
+            chatToken: authResponse.chatToken,
             uid: authResponse.uid,
             displayName: authResponse.displayName,
             photoUrl: authResponse.photoUrl,
             email: authResponse.email,
             gender: authResponse.gender,
-            bio: authResponse.bio
+            bio: authResponse.bio,
+            session: authResponse.session,
+            chatId: authResponse.chatId,
+            chatUrl: authResponse.chatUrl
         ))
         
         // 使用 csrfToken 更新会话
@@ -100,25 +106,34 @@ final class APIClient {
         
         return userProfile
     }
+    
 }
 
 private struct AuthResponse: Codable {
     let csrfToken: String
+    let chatToken: String
     let uid: String
     let displayName: String
     let photoUrl: String?
     let email: String
     let gender: String?
     let bio: String?
+    let session: String?
+    let chatId: [String]
+    let chatUrl: String?
     
     enum CodingKeys: String, CodingKey {
         case csrfToken = "csrf_token"
+        case chatToken = "chat_token"
         case uid
         case displayName = "display_name"
         case photoUrl = "photo_url"
         case email
         case gender
         case bio
+        case session
+        case chatId = "chat_id"
+        case chatUrl = "chat_url"
     }
 }
 

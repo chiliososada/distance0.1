@@ -12,7 +12,12 @@ struct UserProfile: Codable, Identifiable {
     var avatarUrl: String?
     let createdAt: Date
     var lastUpdated: Date
-    
+    // 添加新属性
+       var chatToken: String?
+       var session: String?
+       var chatId: [String]?
+       var chatUrl: String?
+
     // MARK: - Settings
     var settings: Settings
     var stats: UserStats
@@ -118,38 +123,44 @@ struct UserProfile: Codable, Identifiable {
     
     // 从后端 UserProfile 初始化的构造方法
     init(backendProfile: BackendUserProfile) {
-        self.init(
-            id: backendProfile.uid,
-            userName: backendProfile.displayName,
-            email: backendProfile.email,
-            phoneNumber: nil,
-            location: nil,
-            bio: backendProfile.bio,
-            avatarUrl: backendProfile.photoUrl,
-            createdAt: Date(),
-            lastUpdated: Date(),
-            settings: Settings(
-                nickname: backendProfile.displayName,
-                bio: backendProfile.bio ?? "",
-                idNumber: backendProfile.uid,
-                gender: Gender(from: backendProfile.gender),
-                birthDate: Date(), // 可能需要从后端获取
-                notificationsEnabled: true,
-                privacySettings: Settings.PrivacySettings(
-                    isProfilePublic: true,
-                    showLocation: true,
-                    showOnlineStatus: true
-                )
-            ),
-            stats: UserStats(
-                participantsCount: 0,
-                viewedTopicsCount: 0,
-                postsCount: 0,
-                followersCount: 0,
-                followingCount: 0
-            )
-        )
-    }
+          self.init(
+              id: backendProfile.uid,
+              userName: backendProfile.displayName,
+              email: backendProfile.email,
+              phoneNumber: nil,
+              location: nil,
+              bio: backendProfile.bio,
+              avatarUrl: backendProfile.photoUrl,
+              createdAt: Date(),
+              lastUpdated: Date(),
+              settings: Settings(
+                  nickname: backendProfile.displayName,
+                  bio: backendProfile.bio ?? "",
+                  idNumber: backendProfile.uid,
+                  gender: Gender(from: backendProfile.gender),
+                  birthDate: Date(), // 可能需要从后端获取
+                  notificationsEnabled: true,
+                  privacySettings: Settings.PrivacySettings(
+                      isProfilePublic: true,
+                      showLocation: true,
+                      showOnlineStatus: true
+                  )
+              ),
+              stats: UserStats(
+                  participantsCount: 0,
+                  viewedTopicsCount: 0,
+                  postsCount: 0,
+                  followersCount: 0,
+                  followingCount: 0
+              )
+          )
+          
+          // 设置新增的属性
+          self.chatToken = backendProfile.chatToken
+          self.session = backendProfile.session
+          self.chatId = backendProfile.chatId
+          self.chatUrl = backendProfile.chatUrl
+      }
     
     // MARK: - Helper Methods
     func formattedJoinDate() -> String {
@@ -194,20 +205,29 @@ struct UserProfile: Codable, Identifiable {
 // 后端返回的用户信息结构体
 struct BackendUserProfile: Codable {
     let csrfToken: String
+    let chatToken: String
     let uid: String
     let displayName: String
     let photoUrl: String?
     let email: String
     let gender: String?
     let bio: String?
+    let session: String?
+    let chatId: [String]
+    let chatUrl: String?
     
     enum CodingKeys: String, CodingKey {
         case csrfToken = "csrf_token"
+        case chatToken = "chat_token"
         case uid
         case displayName = "display_name"
         case photoUrl = "photo_url"
         case email
         case gender
         case bio
+        case session
+        case chatId = "chat_id"
+        case chatUrl = "chat_url"
     }
 }
+
