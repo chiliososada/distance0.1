@@ -15,7 +15,7 @@ struct UserProfile: Codable, Identifiable {
     // 添加新属性
     var chatToken: String?
     var session: String?
-    var chatID: [String]?  // 修改为chatID以保持一致性
+    var chatID: [String]?  // 聊天ID数组
     var chatUrl: String?
 
     // MARK: - Settings
@@ -162,7 +162,6 @@ struct UserProfile: Codable, Identifiable {
                 followingCount: 0
             ),
             chatToken: backendProfile.chatToken,
-            //session: backendProfile.session,
             chatID: backendProfile.chatID,
             chatUrl: backendProfile.chatUrl
         )
@@ -209,7 +208,7 @@ struct UserProfile: Codable, Identifiable {
 }
 
 // 后端返回的用户信息结构体
-struct BackendUserProfile: Codable {
+struct BackendUserProfile {
     let csrfToken: String
     let uid: String
     let displayName: String
@@ -218,21 +217,31 @@ struct BackendUserProfile: Codable {
     let gender: String?
     let bio: String?
     let chatToken: String
-   // let session: String
     let chatID: [String]  // 确保使用chatID（大写ID）
     let chatUrl: String
     
-    enum CodingKeys: String, CodingKey {
-        case csrfToken = "CsrfToken"
-        case uid = "UID"
-        case displayName = "DisplayName"
-        case photoUrl = "PhotoUrl"
-        case email = "Email"
-        case gender = "Gender"
-        case bio = "Bio"
-        case chatToken = "ChatToken"
-       // case session = "Session"
-        case chatID = "ChatID"  // 映射到大写的ChatID
-        case chatUrl = "ChatUrl"
+    // 手动初始化方法，不使用Codable
+    init(
+        csrfToken: String,
+        uid: String,
+        displayName: String,
+        photoUrl: String?,
+        email: String,
+        gender: String?,
+        bio: String?,
+        chatToken: String,
+        chatID: [String],
+        chatUrl: String
+    ) {
+        self.csrfToken = csrfToken
+        self.uid = uid
+        self.displayName = displayName
+        self.photoUrl = photoUrl
+        self.email = email
+        self.gender = gender
+        self.bio = bio
+        self.chatToken = chatToken
+        self.chatID = chatID
+        self.chatUrl = chatUrl
     }
 }
