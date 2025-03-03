@@ -31,22 +31,60 @@ final class APIClient {
         }
         
         if let body = endpoint.body {
-            request.httpBody = try? JSONEncoder().encode(body)
+            let encoder = JSONEncoder()
+            let data = try encoder.encode(body)
+            request.httpBody = data
+            
+            // 调试打印请求体
+            if let bodyString = String(data: data, encoding: .utf8) {
+                print("Request body: \(bodyString)")
+            }
         }
         
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
+            // 调试打印响应数据
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("Response data: \(responseString)")
+            }
+            
             guard let httpResponse = response as? HTTPURLResponse else {
                 throw APIError.invalidResponse
+            }
+            
+            print("HTTP Status Code: \(httpResponse.statusCode)")
+            
+            // 首先检查响应是否包含错误信息
+            if let errorResponse = try? JSONDecoder().decode(ErrorResponse.self, from: data) {
+                if errorResponse.code != 0 {
+                    print("服务器返回了错误: \(errorResponse.code) - \(errorResponse.message)")
+                    throw APIError.serverError(errorResponse.code)
+                }
             }
             
             switch httpResponse.statusCode {
             case 200...299:
                 do {
-                    print("httpResponse.statusCode: \(httpResponse.statusCode)")
-                    return try JSONDecoder().decode(T.self, from: data)
+                    let decoder = JSONDecoder()
+                    return try decoder.decode(T.self, from: data)
+                } catch let decodingError as DecodingError {
+                    // 详细打印解码错误
+                    switch decodingError {
+                    case .keyNotFound(let key, let context):
+                        print("解码错误：找不到键 '\(key.stringValue)'，路径：\(context.codingPath.map { $0.stringValue })")
+                    case .valueNotFound(let type, let context):
+                        print("解码错误：找不到类型为 \(type) 的值，路径：\(context.codingPath.map { $0.stringValue })")
+                    case .typeMismatch(let type, let context):
+                        print("解码错误：类型不匹配，期望类型 \(type)，路径：\(context.codingPath.map { $0.stringValue })")
+                    case .dataCorrupted(let context):
+                        print("解码错误：数据已损坏，\(context)")
+                    @unknown default:
+                        print("未知解码错误: \(decodingError)")
+                    }
+                    throw APIError.decodingError(decodingError)
                 } catch {
+                    print("其他错误: \(error)")
                     throw APIError.decodingError(error)
                 }
             case 401:
@@ -84,29 +122,39 @@ final class APIClient {
     func loginWithFirebaseToken(_ idToken: String) async throws -> UserProfile {
         let endpoint = APIEndpoint.loginWithFirebaseToken(idToken: idToken)
         
-        let authResponse: AuthResponse = try await fetch(endpoint)
-
-        // 使用后台返回的 AuthResponse 创建 UserProfile
-        var userProfile = UserProfile(backendProfile: BackendUserProfile(
-            csrfToken: authResponse.csrfToken,
-            chatToken: authResponse.chatToken,
-            uid: authResponse.uid,
-            displayName: authResponse.displayName,
-            photoUrl: authResponse.photoUrl,
-            email: authResponse.email,
-            gender: authResponse.gender,
-            bio: authResponse.bio,
-            session: authResponse.session,
-            chatId: authResponse.chatId,
-            chatUrl: authResponse.chatUrl
-        ))
-        
-        // 使用 csrfToken 更新会话
-        await SessionManager.shared.updateSessionWithToken(idToken: authResponse.csrfToken, profile: userProfile)
-        
-        return userProfile
+        do {
+            let authResponse: AuthResponse = try await fetch(endpoint)
+            
+            // 使用后台返回的 AuthResponse 直接创建 UserProfile
+            let userProfile = UserProfile(backendProfile: BackendUserProfile(
+                csrfToken: authResponse.csrfToken,
+                uid: authResponse.uid,
+                displayName: authResponse.displayName,
+                photoUrl: authResponse.photoUrl,
+                email: authResponse.email,
+                gender: authResponse.gender,
+                bio: authResponse.bio,
+                chatToken: authResponse.chatToken,
+               // session: authResponse.session,
+                chatID: authResponse.chatID,
+                chatUrl: authResponse.chatUrl
+            ))
+            
+            // 使用 csrfToken 更新会话
+            await SessionManager.shared.updateSessionWithToken(idToken: authResponse.csrfToken, profile: userProfile)
+            
+            return userProfile
+        } catch {
+            print("登录失败: \(error.localizedDescription)")
+            throw error
+        }
     }
-    
+}
+
+// 添加错误响应结构
+private struct ErrorResponse: Codable {
+    let code: Int
+    let message: String
 }
 
 private struct AuthResponse: Codable {
@@ -118,21 +166,21 @@ private struct AuthResponse: Codable {
     let email: String
     let gender: String?
     let bio: String?
-    let session: String?
-    let chatId: [String]
-    let chatUrl: String?
+    //let session: String
+    let chatID: [String]
+    let chatUrl: String
     
     enum CodingKeys: String, CodingKey {
         case csrfToken = "csrf_token"
         case chatToken = "chat_token"
-        case uid
+        case uid = "uid"
         case displayName = "display_name"
         case photoUrl = "photo_url"
-        case email
-        case gender
-        case bio
-        case session
-        case chatId = "chat_id"
+        case email = "email"
+        case gender = "gender"
+        case bio = "bio"
+        //case session = "Session"
+        case chatID = "chat_id"
         case chatUrl = "chat_url"
     }
 }

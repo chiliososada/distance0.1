@@ -13,10 +13,10 @@ struct UserProfile: Codable, Identifiable {
     let createdAt: Date
     var lastUpdated: Date
     // 添加新属性
-       var chatToken: String?
-       var session: String?
-       var chatId: [String]?
-       var chatUrl: String?
+    var chatToken: String?
+    var session: String?
+    var chatID: [String]?  // 修改为chatID以保持一致性
+    var chatUrl: String?
 
     // MARK: - Settings
     var settings: Settings
@@ -106,7 +106,11 @@ struct UserProfile: Codable, Identifiable {
         createdAt: Date = Date(),
         lastUpdated: Date = Date(),
         settings: Settings,
-        stats: UserStats
+        stats: UserStats,
+        chatToken: String? = nil,
+        session: String? = nil,
+        chatID: [String]? = nil,
+        chatUrl: String? = nil
     ) {
         self.id = id
         self.userName = userName
@@ -119,48 +123,50 @@ struct UserProfile: Codable, Identifiable {
         self.lastUpdated = lastUpdated
         self.settings = settings
         self.stats = stats
+        self.chatToken = chatToken
+        self.session = session
+        self.chatID = chatID
+        self.chatUrl = chatUrl
     }
     
     // 从后端 UserProfile 初始化的构造方法
     init(backendProfile: BackendUserProfile) {
-          self.init(
-              id: backendProfile.uid,
-              userName: backendProfile.displayName,
-              email: backendProfile.email,
-              phoneNumber: nil,
-              location: nil,
-              bio: backendProfile.bio,
-              avatarUrl: backendProfile.photoUrl,
-              createdAt: Date(),
-              lastUpdated: Date(),
-              settings: Settings(
-                  nickname: backendProfile.displayName,
-                  bio: backendProfile.bio ?? "",
-                  idNumber: backendProfile.uid,
-                  gender: Gender(from: backendProfile.gender),
-                  birthDate: Date(), // 可能需要从后端获取
-                  notificationsEnabled: true,
-                  privacySettings: Settings.PrivacySettings(
-                      isProfilePublic: true,
-                      showLocation: true,
-                      showOnlineStatus: true
-                  )
-              ),
-              stats: UserStats(
-                  participantsCount: 0,
-                  viewedTopicsCount: 0,
-                  postsCount: 0,
-                  followersCount: 0,
-                  followingCount: 0
-              )
-          )
-          
-          // 设置新增的属性
-          self.chatToken = backendProfile.chatToken
-          self.session = backendProfile.session
-          self.chatId = backendProfile.chatId
-          self.chatUrl = backendProfile.chatUrl
-      }
+        self.init(
+            id: backendProfile.uid,
+            userName: backendProfile.displayName,
+            email: backendProfile.email,
+            phoneNumber: nil,
+            location: nil,
+            bio: backendProfile.bio,
+            avatarUrl: backendProfile.photoUrl,
+            createdAt: Date(),
+            lastUpdated: Date(),
+            settings: Settings(
+                nickname: backendProfile.displayName,
+                bio: backendProfile.bio ?? "",
+                idNumber: backendProfile.uid,
+                gender: Gender(from: backendProfile.gender),
+                birthDate: Date(), // 可能需要从后端获取
+                notificationsEnabled: true,
+                privacySettings: Settings.PrivacySettings(
+                    isProfilePublic: true,
+                    showLocation: true,
+                    showOnlineStatus: true
+                )
+            ),
+            stats: UserStats(
+                participantsCount: 0,
+                viewedTopicsCount: 0,
+                postsCount: 0,
+                followersCount: 0,
+                followingCount: 0
+            ),
+            chatToken: backendProfile.chatToken,
+            //session: backendProfile.session,
+            chatID: backendProfile.chatID,
+            chatUrl: backendProfile.chatUrl
+        )
+    }
     
     // MARK: - Helper Methods
     func formattedJoinDate() -> String {
@@ -205,29 +211,28 @@ struct UserProfile: Codable, Identifiable {
 // 后端返回的用户信息结构体
 struct BackendUserProfile: Codable {
     let csrfToken: String
-    let chatToken: String
     let uid: String
     let displayName: String
     let photoUrl: String?
     let email: String
     let gender: String?
     let bio: String?
-    let session: String?
-    let chatId: [String]
-    let chatUrl: String?
+    let chatToken: String
+   // let session: String
+    let chatID: [String]  // 确保使用chatID（大写ID）
+    let chatUrl: String
     
     enum CodingKeys: String, CodingKey {
-        case csrfToken = "csrf_token"
-        case chatToken = "chat_token"
-        case uid
-        case displayName = "display_name"
-        case photoUrl = "photo_url"
-        case email
-        case gender
-        case bio
-        case session
-        case chatId = "chat_id"
-        case chatUrl = "chat_url"
+        case csrfToken = "CsrfToken"
+        case uid = "UID"
+        case displayName = "DisplayName"
+        case photoUrl = "PhotoUrl"
+        case email = "Email"
+        case gender = "Gender"
+        case bio = "Bio"
+        case chatToken = "ChatToken"
+       // case session = "Session"
+        case chatID = "ChatID"  // 映射到大写的ChatID
+        case chatUrl = "ChatUrl"
     }
 }
-
